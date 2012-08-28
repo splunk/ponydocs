@@ -383,7 +383,6 @@ class PonyDocsTOC
 					$safeVersion = preg_quote($selectedVersion, '#');
 					// Lets be specific and replace the version and not some other part of the URI that might match...
 					$toc[$idx]['link'] = preg_replace('#^/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/([^/]+)/$safeVersion#", '/Documentation/$1/latest', $toc[$idx]['link'], 1);
-					error_log($toc[$idx]['link']);
 				}
 			}
 		}
