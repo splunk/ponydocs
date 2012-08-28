@@ -366,22 +366,24 @@ class PonyDocsTOC
 		$start = array( );
 		// Go through and determine start, prev, next and current elements.
 
-		foreach($toc as $idx => &$entry) {
+		foreach ($toc as $idx => &$entry) {
 			// Not using $entry.  Only interested in $idx.
 			// This allows us to process tocs with removed key indexes.
-			if($toc[$idx]['level'] == 1) {
-				if(empty($start)) {
+			if ($toc[$idx]['level'] == 1) {
+				if (empty($start)) {
 					$start = $toc[$idx];
 				}
 				// Determine current
 				$toc[$idx]['current'] = strcmp($wgTitle->mPrefixedText, $toc[$idx]['title']) ? false : true;
-				if($toc[$idx]['current']) {
+				if ($toc[$idx]['current']) {
 					$currentIndex = $idx;
 				}
 				// Now rewrite link with latest, if we are in latest
-				if($latest) {
-					$safeVersion = preg_quote($selectedVersion);
-					$toc[$idx]['link'] = preg_replace('/' . $safeVersion . '/', 'latest', $toc[$idx]['link'], 1);
+				if ($latest) {
+					$safeVersion = preg_quote($selectedVersion, '#');
+					// Lets be specific and replace the version and not some other part of the URI that might match...
+					$toc[$idx]['link'] = preg_replace('#^/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/([^/]+)/$safeVersion#", '/Documentation/$1/latest', $toc[$idx]['link'], 1);
+					error_log($toc[$idx]['link']);
 				}
 			}
 		}
