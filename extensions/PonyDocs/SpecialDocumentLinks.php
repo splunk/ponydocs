@@ -54,10 +54,12 @@ class SpecialDocumentLinks extends SpecialPage {
 		// Find titles for all inherited versions, etc.
 		$titlePieces = explode(':', $title);
 		$plainTitle = $title;
-		$title = Title::newFromText($title); // Create a new Title from text, such as what one would find in a link. Decodes any HTML entities in the text.
+		// Create a new Title from text, such as what one would find in a link. Decodes any HTML entities in the text.		
+		$title = Title::newFromText($title);
 
 		$toUrls = array();
-		if ($titlePieces[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) { // Do PonyDocs-specific stuff (loop through all inherited versions)
+		// Do PonyDocs-specific stuff (loop through all inherited versions)
+		if ($titlePieces[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
 
 			// Get the versions associated with this topic
 			PonyDocsProductVersion::LoadVersionsForProduct($titlePieces[1], true);
@@ -89,7 +91,8 @@ class SpecialDocumentLinks extends SpecialPage {
 					// Compare this version with latest version. If they're the same, add the URL with "latest" too.
 					$thisVersion = $ver->getVersionName();
 					if ($thisVersion == $latestVersion) {
-						$titleLatestVersion = $titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
+						$titleLatestVersion =
+							$titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
 						$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($titleLatestVersion);
 					}
 				}
@@ -159,15 +162,13 @@ class SpecialDocumentLinks extends SpecialPage {
 
 		<?php
 		// If there are no links, display a message saying as much
-		if (empty($links)) {
-		?>
+		if (empty($links)) { ?>
 			<p>No links to <?php echo $plainTitle; ?> (and its inherited versions) from other topics.</p>
 		<?php
 		} else {
 			// Display all links, ordered by product then version
-			foreach ($links as $fromProduct => $fromVersions) {
-				?>
-				<h2><?php echo $fromProduct; ?> </h2>
+			foreach ($links as $fromProduct => $fromVersions) { ?>
+				<h2><?php echo $fromProduct; ?></h2>
 				<?php
 				// If this is a PonyDocs Product
 				if (PonyDocsProduct::IsProduct($fromProduct)) {
@@ -175,19 +176,21 @@ class SpecialDocumentLinks extends SpecialPage {
 					PonyDocsProductVersion::LoadVersionsForProduct($fromProduct, true);
 					$fromProductVersions = PonyDocsProductVersion::GetVersions($fromProduct);
 					foreach ($fromProductVersions as $fromProductVersionObj) {
-						$fromProductVersionName = $fromProductVersionObj->getVersionName(); // to make it easier to read
+						// to make it easier to read
+						$fromProductVersionName = $fromProductVersionObj->getVersionName();
 						// If there are doclinks from this version, print them
-						if (array_key_exists($fromProductVersionName, $fromVersions)) {
-							?>
+						if (array_key_exists($fromProductVersionName, $fromVersions)) { ?>
 							<h3><?php echo $fromProduct . ' ' . $fromProductVersionName; ?></h3>
 							<ul>
 							<?php
-							foreach ($fromVersions[$fromProductVersionName] as $linkAry) {
-								?>
-								<li><a href="<?php echo str_replace('$1', $linkAry['from_link'], $wgArticlePath); ?>"><?php echo $linkAry['display_url']; ?></a></li>
+							foreach ($fromVersions[$fromProductVersionName] as $linkAry) { ?>
+								<li>
+									<a href="<?php echo str_replace('$1', $linkAry['from_link'], $wgArticlePath); ?>">
+										<?php echo $linkAry['display_url']; ?>
+									</a>
+								</li>
 							<?php
-							}
-							?>
+							} ?>
 							</ul>
 							<?php
 						}
@@ -200,10 +203,13 @@ class SpecialDocumentLinks extends SpecialPage {
 						<?php
 						foreach ($fromVersionData as $linkAry) {
 							?>
-							<li><a href="<?php echo str_replace('$1', $linkAry['from_link'], $wgArticlePath); ?>"><?php echo $linkAry['display_url']; ?></a></li>
+							<li>
+								<a href="<?php echo str_replace('$1', $linkAry['from_link'], $wgArticlePath); ?>">
+									<?php echo $linkAry['display_url']; ?>
+								</a>
+							</li>
 						<?php
-						}
-						?>
+						} ?>
 						</ul>
 						<?php
 					}
@@ -216,6 +222,4 @@ class SpecialDocumentLinks extends SpecialPage {
 		$wgOut->addHTML($htmlContent);
 		return true;
 	}
-
 }
-
