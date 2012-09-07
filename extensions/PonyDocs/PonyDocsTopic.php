@@ -241,31 +241,33 @@ class PonyDocsTopic
 	}
 
 	/**
-	 * This loads/parses the sub-contents for the in-page header TOC display.  This display shows the H2s and H3s for the current topic.
+	 * This loads/parses the sub-contents for the in-page header TOC display.
+	 * This display shows the H2s and H3s for the current topic.
 	 *
 	 * @return array
 	 */
-	public function getSubContents( )
-	{
-		$sec = array( );
+	public function getSubContents() {
+		$sections = array();
 		
-		if( preg_match( '/__NOTOC__/', $this->pArticle->getContent( )))
-			return $sec;
+		if (preg_match( '/__NOTOC__/', $this->pArticle->getContent())) {
+			return $sections;
+		}
 		
-		$matches = $this->parseSections( );
-		foreach( $matches as $m )
-		{			
-			$lvl = strlen( $m[1] );			
-			if(( $lvl < 2 ) || ( $lvl > 3 )) {
+		$matches = $this->parseSections();
+		foreach ($matches as $match) {
+			$level = strlen($match[1]);
+			if ($lvl < 2 || $lvl > 3 ) {
 				continue;
 			}
-			$sec[] = array(	'level' => $lvl,
-							'link' => '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection( $m[2] )),
-							'text' => $m[2],
-							'class' => 'toclevel-' . round( $lvl - 1, 0 ));
-									
+			
+			$sections[] = array(
+				'level' => $level,
+				'link' => '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2])),
+				'text' => $match[2],
+				'class' => 'toclevel-' . round($level - 1, 0)
+			);
 		}
-		return $sec;
+		return $sections;
 	}
 
 	/**
