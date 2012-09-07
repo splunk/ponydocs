@@ -254,18 +254,21 @@ class PonyDocsTopic
 		}
 		
 		$matches = $this->parseSections();
+		$h2 = FALSE;
 		foreach ($matches as $match) {
-			$level = strlen($match[1]);
-			if ($lvl < 2 || $lvl > 3 ) {
-				continue;
+			$level = strlen($match[1]);		
+			// We don't want to include any H3s that don't have an H2 parent
+			if ($level == 2 || ($level == 3 && $h2))  {
+				if ($level == 2) {
+					$h2 = TRUE;
+				}
+				$sections[] = array(
+					'level' => $level,
+					'link' => '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2])),
+					'text' => $match[2],
+					'class' => 'toclevel-' . round($level - 1, 0)
+				);
 			}
-			
-			$sections[] = array(
-				'level' => $level,
-				'link' => '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2])),
-				'text' => $match[2],
-				'class' => 'toclevel-' . round($level - 1, 0)
-			);
 		}
 		return $sections;
 	}
