@@ -181,7 +181,7 @@ class SpecialDocumentLinks extends SpecialPage {
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
 								// Leave links from the current product/version expanded
-								// Leave links from other productions/splexicon expanded
+								// Leave links from other products expanded
 								$selected = '';
 								if ($currentVersion == $fromProductVersionName || $currentProduct != $fromProduct) {
 									$selected = 'selected';
