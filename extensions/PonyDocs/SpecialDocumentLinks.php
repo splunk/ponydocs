@@ -169,13 +169,16 @@ class SpecialDocumentLinks extends SpecialPage {
 				// Display all links, ordered by product then version
 				foreach ( $links as $fromProduct => $fromVersions ) {
 					// If this is a PonyDocs Product
-					if ( PonyDocsProduct::IsProduct($fromProduct) ) { ?>
-						<h2><?php echo $fromProduct; ?></h2>
-						<?php
-
+					if ( PonyDocsProduct::IsProduct($fromProduct) ) { 
 						// Get versions for this product, so we can display the versions in the correct order
 						PonyDocsProductVersion::LoadVersionsForProduct($fromProduct, true);
 						$fromProductVersions = PonyDocsProductVersion::GetVersions($fromProduct);
+						// If there are no valid versions for this product/user, then skip the product name header.
+						if (! count($fromProductVersions)) {
+							continue;
+						} ?>
+						<h2><?php echo $fromProduct; ?></h2>
+						<?php
 						foreach ($fromProductVersions as $fromProductVersionObj) {
 							$fromProductVersionName = $fromProductVersionObj->getVersionName();
 							// If there are doclinks from this version, print them
