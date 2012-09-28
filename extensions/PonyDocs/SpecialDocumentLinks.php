@@ -38,6 +38,10 @@ class SpecialDocumentLinks extends SpecialPage {
 		global $wgRequest;
 		global $wgDBprefix;
 
+		$currentProduct = '';
+		$currentVersion = '';
+		$collapseAll = FALSE;
+		
 		$dbr = wfGetDB(DB_SLAVE);
 
 		// Set headers and title of the page, get value of "t" from GET/POST
@@ -101,6 +105,7 @@ class SpecialDocumentLinks extends SpecialPage {
 			}
 
 		} else { // Do generic mediawiki stuff for non-PonyDocs namespaces
+			$collapseAll = TRUE;
 			$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($title);
 		}
 
@@ -183,10 +188,12 @@ class SpecialDocumentLinks extends SpecialPage {
 							$fromProductVersionName = $fromProductVersionObj->getVersionName();
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
-								// Leave links from the current product/version expanded
-								// Leave links from other products expanded
+								// Expand containers of incoming links from the current Product and Version
+								// Expand containers of incoming links from other Products
+								// But don't expand any containers if this is not a PonyDocs product
 								$selected = '';
-								if ($currentVersion == $fromProductVersionName || $currentProduct != $fromProduct) {
+								if (($currentProduct != $fromProduct || $currentVersion == $fromProductVersionName)
+									&& ! $collapseAll) {
 									$selected = 'selected';
 								} ?>
 								<h3 class="doclinks-collapsible <?php print $selected; ?>">
