@@ -96,11 +96,6 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$this->skin = $skin = $this->data['skin'];
 
-		if($skin->mTitle) {
-			$this->data['canonicalURI'] = $skin->mTitle->getFullURL();
-		}
-
-
 		$action = $wgRequest->getText( 'action' );
 
 		// Suppress warnings to prevent notices about missing indexes in $this->data
