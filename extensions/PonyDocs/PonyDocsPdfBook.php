@@ -92,8 +92,13 @@ class PonyDocsPdfBook {
 		$productName = $pieces[1];
 		$ponydocs = PonyDocsWiki::getInstance($productName);
 		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
+		if ($pProduct === NULL) { // product wasn't valid
+			wfProfileOut( __METHOD__ );
+			$wgOut->setStatusCode(404);
+			return FALSE;
+		}
 		$productLongName = $pProduct->getLongName();
-
+		
 		if(PonyDocsProductManual::isManual($productName, $pieces[2])) {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
