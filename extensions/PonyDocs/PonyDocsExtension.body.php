@@ -1820,7 +1820,7 @@ HEREDOC;
 			PonyDocsProductManual::LoadManualsForProduct($product, true);
 		}
 		else {
-			if (PONYDOCS_SESSION_DEBUG) {
+			if (PONYDOCS_CACHE_DEBUG) {
 				error_log("DEBUG [PonyDocsExtension::fetchNavDataForVersion]" .
 					" Fetched navigation cache from PonyDocsCache for product $product");
 			}
