@@ -1864,6 +1864,12 @@ HEREDOC;
 
 			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
 
+			if (!($p instanceof PonyDocsProduct)) {
+				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
+				return false;
+			}
+
+
 			// User wants to find first topic in a requested manual.
 			// Load up versions
 			PonyDocsProductVersion::LoadVersionsForProduct($targetProduct);
