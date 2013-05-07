@@ -225,7 +225,7 @@ class PonyDocsProduct
 	 * @param string $shortName
 	 * @return PonyDocsProduct&
 	 */
-	static public function & GetProductByShortName( $shortName )
+	static public function GetProductByShortName( $shortName )
 	{
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $shortName );
 		if( self::IsProduct( $convertedName ))
