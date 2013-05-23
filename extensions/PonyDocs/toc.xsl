@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-This is the XSL for the Table of Contents for PonyDocs's PDFBook output.  Use this to customize how the table of contents renders in PDF output.
+This is the XSL for the Table of Contents for PonyDocs's PDFBook output.  Use this to customize
+how the table of contents renders in PDF output.
 
 Refer to: http://code.google.com/p/wkhtmltopdf/
 

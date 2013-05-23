@@ -17,10 +17,10 @@ $options = getopt('', array(
 							'output:',
 							'encoding:',
 							'copyright:'
-));
+	));
 
 // If required variables are not provided, print usage and exit with err.
-if(!isset($options['file']) || !isset($options['output'])) {
+if (!isset($options['file']) || !isset($options['output'])) {
 	print_usage();
 	return -1;
 }
@@ -29,7 +29,7 @@ $file = $options['file'];
 $pdfFileName = $options['output'];
 $coverFile = null;
 
-if(!file_exists($file)) {
+if (!file_exists($file)) {
 	print("Error: Input file " . $file . " does not exist.\n\n");
 	return -1;
 }
@@ -39,9 +39,9 @@ $copyright = isset($options['copyright']) ? $options['copyright'] : PONYDOCS_PDF
 $encoding = isset($options['encoding']) ? $options['encoding'] : 'utf-8';
 
 // If a cover file was specified, let's do some setup of the cover page.
-if(isset($options['cover'])) {
+if (isset($options['cover'])) {
 	$coverFile = $options['cover'];
-	if(!file_exists($coverFile)) {
+	if (!file_exists($coverFile)) {
 		print("Error: Cover file " . $cover . " does not exist.\n\n");
 		return -1;
 	}
@@ -52,7 +52,10 @@ if(isset($options['cover'])) {
 	$titlepagefile = "$path/" .uniqid('ponydocs-pdf-book-title') . '.html';
 	$fh = fopen($titlepagefile, 'w+');
 
-	$titleText = '<!doctype html><html lang="en" xmlns="http://www.w3.org/1999/xhtml" charset="' . $encoding . '"> <head> <meta charset="' . $encoding . '"> <title></title> <style> html,body { margin: 0px; padding: 0px; width: 210mm; max-width: 210mm; overflow-x: hidden; } </style> </head> <body>'; 
+	$titleText = '<!doctype html><html lang="en" xmlns="http://www.w3.org/1999/xhtml" charset="' . $encoding . '"> '
+		. '<head> <meta charset="' . $encoding . '"> <title></title> '
+		. '<style> html,body { margin: 0px; padding: 0px; width: 210mm; max-width: 210mm; overflow-x: hidden; } </style> '
+		. '</head> <body>';
 	$titleText .= $file_contents . "</body></html>"; 
 	fwrite($fh, $titleText); 
 	fclose($fh); 
@@ -62,20 +65,30 @@ if(isset($options['cover'])) {
 $file = $path . "/" . $file; 
 $file_contents = file_get_contents($file);
 
-$html = ' <!doctype html> <html lang="en" xmlns="http://www.w3.org/1999/xhtml" charset="' . $encoding . '"> <head> <meta charset="' . $encoding . '"> <title></title> <style> html,body { margin: 0px; padding: 0px; width: 210mm; max-width: 210mm; overflow-x: hidden; } pre { width: 100%; overflow-x: hidden; } </style> </head> <body>';
+$html = ' <!doctype html> <html lang="en" xmlns="http://www.w3.org/1999/xhtml" charset="' . $encoding . '"> '
+	. '<head> <meta charset="' . $encoding . '"> <title></title> '
+	. '<style> html,body { margin: 0px; padding: 0px; width: 210mm; max-width: 210mm; overflow-x: hidden; } '
+	. 'pre { width: 100%; overflow-x: hidden; } </style> </head> <body>';
 $html .= $file_contents;
 $html .= "</body></html>";
 
-$file = "$path/".uniqid('ponydocs-pdf-book') . '.html';
+$file = "$path/" . uniqid('ponydocs-pdf-book') . '.html';
 $fh = fopen($file, 'w+');
 fwrite($fh, $html);
 fclose($fh);
 
 // Build wkhtmltopdf command.
 if($coverFile) {
-	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip --footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover ' . $titlepagefile . ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet ' . dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
+	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip '
+		. '--footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover '
+		. $titlepagefile . ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet '
+		. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --encoding ks_c_5601-1987 --enable-internal-links '
+		. '--load-error-handling skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
 } else {
-	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip --footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm ' . $file . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
+	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip '
+		. '--footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm '
+		. $file . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip --footer-center "[page]" '
+		. '--zoom 1.03 ' . $pdfFileName;
 }
 
 $output = array();

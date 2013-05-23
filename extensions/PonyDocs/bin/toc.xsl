@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-This is the XSL for the Table of Contents for PonyDocs's pdfconvert utiliy script.  Modify this to make changes to how Table of Contents renders for the pdfconvert utility method.
+This is the XSL for the Table of Contents for PonyDocs's pdfconvert utiliy script.  Modify this to make changes
+to how Table of Contents renders for the pdfconvert utility method.
 
 Refer to: http://code.google.com/p/wkhtmltopdf/
 

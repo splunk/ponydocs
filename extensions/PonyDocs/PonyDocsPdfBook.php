@@ -13,20 +13,20 @@ if (!defined('MEDIAWIKI')) die('Not an entry point.');
 define('PONYDOCS_PDFBOOK_VERSION', '2.0, 2013-01-13');
 
 $wgExtensionCredits['parserhook'][] = array(
-	'name'		  => 'PonyDocsPdfBook',
-	'author'	  => 'Taylor Dondich and [http://www.organicdesign.co.nz/nad User:Nad]',
+	'name' => 'PonyDocsPdfBook',
+	'author' => 'Taylor Dondich and [http://www.organicdesign.co.nz/nad User:Nad]',
 	'description' => 'Composes a book from documentation and exports as a PDF book',
-	'url'		  => 'http://www.splunk.com',
-	'version'	 => PONYDOCS_PDFBOOK_VERSION
+	'url' => 'http://www.splunk.com',
+	'version' => PONYDOCS_PDFBOOK_VERSION
 	);
 
 // Catch the pdfbook action
 $wgHooks['UnknownAction'][] = "PonyDocsPdfBook::onUnknownAction";
 
 // Add a new pdf log type
-$wgLogTypes[]			 = 'ponydocspdf';
-$wgLogNames['ponydocspdf']	  = 'ponydocspdflogpage';
-$wgLogHeaders['ponydocspdf']	  = 'ponydocspdflogpagetext';
+$wgLogTypes[] = 'ponydocspdf';
+$wgLogNames['ponydocspdf'] = 'ponydocspdflogpage';
+$wgLogHeaders['ponydocspdf'] = 'ponydocspdflogpagetext';
 $wgLogActions['ponydocspdf/book'] = 'ponydocspdflogentry';
 
 
@@ -41,13 +41,14 @@ class PonyDocsPdfBook {
 		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
 
 		// We don't do any processing unless it's pdfbook
-		if($action != 'pdfbook') {
+		if ($action != 'pdfbook') {
 			return true;
 		}
 
 		// Check for required setup constant.
-		if(!defined('PONYDOCS_WKHTMLTOPDF_PATH')) {
-			error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": Failed to run create PDF. Required PONYDOCS_WKHTMLTOPDF_PATH constant not defined.");
+		if (!defined('PONYDOCS_WKHTMLTOPDF_PATH')) {
+			error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
+				. ": Failed to run create PDF. Required PONYDOCS_WKHTMLTOPDF_PATH constant not defined.");
 			print("Failed to create PDF.  Our team is looking into it.");
 			die();
 		}
@@ -62,7 +63,7 @@ class PonyDocsPdfBook {
 		$opt = ParserOptions::newFromUser($wgUser);
 
 		# Log the export
-		$msg = $wgUser->getUserPage()->getPrefixedText().' exported as a PonyDocs PDF Book';
+		$msg = $wgUser->getUserPage()->getPrefixedText() . ' exported as a PonyDocs PDF Book';
 		$log = new LogPage('ponydocspdfbook', false);
 		$log->addEntry('book', $wgTitle, $msg);
 
@@ -79,12 +80,14 @@ class PonyDocsPdfBook {
 		$pieces = explode(":", $wgTitle->__toString());
 
 		// Try and get rid of the TOC portion of the title
-		if(strpos($pieces[2], "TOC") && count($pieces) == 3) {
+		if (strpos($pieces[2], "TOC") && count($pieces) == 3) {
 			$pieces[2] = substr($pieces[2], 0, strpos($pieces[2], "TOC"));
 		} else if (count($pieces) != 5) {
 			// something is wrong, let's get out of here
 			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_REDIRECT_DEBUG) {
+				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
+			}
 			header( "Location: " . $defaultRedirect );
 			exit;
 		}
@@ -99,25 +102,28 @@ class PonyDocsPdfBook {
 		}
 		$productLongName = $pProduct->getLongName();
 		
-		if(PonyDocsProductManual::isManual($productName, $pieces[2])) {
+		if (PonyDocsProductManual::isManual($productName, $pieces[2])) {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
 		$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
 
-		if(!empty($pManual)) {
+		if (!empty($pManual)) {
 			// We should always have a pManual, if we're printing 
 			// from a TOC
 			$v = PonyDocsProductVersion::GetVersionByName($productName, $versionText);
 
 			// We have our version and our manual
 			// Check to see if a file already exists for this combination
-			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $pManual->getShortName() . "-book.pdf";
+			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $pManual->getShortName()
+					. "-book.pdf";
 			// Check first to see if this PDF has already been created and 
 			// is up to date.  If so, serve it to the user and stop 
 			// execution.
-			if(file_exists($pdfFileName)) {
-				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\"" . $wgUser->getName() . "\" product=\"" . $productName . "\" version=\"" . $versionText ."\" " . " manual=\"" . $pManual->getShortName() . "\"");
+			if (file_exists($pdfFileName)) {
+				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\""
+					. $wgUser->getName() . "\" product=\"" . $productName . "\" version=\"" . $versionText ."\" "
+					. " manual=\"" . $pManual->getShortName() . "\"");
 				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pManual->getShortName());
 				// No more processing
 				return false;
@@ -135,9 +141,9 @@ class PonyDocsPdfBook {
 					$articles[$tocEntry['section']][] = array('title' => $title, 'text' => $tocEntry['text']);
 				}
 			}
-		}
-		else {
-			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": User attempted to print a pdfbook from a non TOC page with path:" . $wgTitle->__toString());
+		} else {
+			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
+				. ": User attempted to print a pdfbook from a non TOC page with path:" . $wgTitle->__toString());
 		}
 
 		# Format the article(s) as a single HTML document with absolute URL's
@@ -170,12 +176,12 @@ pre {
 EOT;
 
 		$wgArticlePath = $wgServer.$wgArticlePath;
-		$wgScriptPath  = $wgServer.$wgScriptPath;
-		$wgUploadPath  = $wgServer.$wgUploadPath;
-		$wgScript	  = $wgServer.$wgScript;
+		$wgScriptPath = $wgServer.$wgScriptPath;
+		$wgUploadPath = $wgServer.$wgUploadPath;
+		$wgScript = $wgServer.$wgScript;
 		$currentSection = '';
 		foreach ($articles as $section => $subarticles) {
-			foreach($subarticles as $article) {
+			foreach ($subarticles as $article) {
 				$title = $article['title'];
 				$ttext = $title->getPrefixedText();
 				if (!in_array($ttext, $exclude)) {
@@ -184,29 +190,25 @@ EOT;
 						$currentSection = $section;
 					}		
 					$article = new Article($title, 0);
-					$text	= $article->fetchContent();
+					$text = $article->fetchContent();
 
-
-					// We don't need to preserve html comments.
-					//$text	= preg_replace('/<!--([^@]+?)-->/s', '@@'.'@@$1@@'.'@@', $text); # preserve HTML comments
-
-					// Specify that we don't need a table of contents for this 
-					// article.
-					$text   .= '__NOTOC__';
+					// Specify that we don't need a table of contents for this article.
+					$text .= '__NOTOC__';
 
 					$opt->setEditSection(false);	# remove section-edit links
 					$wgOut->setHTMLTitle($ttext);   # use this so DISPLAYTITLE magic works
 					
-					$out	 = $wgParser->parse($text, $title, $opt, true, true);
-					$ttext   = $wgOut->getHTMLTitle();
-					$text	 = $out->getText();
+					$out = $wgParser->parse($text, $title, $opt, true, true);
+					$ttext = $wgOut->getHTMLTitle();
+					$text = $out->getText();
 
 					// parse article title string and add topic name anchor tag for intramanual linking
 					$articleMeta = PonyDocsArticleFactory::getArticleMetadataFromTitle($title);
 					$text = '<a name="' . $articleMeta['topic'] . '"></a>' . $text;
 
 					// prepare for replacing pre tags with code tags WEB-5926
-					// derived from http://stackoverflow.com/questions/1517102/replace-newlines-with-br-tags-but-only-inside-pre-tags
+					// derived from
+					// http://stackoverflow.com/questions/1517102/replace-newlines-with-br-tags-but-only-inside-pre-tags
 					// only inside pre tag:
 					//   replace space with &nbsp; only when positive lookbehind is a whitespace character
 					//   replace \n -> <br/>
@@ -228,17 +230,11 @@ EOT;
 					$text = substr($str, 1);
 
 					/*
-					// String search and replace
-					$str_search  = array('<h5>', '</h5>', '<h4>', '</h4>', '<h3>', '</h3>', '<h2>', '</h2>', '<h1>', '</h1>', '<code>', '</code>', '<pre>', '</pre>');
-					$str_replace = array('<h6>', '</h6>', '<h5>', '</h5>', '<h4><font size="3"><b><i>', '</i></b></font></h4>', '<h3>', '</h3>', '<h2>', '</h2>', '<code><font size="2">', '</font></code>', '<code><font size="2">', '</font></code>');
-					$text    	 = str_replace($str_search, $str_replace, $text);
-					*/
-
-					/*
 					 * HTML regex tweaking prior to sending to PDF library
 					 *
 					 * 1 - replace intramanual links with just the anchor hash of topic name (e.g. href="#topicname")
-					 * 2 - remove all non-intramanual links - strip anchor tags with href attribute whose href value doesn't start with #
+					 * 2 - remove all non-intramanual links - strip anchor tags with href attribute whose href value doesn't start
+					 *     with #
 					 * 3 - wrap all span tags having id attribute with <a name="[topicname]_[span_id_attr_value]"> ... </a>
 					 * 4 - all anchor links' href values that contain two # characters, replace the second with _
 					 * 5 - make images have absolute URLs
@@ -247,14 +243,12 @@ EOT;
 					 * 8 - cell padding
 					 * 9 - th bgcolor
 					 * 10 - td valign, align and font size
-					 *
-					 * NEW CHANGES:
-					 * Remove font element.  Remove semi-color in table header 
-					 * color definition.
+					 * 
 					 */
-					$regex_search = array
-					(
-						'|<a([^\>])+href="(' . str_replace('/', '\/', $wgServer) . ')+\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/' . $productName . '\/' . $versionText . '\/' . $pManual->getShortName() . '\/([^"]*)"([^\<]*)>|',
+					$regex_search = array(
+						'|<a([^\>])+href="(' . str_replace('/', '\/', $wgServer) . ')+\/'
+							. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/' . $productName . '\/' . $versionText . '\/'
+							. $pManual->getShortName() . '\/([^"]*)"([^\<]*)>|',
 						'|<a[^\>]+href="(?!#)[^"]*"[^>]*>(.*?)</a>|',
 						'|<span[^\>]+id="([^"]*)"[^>]*>(.*?)</span>|',
 						'|<a([^\>])+href="#([^"]*)#([^"]*)"([^>])*>(.*?)</a>|',
@@ -268,11 +262,10 @@ EOT;
 					
 					// Table vars
 					$table_extra = ' cellpadding="6"';
-					$th_extra	 = ' bgcolor="#C0C0C0"';
-					$td_extra	 = ' valign="center" align="left"';
+					$th_extra = ' bgcolor="#C0C0C0"';
+					$td_extra = ' valign="center" align="left"';
 					
-					$regex_replace = array
-					(
+					$regex_replace = array(
 						'<a${1}href="#${3}"${4}>',
 						'${1}',
 						'<a name="' . $articleMeta['topic'] . '_${1}">${0}</a>',
@@ -285,10 +278,8 @@ EOT;
 						"$1$td_extra>$2"
 					);
 					
-					$text  = preg_replace($regex_search, $regex_replace, $text);
+					$text = preg_replace($regex_search, $regex_replace, $text);
 					$ttext = basename($ttext);
-					// We don't want to decode
-					//$html .= utf8_decode("$text\n");
 					$html .= $text;
 				}
 			}
@@ -296,13 +287,13 @@ EOT;
 		$html .= "</body></html>";
 
 		# Write the HTML to a tmp file
-		$file = "$wgUploadDirectory/".uniqid('ponydocs-pdf-book') . '.html';
+		$file = "$wgUploadDirectory/" . uniqid('ponydocs-pdf-book') . '.html';
 		$fh = fopen($file, 'w+');
 		fwrite($fh, $html);
 		fclose($fh);
 
 		// Okay, create the title page
-		$titlepagefile = "$wgUploadDirectory/" .uniqid('ponydocs-pdf-book-title') . '.html';
+		$titlepagefile = "$wgUploadDirectory/" . uniqid('ponydocs-pdf-book-title') . '.html';
 		$fh = fopen($titlepagefile, 'w+');
 		
 		$image_path	= $wgServer . $wgStylePath . PONYDOCS_PDF_TITLE_IMAGE_PATH;
@@ -325,44 +316,50 @@ overflow-x: hidden;
 <body>
 EOT;
 
-		$titleText	.= '<img src="' . $image_path .  '" width="1024">'
-					. '<h1 style="font-size: 32pt;">' . $productLongName . ' ' . $versionText . '</h1>'
-					. '<h2 style="font-size: 32pt;">' . $book . '</h2>'
-					. '<h3 style="font-size: 24pt; font-weight: normal;">Generated: ' . date('n/d/Y g:i a', time())
-					. '</h3></body></html>';
+		$titleText .= '<img src="' . $image_path . '" width="1024">'
+			. '<h1 style="font-size: 32pt;">' . $productLongName . ' ' . $versionText . '</h1>'
+			. '<h2 style="font-size: 32pt;">' . $book . '</h2>'
+			. '<h3 style="font-size: 24pt; font-weight: normal;">Generated: ' . date('n/d/Y g:i a', time())
+			. '</h3></body></html>';
 
 		fwrite($fh, $titleText);
 		fclose($fh);
 
 		$format = 'manual'; 	/* @todo Modify so single topics can be printed in pdf */
 		$footer = $format == 'single' ? '...' : '.1.';
-		$toc	= $format == 'single' ? '' : " --toclevels $levels";
+		$toc = $format == 'single' ? '' : " --toclevels $levels";
 
 		# Send the file to the client via htmldoc converter
 		$wgOut->disable();
 
 		// Build wkhtmltopdf command.
-		$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --enable-internal-links --load-error-handling skip --footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover ' . $titlepagefile . ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet ' . dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --enable-internal-links --load-error-handling skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
+		$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --enable-internal-links --load-error-handling skip --footer-font-size 10 '
+			. '--margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover ' . $titlepagefile
+			. ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet '
+			. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --enable-internal-links --load-error-handling '
+			. 'skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
 
 		$output = array();
 		$returnVar = 0;
 		exec($cmd, $output, $returnVar);
-		if($returnVar != 0) {	
-			error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": Failed to run wkhtmltopdf (" . $returnVar . ") Output is as follows: " . implode("-", $output));
+		if ($returnVar != 0) {
+			error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
+				. ": Failed to run wkhtmltopdf (" . $returnVar . ") Output is as follows: " . implode("-", $output));
 			print("Failed to create PDF.  Our team is looking into it.");
 		}
 		// Delete the htmlfile and title file from the filesystem.
 		@unlink($file);
-		if(file_exists($file)) {
+		if (file_exists($file)) {
 			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": Failed to delete temp file $file");
 		}
 		@unlink($titlepagefile);
-		if(file_exists($titlepagefile)) {
-			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": Failed to delete temp file $titlepagefile");
+		if (file_exists($titlepagefile)) {
+			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
+				. ": Failed to delete temp file $titlepagefile");
 		}
-		// Okay, let's add an entry to the error log to dictate someone 
-		// requested a pdf
-		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\"" . $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $book . "\"");
+		// Okay, let's add an entry to the error log to dictate someone requested a pdf
+		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
+			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $book . "\"");
 		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $book);
 		// No more processing
 		return false;
@@ -374,13 +371,12 @@ EOT;
 	 * @param $fileName string The full path to the PDF file.
 	 */
 	static public function servePdf($fileName, $product, $version, $manual) {
-		if(file_exists($fileName)) {
+		if (file_exists($fileName)) {
 			header("Content-Type: application/pdf");
 			header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");
 			readfile($fileName);
 			die();				// End processing right away.
-		}
-		else {
+		} else {
 			return false;
 		}
 	}
@@ -398,11 +394,11 @@ EOT;
 		global $wgUploadDirectory;
 		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
 		@unlink($pdfFileName);
-		if(file_exists($pdfFileName)) {
-			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n') . ": Failed to delete cached pdf file $pdfFileName");
+		if (file_exists($pdfFileName)) {
+			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n')
+				. ": Failed to delete cached pdf file $pdfFileName");
 			return false;
-		}
-		else {
+		} else {
 			error_log("INFO [PonyDocsPdfBook::removeCachedFile] " . php_uname('n') . ": Cache file $pdfFileName removed.");
 		}
 		return true;
@@ -411,7 +407,9 @@ EOT;
 	/**
 	 * Needed in some versions to prevent Special:Version from breaking
 	 */
-	function __toString() { return 'PonyDocsPdfBook'; }
+	function __toString() {
+		return 'PonyDocsPdfBook';
+	}
 }
 
 /**
