@@ -82,13 +82,12 @@ if($coverFile) {
 	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip '
 		. '--footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover '
 		. $titlepagefile . ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet '
-		. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --encoding ks_c_5601-1987 --enable-internal-links '
-		. '--load-error-handling skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
+		. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --encoding ks_c_5601-1987 --footer-center "[page]" '
+		. '--zoom 1.03 ' . $pdfFileName;
 } else {
 	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip '
 		. '--footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm '
-		. $file . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip --footer-center "[page]" '
-		. '--zoom 1.03 ' . $pdfFileName;
+		. $file . ' --encoding ks_c_5601-1987 --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
 }
 
 $output = array();

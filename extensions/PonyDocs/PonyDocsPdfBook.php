@@ -284,6 +284,7 @@ EOT;
 					$text = preg_replace_callback(
 						'|<a([^\>])+href="([^"]*)"([^\<]*)>|',
 						function ($matches) {
+							$matches[3] = (empty($matches[3])) ? '' : $matches[3]; // init $matches[3] if necessary
 							return '<a' . $matches[1] . 'href="' . strtolower($matches[2]) . '"' . $matches[3] . '>';
 						},
 						$text
@@ -291,6 +292,7 @@ EOT;
 					$text = preg_replace_callback(
 						'|<a([^\>])+name="([^"]*)"[^>]*>|',
 						function ($matches) {
+							$matches[3] = (empty($matches[3])) ? '' : $matches[3]; // init $matches[3] if necessary
 							return '<a' . $matches[1] . 'name="' . strtolower($matches[2]) . '"' . $matches[3] . '>';
 						},
 						$text
@@ -353,8 +355,8 @@ EOT;
 		$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --enable-internal-links --load-error-handling skip --footer-font-size 10 '
 			. '--margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover ' . $titlepagefile
 			. ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet '
-			. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --enable-internal-links --load-error-handling '
-			. 'skip --footer-center "[page]" --zoom 1.03 ' . $pdfFileName;
+			. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --footer-center "[page]" --zoom 1.03 '
+			. $pdfFileName;
 
 		$output = array();
 		$returnVar = 0;
