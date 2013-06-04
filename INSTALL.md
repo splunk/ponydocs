@@ -324,14 +324,16 @@ Failure to do so will result in frustration and keyboard tossing.
 * Clicking on the topic in the TOC page will take you to the new topic, which you'll be able to edit with your new content.
 * Note that each new topic page is also auto-populated with a category tag (or tags).
 
-This should get you started! Have fun!
-
-### Optional: Install HTMLDOC
+### 11) Configure wkhtmltopdf
 
 In the Ponydocs skin, there is a link to "PDF Version".
 
-* If you would like this to work, you'll need to install [HTMLDOC](http://www.htmldoc.org/)
+* If you would like this to work, you'll need to make sure the binary in Ponydocs/bin/ (e.g. wkhtmltopdf-amd64) is executable
+  by the web server user.
 * Additionally, you'll need to make sure your MEDIAWIKIBASE/images directory is writable by your web server user.
+
+This should get you started! Have fun!
+
 
 F.A.Q.
 ------
@@ -348,7 +350,7 @@ A. Reset to the backup you made before starting and try again.
    in order.
 
 Q. When I click "View PDF" I get an error, "Failed to create PDF. Our team is looking into it."  
-A. Follow step 11 to install HTMLDOC.
+A. Follow step 11 to configure wkhtmltopdf.
    Check that the web user can write to the images directory in your MediaWiki install.
    
 Q. How come the vanilla ponydocs skin shipping with the extension doesn't look anything like docs.splunk.com?  
