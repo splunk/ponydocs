@@ -22,7 +22,7 @@ $options = getopt('', array(
 // If required variables are not provided, print usage and exit with err.
 if (!isset($options['file']) || !isset($options['output'])) {
 	print_usage();
-	return -1;
+	return 1;
 }
 
 $file = $options['file'];
@@ -31,7 +31,7 @@ $coverFile = null;
 
 if (!file_exists($file)) {
 	print("Error: Input file " . $file . " does not exist.\n\n");
-	return -1;
+	return 1;
 }
 
 // Setup other args
@@ -43,13 +43,13 @@ if (isset($options['cover'])) {
 	$coverFile = $options['cover'];
 	if (!file_exists($coverFile)) {
 		print("Error: Cover file " . $cover . " does not exist.\n\n");
-		return -1;
+		return 1;
 	}
 	$file_contents = file_get_contents($coverFile);
 	print("Generating Title Page.\n");
 
 	// Okay, create the title page
-	$titlepagefile = "$path/" .uniqid('ponydocs-pdf-book-title') . '.html';
+	$titlepagefile = "$path" .uniqid('ponydocs-pdf-book-title') . '.html';
 	$fh = fopen($titlepagefile, 'w+');
 
 	$titleText = '<!doctype html><html lang="en" xmlns="http://www.w3.org/1999/xhtml" charset="' . $encoding . '"> '
@@ -62,7 +62,6 @@ if (isset($options['cover'])) {
 }
 	
 // Create main input file
-$file = $path . "/" . $file; 
 $file_contents = file_get_contents($file);
 
 $html = ' <!doctype html> <html lang="en" xmlns="http://www.w3.org/1999/xhtml" charset="' . $encoding . '"> '
