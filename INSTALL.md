@@ -324,12 +324,14 @@ Failure to do so will result in frustration and keyboard tossing.
 * Clicking on the topic in the TOC page will take you to the new topic, which you'll be able to edit with your new content.
 * Note that each new topic page is also auto-populated with a category tag (or tags).
 
-### 11) Configure wkhtmltopdf
+### 11) Install and configure wkhtmltopdf
 
 In the Ponydocs skin, there is a link to "PDF Version".
 
-* If you would like this to work, you'll need to make sure the binary in Ponydocs/bin/ (e.g. wkhtmltopdf-amd64) is executable
-  by the web server user.
+* If you would like this to work, you'll need to install wkhtmltopdf. It can be downloaded here:
+  https://code.google.com/p/wkhtmltopdf/downloads/list
+* We recommend putting the binary in extensions/Ponydocs/bin/. Make sure it's executable by the web server user.
+* PonyDocs has only been tested with wkhtmltopdf version 0.10.0 rc2
 * Additionally, you'll need to make sure your MEDIAWIKIBASE/images directory is writable by your web server user.
 
 This should get you started! Have fun!
