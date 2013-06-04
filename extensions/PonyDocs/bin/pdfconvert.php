@@ -80,7 +80,7 @@ fclose($fh);
 if($coverFile) {
 	$cmd = PONYDOCS_WKHTMLTOPDF_PATH . ' --encoding ks_c_5601-1987 --enable-internal-links --load-error-handling skip '
 		. '--footer-font-size 10 --margin-bottom 25.4mm --margin-top 25.4mm --margin-left 31.75mm --margin-right 31.75mm cover '
-		. $titlepagefile . ' --footer-left "' . PONYDOCS_PDF_COPYRIGHT_MESSAGE . '" --exclude-from-outline toc --xsl-style-sheet '
+		. $titlepagefile . ' --footer-left "' . $copyright . '" --exclude-from-outline toc --xsl-style-sheet '
 		. dirname(__FILE__) . '/toc.xsl --exclude-from-outline ' . $file . ' --encoding ks_c_5601-1987 --footer-center "[page]" '
 		. '--zoom 1.03 ' . $pdfFileName;
 } else {
@@ -115,7 +115,7 @@ Required Arguments:
 Optional Arguments:
 
  --cover <cover_file>		The cover html file to provide as a cover page. Do not include HTML header or body element.
- --copyright <copyright>	Override the copyright message on coverpage to something else.
+ --copyright "copyright text"	Override the copyright message on coverpage to something else.
  --encoding <charset>		The encoding character set input files use (default: utf-8)
 
 
