@@ -50,6 +50,6 @@ define('PONYDOCS_STATIC_CSS', '');
 define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
 
 // pdf output constants
-define('PONYDOCS_WKHTMLTOPDF_PATH', dirname(__FILE__) . '/bin/wkhtmltopdf-amd64');
+define('PONYDOCS_WKHTMLTOPDF_PATH', dirname(__FILE__) . '/bin/wkhtmltopdf');
 
 ?>
