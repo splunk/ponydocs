@@ -5,7 +5,7 @@
 */
 // Ponydocs environment configuration
 define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Created Using PonyDocs Mediawiki Extension: http://splunk.github.com/ponydocs/');
-define('PONYDOCS_WKHTMLTOPDF_PATH', dirname(__FILE__) . '/wkhtmltopdf');
+define('PONYDOCS_WKHTMLTOPDF_PATH', '/usr/local/bin/wkhtmltopdf');
 
 // Path used to created temporary files for processing
 $path = '/tmp/';
