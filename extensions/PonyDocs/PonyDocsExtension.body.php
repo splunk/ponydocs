@@ -1014,16 +1014,34 @@ HEREDOC;
 	{
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath;
 
+		// Retrieve read/slave handler for fetching from DB.
+		$dbr = wfGetDB( DB_SLAVE );
+
+
 		// Dangerous.  Only set the flag if you know that you should be skipping 
 		// this processing.  Currently used for branch/inherit.
 		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
 			return true;
 		}
 
+
 		$title = $article->getTitle( );
+
+		// We only perform this in Documentation namespace.
 		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( ))) return true;
 
-		$dbr = wfGetDB( DB_SLAVE );
+		$missingTopics = array();
+
+		if( preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title) && !PONYDOCS_AUTOCREATE_ON_TOC_EDIT)
+		{
+			// Then we do not want to autocreate from TOC articles.
+			return true;
+		} else if( !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT) {
+			// Then we do not want to autocreate in non-TOC Documentation 
+			// articles.
+			return true;
+		}
+
 
 		if( preg_match_all( "/\[\[([" . Title::legalChars( ) . "]*)([|]?([^\]]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
 		//if( preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:._?#!@$+= -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
@@ -1032,7 +1050,7 @@ HEREDOC;
 			 * $match[1] = Wiki Link
 			 * $match[3] = Alternate Text
 			 */
-			
+
 			foreach( $matches as $match )
 			{
 				/**
@@ -1099,14 +1117,13 @@ HEREDOC;
 							if( !$res->numRows( )) 
 							{
 								$topicTitle = $sqlMatch . ':' . $version;
-
 								$tempArticle = new Article( Title::newFromText( $topicTitle ));
 								if( !$tempArticle->exists( ))
 								{
 									/**
-									 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-									 * Tag it with the currently selected version only.
-									 */
+									* Create the new article in the system;  if we have alternate text then set our H1 to this.
+									* Tag it with the currently selected version only.
+									*/
 									$content = '';
 									if( strlen( $match[3] ))
 										$content = '= ' . $match[3] . " =\n";
@@ -1135,10 +1152,9 @@ HEREDOC;
 							$tempArticle = new Article( Title::newFromText( $topicTitle ));
 							if( !$tempArticle->exists( ))
 							{
-								//echo "- Adding new article with title $topicTitle.<br>";
 								/**
-								 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-								 */
+								* Create the new article in the system;  if we have alternate text then set our H1 to this.
+								*/
 								$content = '';
 								if( strlen( $match[3] ))
 									$content = '= ' . $match[3] . " =\n";
@@ -1167,8 +1183,8 @@ HEREDOC;
 							if( !$tempArticle->exists( ))
 							{
 								/**
-								 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-								 */
+								* Create the new article in the system;  if we have alternate text then set our H1 to this.
+								*/
 								$content = '';
 								if( strlen( $match[3] ))
 									$content = '= ' . $match[3] . " =\n";
@@ -1214,8 +1230,8 @@ HEREDOC;
 						if( !$tempArticle->exists( ))
 						{
 							/**
-							 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-							 */
+							* Create the new article in the system;  if we have alternate text then set our H1 to this.
+							*/
 							$content = '';
 							if( strlen( $match[3] ))
 								$content = '= ' . $match[3] . " =\n";
@@ -1584,6 +1600,21 @@ HEREDOC;
 						} else {
 							$version = 'latest';
 						}
+
+						// Check for existence of article and if it is relevant 
+						// to version category.
+						$fullTitle = $dbr->strencode(strtolower(implode(":", $pieces)));
+						// Look to see if this is found in categorylinks.
+						$res = $dbr->select( 'categorylinks', 'cl_sortkey',
+											 array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $fullTitle . ":%'",
+														"cl_to = 'V:" . $pieces[1] . ":" . $version . "'" ), __METHOD__ );
+
+						if(!$res->numRows())
+						{
+							// This article is not found.
+							continue;
+						}
+
 						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $version . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
 						$href .= $match[2];
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
@@ -1630,6 +1661,7 @@ HEREDOC;
 				}
 			}
 		}
+		//die();
 		return true;
 	}
 
@@ -1683,6 +1715,14 @@ HEREDOC;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Checks to see if a title is existing.
+	 * Documentation:Product:Manual:Topic:Version
+	 */
+	static public function titleExists($title) {
+
 	}
 
 	/**
@@ -1820,10 +1860,7 @@ HEREDOC;
 			PonyDocsProductManual::LoadManualsForProduct($product, true);
 		}
 		else {
-			if (PONYDOCS_CACHE_DEBUG) {
-				error_log("DEBUG [PonyDocsExtension::fetchNavDataForVersion]" .
-				" Fetched navigation cache from PonyDocsCache for product $product");
-			}
+			error_log("INFO [PonyDocsExtension::fetchNavDataForVersion] Fetched navigation cache from PonyDocsCache");
 		}
 		return $cacheEntry;
 	}
@@ -1863,12 +1900,6 @@ HEREDOC;
 			$targetVersion = $match[3];
 
 			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
-
-			if (!($p instanceof PonyDocsProduct)) {
-				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
-				return false;
-			}
-
 
 			// User wants to find first topic in a requested manual.
 			// Load up versions
