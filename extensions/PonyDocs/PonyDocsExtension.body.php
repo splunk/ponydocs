@@ -1018,8 +1018,7 @@ HEREDOC;
 		$dbr = wfGetDB( DB_SLAVE );
 
 
-		// Dangerous.  Only set the flag if you know that you should be skipping 
-		// this processing.  Currently used for branch/inherit.
+		// Dangerous.  Only set the flag if you know that you should be skipping this processing.  Currently used for branch/inherit.
 		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
 			return true;
 		}
@@ -1032,13 +1031,9 @@ HEREDOC;
 
 		$missingTopics = array();
 
-		if( preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title) && !PONYDOCS_AUTOCREATE_ON_TOC_EDIT)
+		// If this is not a TOC and we don't want to create on article edit, then simply return.
+		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title) && !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
 		{
-			// Then we do not want to autocreate from TOC articles.
-			return true;
-		} else if( !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT) {
-			// Then we do not want to autocreate in non-TOC Documentation 
-			// articles.
 			return true;
 		}
 
@@ -1661,7 +1656,6 @@ HEREDOC;
 				}
 			}
 		}
-		//die();
 		return true;
 	}
 
@@ -1715,14 +1709,6 @@ HEREDOC;
 		}
 
 		return true;
-	}
-
-	/**
-	 * Checks to see if a title is existing.
-	 * Documentation:Product:Manual:Topic:Version
-	 */
-	static public function titleExists($title) {
-
 	}
 
 	/**
@@ -1860,7 +1846,10 @@ HEREDOC;
 			PonyDocsProductManual::LoadManualsForProduct($product, true);
 		}
 		else {
-			error_log("INFO [PonyDocsExtension::fetchNavDataForVersion] Fetched navigation cache from PonyDocsCache");
+			if (PONYDOCS_CACHE_DEBUG) {
+				error_log("DEBUG [PonyDocsExtension::fetchNavDataForVersion]" .
+				" Fetched navigation cache from PonyDocsCache for product $product");
+			}
 		}
 		return $cacheEntry;
 	}
@@ -1900,6 +1889,11 @@ HEREDOC;
 			$targetVersion = $match[3];
 
 			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
+
+			if (!($p instanceof PonyDocsProduct)) {
+				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
+				return false;
+			}
 
 			// User wants to find first topic in a requested manual.
 			// Load up versions
