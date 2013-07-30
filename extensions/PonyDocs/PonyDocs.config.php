@@ -49,5 +49,5 @@ define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
 
 // Auto-Create Topics when referenced during editing
 define('PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', false);
-
-?>
+// pdf output constants
+define('PONYDOCS_WKHTMLTOPDF_PATH', '/usr/local/bin/wkhtmltopdf');
