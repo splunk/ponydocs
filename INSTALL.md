@@ -55,25 +55,22 @@ Failure to do so will result in frustration and keyboard tossing.
 	```
 	################# START SAMPLE APACHE CONFIGURATION #################
 	RewriteEngine On
-	# Main passthrus
-	RewriteRule ^/api.php$	  /api.php	[L,QSA]
-	RewriteRule ^/images/(.*)$	  /images/$1  [L,QSA]
-	RewriteRule ^/config/(.*)$	  /config/$1  [L,QSA]
-	RewriteRule ^/skins/(.*)$	   /skins/$1   [L,QSA]
-	RewriteRule ^/extensions/(.*)$  /extensions/$1  [L,QSA]
 
-	# Rewrite /Documentation/ to /Documentation
-	RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
+	# Remove trailing slash from /Documentation/
+	RewriteRule ^/Documentation/$	/Documentation [L,R=301]
 
-	# Rewrite rule to handle passing ugly doc urls to pretty urls
-	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*) /Documentation/$1/$4/$2/$3  [L,QSA,R=301]
-	RewriteRule ^/Documentation:(.*):(.*):(.*)	  /Documentation/$1/latest/$2/$3  [L,QSA,R=301]
+	# Pass ugly doc urls to pretty urls
+	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+	RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
-	# get home page requests to Documentation
-	RewriteRule ^/$ /Documentation [R]
+	# Redirect home page requests to /Documentation
+	RewriteRule ^/$	/Documentation [R]
 
-	# all other requests go to specific page
-	RewriteRule ^/(\/*)(.*)$ /index.php?title=$3 [PT,QSA]
+	# Send all other requests to MediaWiki
+	RewriteCond %{REQUEST_FILENAME}	!-f
+	RewriteCond %{REQUEST_FILENAME}	!-d
+	RewriteCond %{REQUEST_URI}		!=/favicon.ico
+	RewriteRule ^					/index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
