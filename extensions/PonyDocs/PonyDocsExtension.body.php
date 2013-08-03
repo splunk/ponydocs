@@ -1590,27 +1590,38 @@ HEREDOC;
 					 */
 					else if( 4 == sizeof( $pieces ))
 					{
-						if ( !strcmp($selectedProduct, $pieces[1]) ) {
+						$linkProduct = $pieces[1]; // set product in link for legibility
+						
+						// If this is a link to the current project, use the selected version. Otherwise set version to latest.
+						if ( !strcmp($selectedProduct, $linkProduct) ) {
 							$version = $selectedVersion;
 						} else {
 							$version = 'latest';
 						}
-
-						// Check for existence of article and if it is relevant 
-						// to version category.
+						
+						// Set up for database call
 						$fullTitle = $dbr->strencode(strtolower(implode(":", $pieces)));
-						// Look to see if this is found in categorylinks.
+						// If the version is "latest", translate that to a real version number. Use product that was in the link.
+						if ($version == 'latest') {
+							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
+							$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
+							$dbVersion = $versionObj->getVersionName();
+						} else {
+							$dbVersion = $version;
+						}
+						
+						// Database call to see if this topic exists in the product/version specified in the link
 						$res = $dbr->select( 'categorylinks', 'cl_sortkey',
 											 array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $fullTitle . ":%'",
-														"cl_to = 'V:" . $pieces[1] . ":" . $version . "'" ), __METHOD__ );
+														"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'"), __METHOD__ );
 
 						if(!$res->numRows())
 						{
 							// This article is not found.
 							continue;
 						}
-
-						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $version . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
+						
+						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
 						$href .= $match[2];
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
