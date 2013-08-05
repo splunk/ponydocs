@@ -100,7 +100,7 @@ $pdfReplace = '$1$3';
 $pdfContents = preg_replace($pdfSearch, $pdfReplace, file_get_contents($pdfFileName));		
 $pdfHandle = fopen($pdfFileName, 'w');
 fwrite($pdfHandle, $pdfContents);
-fclose($pdfContents);
+fclose($pdfHandle);
 
 print("Cleaning up\n");
 

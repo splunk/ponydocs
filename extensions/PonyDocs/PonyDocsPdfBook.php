@@ -383,7 +383,7 @@ EOT;
 		$pdfContents = preg_replace($pdfSearch, $pdfReplace, file_get_contents($pdfFileName));		
 		$pdfHandle = fopen($pdfFileName, 'w');
 		fwrite($pdfHandle, $pdfContents);
-		fclose($pdfContents);
+		fclose($pdfHandle);
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
