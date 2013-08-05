@@ -376,6 +376,15 @@ EOT;
 			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
 				. ": Failed to delete temp file $titlepagefile");
 		}
+		
+		// Janky fix for whitespace bug in wkhtmltopdf, see https://code.google.com/p/wkhtmltopdf/issues/detail?id=463
+		$pdfSearch = '/(Dests <<.*?)(#00)(.*?>>)/s';
+		$pdfReplace = '$1$3';
+		$pdfContents = preg_replace($pdfSearch, $pdfReplace, file_get_contents($pdfFileName));		
+		$pdfHandle = fopen($pdfFileName, 'w');
+		fwrite($pdfHandle, $pdfContents);
+		fclose($pdfContents);
+		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
 			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $book . "\"");
