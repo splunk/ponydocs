@@ -1605,7 +1605,7 @@ HEREDOC;
 						if ($version == 'latest') {
 							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
 							$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
-							$dbVersion = $versionObj->getVersionName();
+							$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionName();
 						} else {
 							$dbVersion = $version;
 						}
