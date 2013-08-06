@@ -94,14 +94,6 @@ $returnVar = 0;
 print("Executing wkhtmltopdf on requested file.\n");
 exec($cmd, $output, $returnVar);
 
-// Janky fix for whitespace bug in wkhtmltopdf, see https://code.google.com/p/wkhtmltopdf/issues/detail?id=463
-$pdfSearch = '/(Dests <<.*?)(#00)(.*?>>)/s';
-$pdfReplace = '$1$3';
-$pdfContents = preg_replace($pdfSearch, $pdfReplace, file_get_contents($pdfFileName));		
-$pdfHandle = fopen($pdfFileName, 'w');
-fwrite($pdfHandle, $pdfContents);
-fclose($pdfHandle);
-
 print("Cleaning up\n");
 
 @unlink($file);
