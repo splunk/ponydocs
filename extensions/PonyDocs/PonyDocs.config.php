@@ -49,7 +49,4 @@ define('PONYDOCS_STATIC_CSS', '');
 // capitalization settings
 define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
 
-// pdf output constants
-define('PONYDOCS_WKHTMLTOPDF_PATH', '/usr/local/bin/wkhtmltopdf');
-
 ?>
