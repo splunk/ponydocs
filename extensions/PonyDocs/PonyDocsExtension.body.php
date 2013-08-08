@@ -1014,16 +1014,29 @@ HEREDOC;
 	{
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath;
 
-		// Dangerous.  Only set the flag if you know that you should be skipping 
-		// this processing.  Currently used for branch/inherit.
+		// Retrieve read/slave handler for fetching from DB.
+		$dbr = wfGetDB( DB_SLAVE );
+
+
+		// Dangerous.  Only set the flag if you know that you should be skipping this processing.  Currently used for branch/inherit.
 		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
 			return true;
 		}
 
+
 		$title = $article->getTitle( );
+
+		// We only perform this in Documentation namespace.
 		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( ))) return true;
 
-		$dbr = wfGetDB( DB_SLAVE );
+		$missingTopics = array();
+
+		// If this is not a TOC and we don't want to create on article edit, then simply return.
+		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title) && !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
+		{
+			return true;
+		}
+
 
 		if( preg_match_all( "/\[\[([" . Title::legalChars( ) . "]*)([|]?([^\]]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
 		//if( preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:._?#!@$+= -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
@@ -1032,7 +1045,7 @@ HEREDOC;
 			 * $match[1] = Wiki Link
 			 * $match[3] = Alternate Text
 			 */
-			
+
 			foreach( $matches as $match )
 			{
 				/**
@@ -1099,14 +1112,13 @@ HEREDOC;
 							if( !$res->numRows( )) 
 							{
 								$topicTitle = $sqlMatch . ':' . $version;
-
 								$tempArticle = new Article( Title::newFromText( $topicTitle ));
 								if( !$tempArticle->exists( ))
 								{
 									/**
-									 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-									 * Tag it with the currently selected version only.
-									 */
+									* Create the new article in the system;  if we have alternate text then set our H1 to this.
+									* Tag it with the currently selected version only.
+									*/
 									$content = '';
 									if( strlen( $match[3] ))
 										$content = '= ' . $match[3] . " =\n";
@@ -1135,10 +1147,9 @@ HEREDOC;
 							$tempArticle = new Article( Title::newFromText( $topicTitle ));
 							if( !$tempArticle->exists( ))
 							{
-								//echo "- Adding new article with title $topicTitle.<br>";
 								/**
-								 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-								 */
+								* Create the new article in the system;  if we have alternate text then set our H1 to this.
+								*/
 								$content = '';
 								if( strlen( $match[3] ))
 									$content = '= ' . $match[3] . " =\n";
@@ -1167,8 +1178,8 @@ HEREDOC;
 							if( !$tempArticle->exists( ))
 							{
 								/**
-								 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-								 */
+								* Create the new article in the system;  if we have alternate text then set our H1 to this.
+								*/
 								$content = '';
 								if( strlen( $match[3] ))
 									$content = '= ' . $match[3] . " =\n";
@@ -1214,8 +1225,8 @@ HEREDOC;
 						if( !$tempArticle->exists( ))
 						{
 							/**
-							 * Create the new article in the system;  if we have alternate text then set our H1 to this.
-							 */
+							* Create the new article in the system;  if we have alternate text then set our H1 to this.
+							*/
 							$content = '';
 							if( strlen( $match[3] ))
 								$content = '= ' . $match[3] . " =\n";
@@ -1579,12 +1590,38 @@ HEREDOC;
 					 */
 					else if( 4 == sizeof( $pieces ))
 					{
-						if ( !strcmp($selectedProduct, $pieces[1]) ) {
+						$linkProduct = $pieces[1]; // set product in link for legibility
+						
+						// If this is a link to the current project, use the selected version. Otherwise set version to latest.
+						if ( !strcmp($selectedProduct, $linkProduct) ) {
 							$version = $selectedVersion;
 						} else {
 							$version = 'latest';
 						}
-						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $version . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
+						
+						// Set up for database call
+						$fullTitle = $dbr->strencode(strtolower(implode(":", $pieces)));
+						// If the version is "latest", translate that to a real version number. Use product that was in the link.
+						if ($version == 'latest') {
+							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
+							$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
+							$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionName();
+						} else {
+							$dbVersion = $version;
+						}
+						
+						// Database call to see if this topic exists in the product/version specified in the link
+						$res = $dbr->select( 'categorylinks', 'cl_sortkey',
+											 array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $fullTitle . ":%'",
+														"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'"), __METHOD__ );
+
+						if(!$res->numRows())
+						{
+							// This article is not found.
+							continue;
+						}
+						
+						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
 						$href .= $match[2];
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
@@ -1868,7 +1905,6 @@ HEREDOC;
 				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
 				return false;
 			}
-
 
 			// User wants to find first topic in a requested manual.
 			// Load up versions

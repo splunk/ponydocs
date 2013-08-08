@@ -1,6 +1,4 @@
 <?php
-
-
 // Define your user groups here
 define('PONYDOCS_EMPLOYEE_GROUP', 'employees');
 define('PONYDOCS_BASE_AUTHOR_GROUP', 'docteam');
@@ -48,5 +46,8 @@ define('PONYDOCS_STATIC_CSS', '');
 
 // capitalization settings
 define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
+
+// Auto-Create Topics when referenced during editing
+define('PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', false);
 
 ?>

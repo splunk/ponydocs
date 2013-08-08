@@ -313,6 +313,7 @@ class PonyDocsPdfBook {
 			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
 				. ": Failed to delete temp file $titlepagefile");
 		}
+		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
 			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $book . "\"");
