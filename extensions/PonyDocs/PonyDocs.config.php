@@ -1,8 +1,4 @@
 <?php
-// Define your user groups here
-define('PONYDOCS_EMPLOYEE_GROUP', 'employees');
-define('PONYDOCS_BASE_AUTHOR_GROUP', 'docteam');
-define('PONYDOCS_BASE_PREVIEW_GROUP', 'preview');
 define('PONYDOCS_CRAWLER_AGENT_REGEX', '/gsa-crawler/');
 
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation');
@@ -51,3 +47,14 @@ define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
 define('PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', false);
 // pdf output constants
 define('PONYDOCS_WKHTMLTOPDF_PATH', '/usr/local/bin/wkhtmltopdf');
+
+// Configuration variables to map ponydoc groups to mediawiki groups
+if (!isset($ponyDocsEmployeeGroup)) {
+	$ponyDocsEmployeeGroup = 'employees';
+}
+if (!isset($ponyDocsBaseAuthorGroup)) {
+	$ponyDocsBaseAuthorGroup = 'docteam';
+}
+if (!isset($ponyDocsBasePreviewGroup)) {
+	$ponyDocsBasePreviewGroup = 'preview';
+}
