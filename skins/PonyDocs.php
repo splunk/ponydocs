@@ -780,14 +780,14 @@ if($this->data['copyrightico']) { ?>
 
 	private function contentActions( )
 	{
-		global $wgUser, $wgTitle, $wgArticle, $wgArticlePath, $wgScriptPath, $wgUser;
+		global $wgUser, $wgTitle, $wgArticle, $wgArticlePath, $wgScriptPath, $wgUser, $ponyDocsEmployeeGroup;
 
 		$groups = $wgUser->getGroups( );
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
 		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $wgTitle->__toString( ), $match ))
 		{
-			if( in_array( PONYDOCS_EMPLOYEE_GROUP, $groups ) || in_array( $authProductGroup, $groups ))
+			if( in_array( $ponyDocsEmployeeGroup, $groups ) || in_array( $authProductGroup, $groups ))
 			{
 				array_pop( $match );  array_shift( $match );
 				$title = PONYDOCS_DOCUMENTATION_PREFIX . implode( ':', $match );
