@@ -38,7 +38,7 @@ class SpecialDocTopics extends SpecialPage
 	public function execute( )
 	{
 		global $wgOut, $wgArticlePath;
-		global $wgUser, $ponyDocsBaseAuthorGroup;
+		global $wgUser, $wgPonyDocsBaseAuthorGroup;
 
 		// disable this special page for now per WEB-5698
 		$wgOut->addHTML( "<h1>Page Disabled</h1><p>This page has been disabled.</p>" );
@@ -58,7 +58,7 @@ class SpecialDocTopics extends SpecialPage
 		// Security Check
 		$groups = $wgUser->getGroups( );
 
-		if(!in_array( $ponyDocsBaseAuthorGroup, $groups)) {
+		if(!in_array( $wgPonyDocsBaseAuthorGroup, $groups)) {
 			$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
 			return;
 		}

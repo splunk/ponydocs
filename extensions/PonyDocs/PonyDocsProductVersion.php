@@ -308,7 +308,7 @@ class PonyDocsProductVersion
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false )
 	{
 		global $wgUser;
-		global $ponydocsMediaWiki, $ponyDocsEmployeeGroup;
+		global $ponydocsMediaWiki, $wgPonyDocsEmployeeGroup;
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
@@ -377,7 +377,7 @@ class PonyDocsProductVersion
 
 				if( !strcasecmp( $pcs[1], 'UNRELEASED' ))
 				{
-					if(in_array( $ponyDocsEmployeeGroup, $groups ) ||
+					if(in_array( $wgPonyDocsEmployeeGroup, $groups ) ||
 						in_array( $authProductGroup, $groups ) ||
 						(isset($_SERVER['HTTP_USER_AGENT']) && preg_match(PONYDOCS_CRAWLER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT'])) ||
 						(isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress']) ||
@@ -390,7 +390,7 @@ class PonyDocsProductVersion
 				}
 				else if( !strcasecmp( $pcs[1], 'PREVIEW' ))
 				{
-					if( in_array( $ponyDocsEmployeeGroup, $groups ) || 
+					if( in_array( $wgPonyDocsEmployeeGroup, $groups ) || 
 						in_array( $authProductGroup, $groups ) ||
 						in_array( $authPreviewGroup, $groups ) ||
 						(isset($_SERVER['HTTP_USER_AGENT']) && preg_match(PONYDOCS_CRAWLER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT'])) ||
@@ -537,12 +537,12 @@ class PonyDocsProductVersion
 	 */
 	static public function GetVersionsForUser( $productName )
 	{
-		global $wgUser, $ponyDocsEmployeeGroup;
+		global $wgUser, $wgPonyDocsEmployeeGroup;
 		$groups = $wgUser->getGroups( );
 		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName);
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_VERSION, $productName);
 
-		if( in_array( $authProductGroup, $groups ) || in_array( $ponyDocsEmployeeGroup, $groups ) || preg_match(PONYDOCS_CRAWLER_AGENT_REGEX,$_SERVER['HTTP_USER_AGENT']) || $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'])
+		if( in_array( $authProductGroup, $groups ) || in_array( $wgPonyDocsEmployeeGroup, $groups ) || preg_match(PONYDOCS_CRAWLER_AGENT_REGEX,$_SERVER['HTTP_USER_AGENT']) || $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'])
 		{
 			return self::$sVersionMap[$productName];
 		}

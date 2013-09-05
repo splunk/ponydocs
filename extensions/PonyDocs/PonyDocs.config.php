@@ -49,12 +49,12 @@ define('PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', false);
 define('PONYDOCS_WKHTMLTOPDF_PATH', '/usr/local/bin/wkhtmltopdf');
 
 // Configuration variables to map ponydoc groups to mediawiki groups
-if (!isset($ponyDocsEmployeeGroup)) {
-	$ponyDocsEmployeeGroup = 'employees';
+if (!isset($wgPonyDocsEmployeeGroup)) {
+	$wgPonyDocsEmployeeGroup = 'employees';
 }
-if (!isset($ponyDocsBaseAuthorGroup)) {
-	$ponyDocsBaseAuthorGroup = 'docteam';
+if (!isset($wgPonyDocsBaseAuthorGroup)) {
+	$wgPonyDocsBaseAuthorGroup = 'docteam';
 }
-if (!isset($ponyDocsBasePreviewGroup)) {
-	$ponyDocsBasePreviewGroup = 'preview';
+if (!isset($wgPonyDocsBasePreviewGroup)) {
+	$wgPonyDocsBasePreviewGroup = 'preview';
 }

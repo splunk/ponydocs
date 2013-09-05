@@ -45,12 +45,12 @@ if (!isset ($ponyDocsProductsList) || sizeof($ponyDocsProductsList) == 0){
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
 
-$wgGroupPermissions[$ponyDocsEmployeeGroup]['read'] 			= true;
-$wgGroupPermissions[$ponyDocsEmployeeGroup]['edit'] 			= true;
-$wgGroupPermissions[$ponyDocsEmployeeGroup]['upload']			= true;
-$wgGroupPermissions[$ponyDocsEmployeeGroup]['reupload']		= true;
-$wgGroupPermissions[$ponyDocsEmployeeGroup]['reupload-shared']	= true;
-$wgGroupPermissions[$ponyDocsEmployeeGroup]['minoredit']		= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] 			= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] 			= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload']			= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload']		= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared']	= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit']		= true;
 
 // these will be tweaked in PonyDocsExtension::onUserCan()
 $editorPerms = array(
@@ -92,15 +92,15 @@ foreach ($ponyDocsProductsList as $product){
 	// check for empty product
 	if ($product == ''){
 		// allow for existing product-less base groups
-		$convertedNameProduct = $ponyDocsBaseAuthorGroup;
-		$convertedNamePreview = $ponyDocsBasePreviewGroup;
+		$convertedNameProduct = $wgPonyDocsBaseAuthorGroup;
+		$convertedNamePreview = $wgPonyDocsBasePreviewGroup;
 	} else {
 		// TODO: this should be a function that is shared instead
 		// of being local, redundant logic
 		$legalProduct = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $product );
 
-		$convertedNameProduct = $legalProduct.'-'.$ponyDocsBaseAuthorGroup;
-		$convertedNamePreview = $legalProduct.'-'.$ponyDocsBasePreviewGroup;
+		$convertedNameProduct = $legalProduct.'-'.$wgPonyDocsBaseAuthorGroup;
+		$convertedNamePreview = $legalProduct.'-'.$wgPonyDocsBasePreviewGroup;
 
 	}
 
