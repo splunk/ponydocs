@@ -30,7 +30,11 @@ require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryLinks.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryPageHandler.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsPdfBook.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
+
+
 require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
@@ -660,6 +664,7 @@ $wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
 $wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave_AutoLinks';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
+$wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
 $wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
 $wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit';
@@ -671,6 +676,7 @@ $wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageVie
 
 $wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
+
 
 // Add version field to edit form
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';

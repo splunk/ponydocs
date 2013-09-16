@@ -1687,7 +1687,7 @@ HEREDOC;
 		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
-		if( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ))
+		if( !strcmp('zipmanual', $action) || !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ))
 		{
 			/**
 			 * Only doc team can edit manuals/versions/products pages.
