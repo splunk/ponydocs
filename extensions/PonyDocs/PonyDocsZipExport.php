@@ -13,8 +13,7 @@ if (!defined('MEDIAWIKI')) die('Not an entry point.');
 class PonyDocsZipExport extends PonyDocsBaseExport {
 
 	/**
-	 * Called when an unknown action occurs on url.  We are only interested in 
-	 * zipmanual action.
+	 * Called when an unknown action occurs on url.  We are only interested in zipmanual action.
 	 */
 	function onUnknownAction($action, $article) {
 		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
@@ -148,7 +147,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$html = $manualDoc->saveHTML();
 		$coverPageHTML = $coverPageDoc->saveHTML();
 
-		# Write the HTML to a tmp file
+		// Write the HTML to a tmp file
 		$file = tempnam($tempDirPath, "zipexport-");
 		$fh = fopen($file, 'w+');
 		fwrite($fh, $html);
@@ -162,8 +161,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 
 
-		// Disable output of our standard mediawiki output.  We will be 
-		// outputting a zip file instead.
+		// Disable output of our standard mediawiki output.  We will be outputting a zip file instead.
 		$wgOut->disable();
 
 		// Create ZIP Archive which contains a cover and manual html
@@ -175,9 +173,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$zip->addFile($file, 'manual.html');
 		// Iterate through all the images
 		foreach($imgData as $img) {
-			error_log("Adding " . $img['local_path'] . " against: " . $img['new_path']);
 			$zip->addFile($img['local_path'], $img['new_path']);
-			//unlink($img['local_path']);
 		}
 		$zip->close();
 		header("Content-Type: application/zip"); 
@@ -203,8 +199,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 	}
 
 	/**
-	 * Prepares a passed in data array with img elements that need to be fetched 
-	 * from remote server and changed to point to a local resource.
+	 * Prepares a passed in data array with img elements that need to be fetched from remote server and changed to point to a local resource.
 	 *
 	 * @param DOMDocument $doc 	The DOMDocument to evaluate img elements for
 	 * @param resource $mh 		The curl multi handler to append to

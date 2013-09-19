@@ -18,7 +18,25 @@ abstract class PonyDocsBaseExport {
 	{
 		global $wgServer, $wgStylePath;
 		$image_path	= $wgServer . $wgStylePath . PONYDOCS_PDF_TITLE_IMAGE_PATH;
-		$titleText  = '<html><head><meta charset="UTF-8"></head><body><table height="100%" width="100%"><tr><td valign="top" height="50%">'
+		$titleText = <<<EOT
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:og="http://ogp.me/ns#" xmlns:fb="http://ogp.me/ns/fb#" charset="utf-8">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<style>
+html,body {
+margin: 0px;
+padding: 0px;
+width: 210mm;
+max-width: 210mm;
+overflow-x: hidden;
+}
+</style>
+</head>
+<body>
+EOT;
+		$titleText  .= '<table height="100%" width="100%"><tr><td valign="top" height="50%">'
 			. '<center><img src="' . $image_path .  '" width="1024"></center>'
 			. '<h1>' . $product->getLongName() . ' ' . $version->getVersionName() . '</h1>'
 			. '<h2>' . $manual->getLongName() . '</h2>'
@@ -55,8 +73,7 @@ abstract class PonyDocsBaseExport {
 		$toc = new PonyDocsTOC($manual, $version, $product);
 		list($manualtoc, $tocprev, $tocnext, $tocstart) = $toc->loadContent();
 
-		// We successfully got our table of contents.  It's 
-		// stored in $manualtoc
+		// We successfully got our table of contents.  It's stored in $manualtoc
 		foreach($manualtoc as $tocEntry) {
 			if($tocEntry['level'] > 0 && strlen($tocEntry['title']) > 0) {
 				$title = Title::newFromText($tocEntry['title']);
@@ -64,11 +81,30 @@ abstract class PonyDocsBaseExport {
 			}
 		}
 
-		error_log("New Product Name: " . $product->getShortName());
-		error_log("New Version Name: " . $version->getVersionName());
+		// Format the article(s) as a single HTML document with absolute URL's
+		$html = <<<EOT
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:og="http://ogp.me/ns#" xmlns:fb="http://ogp.me/ns/fb#" charset="utf-8">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<style>
+html,body {
+margin: 0px;
+padding: 0px;
+width: 210mm;
+max-width: 210mm;
+overflow-x: hidden;
+}
+pre {
+	width: 100%;
+	overflow-x: hidden;
+}
+</style>
+</head>
 
-
-		# Format the article(s) as a single HTML document with absolute URL's
+<body>
+EOT;
 		$html = '<html><head><meta charset="UTF-8"></head><body>';
 
 		$wgArticlePath = $wgServer.$wgArticlePath;
@@ -89,8 +125,8 @@ abstract class PonyDocsBaseExport {
 					$text = $article->fetchContent();
 					$text   .= '__NOTOC__';
 
-					$opt->setEditSection(false);	# remove section-edit links
-					$wgOut->setHTMLTitle($ttext);   # use this so DISPLAYTITLE magic works
+					$opt->setEditSection(false);	// remove section-edit links
+					$wgOut->setHTMLTitle($ttext);   // use this so DISPLAYTITLE magic works
 					
 					$out = $wgParser->parse($text, $title, $opt, true, true);
 					$ttext = $wgOut->getHTMLTitle();
@@ -100,8 +136,7 @@ abstract class PonyDocsBaseExport {
 					$articleMeta = PonyDocsArticleFactory::getArticleMetadataFromTitle($title);
 					$text = '<a name="' . $articleMeta['topic'] . '"></a>' . $text;
 
-					// prepare for replacing pre tags with code tags WEB-5926
-					// derived from
+					// prepare for replacing pre tags with code tags WEB-5926 derived from
 					// http://stackoverflow.com/questions/1517102/replace-newlines-with-br-tags-but-only-inside-pre-tags
 					// only inside pre tag:
 					//   replace space with &nbsp; only when positive lookbehind is a whitespace character
@@ -119,14 +154,14 @@ abstract class PonyDocsBaseExport {
 							);
 						}
 					}
-                    $str = implode('', $parts);
-                    /* chop off the first space, that we had added */
-                    $text = substr($str, 1);
+					$str = implode('', $parts);
+					/* chop off the first space, that we had added */
+					$text = substr($str, 1);
 
-                    // String search and replace
-                    $str_search  = array('<h5>', '</h5>', '<h4>', '</h4>', '<h3>', '</h3>', '<h2>', '</h2>', '<h1>', '</h1>', '<code>', '</code>', '<pre>', '</pre>');
-                    $str_replace = array('<h6>', '</h6>', '<h5>', '</h5>', '<h4><font size="3"><b><i>', '</i></b></font></h4>', '<h3>', '</h3>', '<h2>', '</h2>', '<code><font size="2">', '</font></code>', '<code><font size="2">', '</font></code>');
-                    $text       = str_replace($str_search, $str_replace, $text);
+					// String search and replace
+					$str_search  = array('<h5>', '</h5>', '<h4>', '</h4>', '<h3>', '</h3>', '<h2>', '</h2>', '<h1>', '</h1>', '<code>', '</code>', '<pre>', '</pre>');
+					$str_replace = array('<h6>', '</h6>', '<h5>', '</h5>', '<h4><font size="3"><b><i>', '</i></b></font></h4>', '<h3>', '</h3>', '<h2>', '</h2>', '<code><font size="2">', '</font></code>', '<code><font size="2">', '</font></code>');
+					$text       = str_replace($str_search, $str_replace, $text);
 
 					/*
 					 * HTML regex tweaking prior to sending to PDF library
@@ -174,10 +209,29 @@ abstract class PonyDocsBaseExport {
 						'<!--$1-->',
 						"$1$table_extra",
 						"$1$th_extra",
-						"$1$td_extra><font size=\"2.75\">$2</font>"
+						"$1$td_extra>$2"
 					);
 					
 					$text = preg_replace($regex_search, $regex_replace, $text);
+
+					$text = preg_replace($regex_search, $regex_replace, $text);
+
+					// Make all anchor tags uniformly lower case (wkhtmltopdf is case sensitive for internal links)
+					$text = preg_replace_callback(
+							'|<a([^\>])+href="([^"]*)"([^\<]*)>|',
+							function ($matches) {
+									return '<a' . $matches[1] . 'href="' . strtolower($matches[2]) . '"' . $matches[3] . '>';
+							},
+							$text
+					);
+					$text = preg_replace_callback(
+							'|<a([^\>])+name="([^"]*)"[^>]*>|',
+							function ($matches) {
+									return '<a' . $matches[1] . 'name="' . strtolower($matches[2]) . '"' . $matches[3] . '>';
+							},
+							$text
+					);
+
 					$ttext = basename($ttext);
 					$html .= $text . "\n";
 				}
