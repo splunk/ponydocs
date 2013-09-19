@@ -105,8 +105,6 @@ pre {
 
 <body>
 EOT;
-		$html = '<html><head><meta charset="UTF-8"></head><body>';
-
 		$wgArticlePath = $wgServer.$wgArticlePath;
 		$wgScriptPath = $wgServer.$wgScriptPath;
 		$wgUploadPath = $wgServer.$wgUploadPath;
