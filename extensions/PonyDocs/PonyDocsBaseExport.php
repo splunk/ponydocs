@@ -212,8 +212,6 @@ EOT;
 					
 					$text = preg_replace($regex_search, $regex_replace, $text);
 
-					$text = preg_replace($regex_search, $regex_replace, $text);
-
 					// Make all anchor tags uniformly lower case (wkhtmltopdf is case sensitive for internal links)
 					$text = preg_replace_callback(
 							'|<a([^\>])+href="([^"]*)"([^\<]*)>|',
@@ -222,14 +220,6 @@ EOT;
 							},
 							$text
 					);
-					$text = preg_replace_callback(
-							'|<a([^\>])+name="([^"]*)"[^>]*>|',
-							function ($matches) {
-									return '<a' . $matches[1] . 'name="' . strtolower($matches[2]) . '"' . $matches[3] . '>';
-							},
-							$text
-					);
-
 					$ttext = basename($ttext);
 					$html .= $text . "\n";
 				}
