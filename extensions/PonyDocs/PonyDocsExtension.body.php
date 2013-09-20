@@ -1718,7 +1718,7 @@ HEREDOC;
 				}
 			}
 		}
-
+		$result = true;
 		return true;
 	}
 
