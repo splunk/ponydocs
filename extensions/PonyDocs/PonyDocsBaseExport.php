@@ -220,6 +220,15 @@ EOT;
 							},
 							$text
 					);
+
+					$text = preg_replace_callback(
+							'|<a([^\>])+name="([^"]*)"([^>]*)>|',
+							function ($matches) {
+									return '<a' . $matches[1] . 'name="' . strtolower($matches[2]) . '"' . $matches[3] . '>';
+							},
+							$text
+					);
+
 					$ttext = basename($ttext);
 					$html .= $text . "\n";
 				}
