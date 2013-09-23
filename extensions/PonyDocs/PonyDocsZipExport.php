@@ -10,6 +10,10 @@
  */
 if (!defined('MEDIAWIKI')) die('Not an entry point.');
 
+require_once(__DIR__ . '/RollingCurl/RollingCurl.php');
+require_once(__DIR__ . '/RollingCurl/Request.php');
+
+
 class PonyDocsZipExport extends PonyDocsBaseExport {
 
 	/**
@@ -97,7 +101,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 		$html = self::getManualHTML($pProduct, $pManual, $v);
 
-		$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v);
+		$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, false);
 
 
 		// Make a temporary directory to store our archive contents.
@@ -111,6 +115,10 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		// Now, let's fetch all the img elements for both and grab them all in 
 		// parallel.
 		$imgData = array();
+
+		// Initialize our RollingCurl instance
+		$rollingCurl = new \RollingCurl\RollingCurl();
+
 		$mh = curl_multi_init();
 
 		$manualDoc = new DOMDocument();
@@ -118,31 +126,20 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$coverPageDoc = new DOMDocument();
 		@$coverPageDoc->loadHTML($coverPageHTML);
 
-		self::prepareImageRequests($manualDoc, $mh, &$imgData);
-		self::prepareImageRequests($coverPageDoc, $mh, &$imgData);
+		self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  &$imgData);
+		self::prepareImageRequests($coverPageDoc, $rollingCurl, $tempDirPath, &$imgData);
 
-		// Perform the multi connect
-		$active = null;
-		do {
-			$mrc = curl_multi_exec($mh, $active);
-		} while($mrc == CURLM_CALL_MULTI_PERFORM);
-
-		while($active && $mrc == CURLM_OK) {
-			if(curl_multi_select($mh) != -1) {
-				do {
-					$mrc = curl_multi_exec($mh, $active);
-				} while ($mrc == CURLM_CALL_MULTI_PERFORM);
-			}
-		}
+		// Execute the RollingCurl requests
+		$rollingCurl->execute();
 
 		// Now update all our image elements in our appropriate DOMDocs.
 		foreach($imgData as $img) {
+			// Put the data into it.
+			file_put_contents($img['local_path'], $img['request']->getResponseText());
 			// Modify element
 			$img['element']->setAttribute('src', $img['new_path']);
 			// Do curl cleanup
-			curl_multi_remove_handle($mh, $img['ch']);
 		}
-		curl_multi_close($mh);
 
 		$html = $manualDoc->saveHTML();
 		$coverPageHTML = $coverPageDoc->saveHTML();
@@ -182,13 +179,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		readfile($tempZipFilePath);
 
 		// Now remove all temp files
-		unlink($tempZipFilePath);
-		unlink($file);
-		unlink($titlepagefile);
-		foreach($imgData as $img) {
-			unlink($img['local_path']);
-		}
-		rmdir($tempDirPath);
+		$this->rrmdir($tempDirPath);
 
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
@@ -202,31 +193,64 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 	 * Prepares a passed in data array with img elements that need to be fetched from remote server and changed to point to a local resource.
 	 *
 	 * @param DOMDocument $doc 	The DOMDocument to evaluate img elements for
-	 * @param resource $mh 		The curl multi handler to append to
+	 * @param \RollingCurl\RollingCurl $rollingCurl 		The RollingCurl instance to add our requests to
+	 * @param string $tempDirPath   The directory to store images
 	 * @param array $imgData 	The data array to populate
 	 */	
-	private function prepareImageRequests($doc, $mh, $imgData) {
+	private function prepareImageRequests($doc, $rollingCurl, $tempDirPath, $imgData) {
+		global $wgServer;
+		// Ensure there's a trailing slash after our $wgServer name
+		if (substr($wgServer, -1) !== '/') {
+			$search = $wgServer .= '/';
+		} else {
+			$search = $wgServer;
+		}
 		$imgElements = $doc->getElementsByTagName('img');
 		foreach($imgElements as $imgElement) {
 			$src = $imgElement->getAttribute('src');
-			$pathInfo = pathinfo($src);
-			$tempFileName = tempnam($tempDirPath, "img-");
-			$ch = curl_init($src);
-			$fh = fopen($tempFileName, 'w+');
-			curl_setopt($ch, CURLOPT_FILE, $fh);
+			// Strip the server and slash from our 
+			$localPath = str_replace($search, '', $src);
+			$pathInfo = pathinfo($localPath);
+			// Create the directory locally to mimic
+			$localPath = $tempDirPath . '/' . $pathInfo['dirname'];
+			if(!is_dir($localPath)) {
+				$result = mkdir($localPath, 0777, true);
+				if(!$result) {
+					throw new Exception("Failed to create temp directory: $localPath");
+				}
+			}
+			$localPath = $localPath .= '/' . $pathInfo['basename'];
+			$zipPath = $pathInfo['dirname'] . '/' . $pathInfo['basename'];
+			$request = new \RollingCurl\Request($src);
 			$imgData[] = array(
 				'src' => $src,
 				'element' => $imgElement,
 				'extension' => $pathInfo['extension'],
-				'local_path' => $tempFileName,
-				'new_path' => 'images/' . basename($tempFileName) . '.' . $pathInfo['extension'],
-				'fh' => $fh,
-				'ch' => $ch,
+				'local_path' => $localPath,
+				'new_path' => $zipPath,
+				'request' => $request,
 			);	
-			curl_multi_add_handle($mh, $ch);
+			$rollingCurl->add($request);
 		}
 	}
 
+	/**	
+	 * Utility method to recursively delete a directory.
+	 *
+	 * @param $dir string The directory to delete
+	 */
+	private function rrmdir($dir) {
+		if (is_dir($dir)) {
+			$objects = scandir($dir);
+			foreach ($objects as $object) {
+				if ($object != "." && $object != "..") {
+					if (filetype($dir."/".$object) == "dir") self::rrmdir($dir."/".$object); else unlink($dir."/".$object);
+				}
+			}
+			reset($objects);
+			rmdir($dir);
+		}
+	}
 
 	/**
 	 * Needed in some versions to prevent Special:Version from breaking
