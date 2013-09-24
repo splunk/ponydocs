@@ -208,10 +208,10 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$imgElements = $doc->getElementsByTagName('img');
 		foreach($imgElements as $imgElement) {
 			$src = $imgElement->getAttribute('src');
-			// Strip the server and slash from our 
+			// Strip the server and slash from our image src
 			$localPath = str_replace($search, '', $src);
 			$pathInfo = pathinfo($localPath);
-			// Create the directory locally to mimic
+			// Create the directory locally to mimic the directory structure of the server
 			$localPath = $tempDirPath . '/' . $pathInfo['dirname'];
 			if(!is_dir($localPath)) {
 				$result = mkdir($localPath, 0777, true);
