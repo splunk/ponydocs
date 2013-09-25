@@ -179,7 +179,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		readfile($tempZipFilePath);
 
 		// Now remove all temp files
-		$this->rrmdir($tempDirPath);
+		self::rrmdir($tempDirPath);
 
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
