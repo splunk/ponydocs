@@ -156,7 +156,6 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
 		$cmd .= "$toc --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
 		$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > $pdfFileName";
-		error_log($cmd);
 
 		putenv("HTMLDOC_NOCGI=1");
 
