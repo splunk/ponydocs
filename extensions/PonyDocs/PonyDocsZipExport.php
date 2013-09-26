@@ -23,7 +23,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
 		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
 
-		// We don't do any processing unless it's pdfbook
+		// We don't do any processing unless it's zipmanual
 		if ($action != 'zipmanual') {
 			return true;
 		}
@@ -98,7 +98,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 				}
 			}
 		} else {
-			error_log("ERROR [PonyDocsZipExport::onUnknownAction] " . php_uname('n')
+			error_log("WARNING [" . __METHOD__ . "] " . php_uname('n')
 				. ": User attempted to export ZIP from a non TOC page with path:" . $wgTitle->__toString());
 		}
 
@@ -111,7 +111,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$tempDirPath = sys_get_temp_dir() . '/ponydocs-zip-export-' . time();
 		$success = @mkdir($tempDirPath);
 		if (!$success) {
-			error_log("ERROR [PonyDocsZipExport::onUnknownAction] Failed to create temporary directory " . $tempDirPath . " for Zip Export.");
+			error_log("FATAL [" . __METHOD__ . "] Failed to create temporary directory " . $tempDirPath . " for Zip Export.");
 			throw new Exception('Failed to create temporary directory for Zip Export.');
 		}
 
@@ -186,7 +186,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
-		error_log("INFO [PonyDocsZipExport::onUnknownAction] " . php_uname('n') . ": zip export serve username=\""
+		error_log("INFO [" . __METHOD__ . "] " . php_uname('n') . ": zip export serve username=\""
 			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $pManual->getShortName() . "\"");
 		// No more processing
 		return false;
