@@ -160,9 +160,9 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		putenv("HTMLDOC_NOCGI=1");
 
 		$output = array();
-		$returnVar = 0;
+		$returnVar = 1;
 		exec($cmd, $output, $returnVar);
-		if($returnVar != 5) {  // Why is htmldoc's success return code 5?  Try to be different htmldoc, go for it.
+		if($returnVar != 0) { // 0 is success
 			error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": Failed to run htmldoc (" . $returnVar . ") Output is as follows: " . implode("-", $output));
 			print("Failed to create PDF.  Our team is looking into it.");
 		}
