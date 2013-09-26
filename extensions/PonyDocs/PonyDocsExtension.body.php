@@ -1686,8 +1686,22 @@ HEREDOC;
 	{
 		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
-
-		if( !strcmp('zipmanual', $action) || !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ))
+		
+		if ( !strcmp('zipmanual', $action) )
+		{
+			/**
+			 * Users can only see and use "download manual as zip" link if they are a member of that product's docteam group
+			 */
+			$groups = $user->getGroups();
+			if( !in_array( $authProductGroup, $groups ) )
+			{
+				$result = false;
+				return false;
+			}
+			
+		}
+		
+		if( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ))
 		{
 			/**
 			 * Only doc team can edit manuals/versions/products pages.

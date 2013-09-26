@@ -30,7 +30,10 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 		$zipAllowed = PonyDocsExtension::onUserCan($wgTitle, $wgUser, 'zipmanual', $zipAllowed);
 		if(!$zipAllowed) {
-			throw new Exception("User attempted to perform a ZIP Export without permission.");
+			error_log("WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission.");
+			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+			header( "Location: " . $defaultRedirect );
+			exit;
 		}
 	
 		// Get the title and make sure we're in Documentation namespace
