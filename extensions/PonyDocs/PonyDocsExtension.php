@@ -30,7 +30,11 @@ require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryLinks.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryPageHandler.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsPdfBook.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
+
+
 require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
@@ -45,12 +49,12 @@ if (!isset ($ponyDocsProductsList) || sizeof($ponyDocsProductsList) == 0){
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
 
-$wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['read'] 			= true;
-$wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['edit'] 			= true;
-$wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['upload']			= true;
-$wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['reupload']		= true;
-$wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['reupload-shared']	= true;
-$wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['minoredit']		= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] 			= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] 			= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload']			= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload']		= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared']	= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit']		= true;
 
 // these will be tweaked in PonyDocsExtension::onUserCan()
 $editorPerms = array(
@@ -92,15 +96,15 @@ foreach ($ponyDocsProductsList as $product){
 	// check for empty product
 	if ($product == ''){
 		// allow for existing product-less base groups
-		$convertedNameProduct = PONYDOCS_BASE_AUTHOR_GROUP;
-		$convertedNamePreview = PONYDOCS_BASE_PREVIEW_GROUP;
+		$convertedNameProduct = $wgPonyDocsBaseAuthorGroup;
+		$convertedNamePreview = $wgPonyDocsBasePreviewGroup;
 	} else {
 		// TODO: this should be a function that is shared instead
 		// of being local, redundant logic
 		$legalProduct = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $product );
 
-		$convertedNameProduct = $legalProduct.'-'.PONYDOCS_BASE_AUTHOR_GROUP;
-		$convertedNamePreview = $legalProduct.'-'.PONYDOCS_BASE_PREVIEW_GROUP;
+		$convertedNameProduct = $legalProduct.'-'.$wgPonyDocsBaseAuthorGroup;
+		$convertedNamePreview = $legalProduct.'-'.$wgPonyDocsBasePreviewGroup;
 
 	}
 
@@ -660,6 +664,7 @@ $wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
 $wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave_AutoLinks';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
+$wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
 $wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
 $wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit';
@@ -671,6 +676,7 @@ $wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageVie
 
 $wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
+
 
 // Add version field to edit form
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';

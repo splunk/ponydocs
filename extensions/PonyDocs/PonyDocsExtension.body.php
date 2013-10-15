@@ -810,7 +810,7 @@ class PonyDocsExtension
 	 */
 	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags )
 	{
-		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath, $wgHooks;
+		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath, $wgHooks, $wgPonyDocsEmployeeGroup;
 
 		$editPonyDocsProduct = $wgRequest->getVal("ponydocsproduct");
 		$editPonyDocsVersion = $wgRequest->getVal("ponydocsversion");
@@ -828,7 +828,7 @@ class PonyDocsExtension
 		// if they're an employee, and what topic they modified.
 		$groups = $user->getGroups();
 		$isEmployee = false;
-		if(in_array( PONYDOCS_EMPLOYEE_GROUP, $groups )) {
+		if(in_array( $wgPonyDocsEmployeeGroup, $groups )) {
 			$isEmployee = true;
 		}
 		error_log("INFO [wikiedit] username=\"" . $user->getName() . "\" usertype=\"" . ($isEmployee ? 'employee' : 'nonemployee') . "\" url=\"" . $article->getTitle()->getFullURL() . "\"");
@@ -1684,9 +1684,23 @@ HEREDOC;
 	 */
 	static public function onUserCan( &$title, &$user, $action, &$result )
 	{
-		global $wgExtraNamespaces;
+		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
-
+		
+		if ( !strcmp('zipmanual', $action) )
+		{
+			/**
+			 * Users can only see and use "download manual as zip" link if they are a member of that product's docteam group
+			 */
+			$groups = $user->getGroups();
+			if( !in_array( $authProductGroup, $groups ) )
+			{
+				$result = false;
+				return false;
+			}
+			
+		}
+		
 		if( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ))
 		{
 			/**
@@ -1711,14 +1725,14 @@ HEREDOC;
 			if(	( $title->getNamespace( ) == PONYDOCS_DOCUMENTATION_NAMESPACE_ID ) || ( !strcmp( $title->__toString( ), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ))) 
 			{
 				$groups = $user->getGroups();
-				if( !in_array($authProductGroup, $groups ) && !in_array( PONYDOCS_EMPLOYEE_GROUP, $groups ))
+				if( !in_array($authProductGroup, $groups ) && !in_array( $wgPonyDocsEmployeeGroup, $groups ))
 				{
 					$result = false;
 					return false;
 				}
 			}
 		}
-
+		$result = true;
 		return true;
 	}
 
@@ -2261,6 +2275,8 @@ HEREDOC;
 	 * @return string or boolean false on failure
 	 */
 	static public function getDerivedGroup($type = self::ACCESS_GROUP_PRODUCT, $productName = NULL){
+		global $wgPonyDocsBaseAuthorGroup, $wgPonyDocsBasePreviewGroup;
+
 		// if product not specified, take product from session
 		if (is_null($productName)) {
 			$product = PonyDocsProduct::GetSelectedProduct();
@@ -2270,11 +2286,11 @@ HEREDOC;
 
 		switch ($type) {
 			case self::ACCESS_GROUP_PRODUCT:
-				$group = $product . '-' . PONYDOCS_BASE_AUTHOR_GROUP;
+				$group = $product . '-' . $wgPonyDocsBaseAuthorGroup;
 				break;
 
 			case self::ACCESS_GROUP_VERSION:
-				$group = $product . '-' . PONYDOCS_BASE_PREVIEW_GROUP;
+				$group = $product . '-' . $wgPonyDocsBasePreviewGroup;
 				break;
 
 			default:

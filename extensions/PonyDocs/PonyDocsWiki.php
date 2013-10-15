@@ -172,7 +172,7 @@ class PonyDocsWiki
 	 */
 	public function generateSideBar( )
 	{
-		global $wgArticlePath, $wgScriptPath, $wgUser;
+		global $wgArticlePath, $wgScriptPath, $wgUser, $wgPonyDocsEmployeeGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT);
 
 		$g = $wgUser->getAllGroups( );
@@ -186,7 +186,7 @@ class PonyDocsWiki
 		/**
 		 * Show Special pages if employee or author.
 		 */
-		if( in_array( $authProductGroup, $g ) || in_array( PONYDOCS_EMPLOYEE_GROUP, $g ))
+		if( in_array( $authProductGroup, $g ) || in_array( $wgPonyDocsEmployeeGroup, $g ))
 			$sidebar['navigation'][] = array( 'text' => 'Special Pages', 'href' => str_replace( '$1', 'Special:Specialpages', $wgArticlePath ));
 
 		/**

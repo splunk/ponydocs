@@ -1,8 +1,4 @@
 <?php
-// Define your user groups here
-define('PONYDOCS_EMPLOYEE_GROUP', 'employees');
-define('PONYDOCS_BASE_AUTHOR_GROUP', 'docteam');
-define('PONYDOCS_BASE_PREVIEW_GROUP', 'preview');
 define('PONYDOCS_CRAWLER_AGENT_REGEX', '/gsa-crawler/');
 
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation');
@@ -50,4 +46,13 @@ define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
 // Auto-Create Topics when referenced during editing
 define('PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', false);
 
-?>
+// Configuration variables to map ponydoc groups to mediawiki groups
+if (!isset($wgPonyDocsEmployeeGroup)) {
+	$wgPonyDocsEmployeeGroup = 'employees';
+}
+if (!isset($wgPonyDocsBaseAuthorGroup)) {
+	$wgPonyDocsBaseAuthorGroup = 'docteam';
+}
+if (!isset($wgPonyDocsBasePreviewGroup)) {
+	$wgPonyDocsBasePreviewGroup = 'preview';
+}
