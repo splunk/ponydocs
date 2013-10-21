@@ -128,7 +128,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		$html = self::getManualHTML($pProduct, $pManual, $v);
 
 		// HTMLDOC does not care for utf8. 
-		$html .= utf8_decode("$html\n");
+		$html = utf8_decode("$html\n");
 
 		// Write the HTML to a tmp file
 		$file = "$wgUploadDirectory/".uniqid('ponydocs-pdf-book');
