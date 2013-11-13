@@ -188,12 +188,12 @@ EOT;
 					 * 
 					 */
 					$regex_search = array(
-						'|<a([^\>])+href="(' . str_replace('/', '\/', $wgServer) . ')+\/'
+						'|<a([^\>]+)href="(' . str_replace('/', '\/', $wgServer) . ')+\/'
 							. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/' . $product->getShortName() . '\/' . $version->getVersionName() . '\/'
 							. $manual->getShortName() . '\/([^"]*)"([^\<]*)>|',
 						'|<a[^\>]+href="(?!#)[^"]*"[^>]*>(.*?)</a>|',
 						'|<span[^\>]+id="([^"]*)"[^>]*>(.*?)</span>|',
-						'|<a([^\>])+href="#([^"]*)#([^"]*)"([^>])*>(.*?)</a>|',
+						'|<a([^\>]+)href="#([^"]*)#([^"]*)"([^>]*)>(.*?)</a>|',
 						'|(<img[^>]+?src=")(/.*>)|',
 						'|<div\s*class=[\'"]?noprint["\']?>.+?</div>|s',
 						'|@{4}([^@]+?)@{4}|s',
