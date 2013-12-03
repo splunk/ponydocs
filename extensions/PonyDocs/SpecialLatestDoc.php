@@ -15,7 +15,7 @@ class SpecialLatestDoc extends SpecialPage {
 	private $categoryName;
 	private $skin;
 	private $titles;
-	
+
 	/**
 	 * Call the parent with our name.
 	 */
@@ -54,7 +54,7 @@ class SpecialLatestDoc extends SpecialPage {
 		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS. ']*)\/(.*)\/(.*)\/(.*)$/i', $title, $matches )) {
 			?>
 			<p>
-			Sorry, but <?php echo $title;?> is not a valid Documentation url.
+			Sorry, but <?php echo htmlspecialchars($title);?> is not a valid Documentation url.
 			</p>
 			<?php
 		}
@@ -69,8 +69,8 @@ class SpecialLatestDoc extends SpecialPage {
 			 */
 			$productName = $matches[1];
 			$versionName = $matches[2];
-			$version = '';
-			PonyDocsProductVersion::LoadVersionsForProduct($productName);		// Load versions from DB
+			$manualName = $matches[3];
+			$topicName = $matches[4];
 			if(strcasecmp('latest', $versionName)) {
 				?>
 				<p>
@@ -85,78 +85,76 @@ class SpecialLatestDoc extends SpecialPage {
 				 * versions available to the current user (i.e. LoadVersions() only loads the ones permitted).
 				 */
 				$versionList = array_reverse( PonyDocsProductVersion::GetReleasedVersions( $productName, true ));
+
 				$versionNameList = array( );
-				foreach( $versionList as $pV )
-					$versionNameList[] = $pV->getVersionName( );
-				
-				/**
-				 * Now get a list of version names to which the current topic is mapped in DESCENDING order as well
-				 * from the 'categorylinks' table.
-				 *
-				 * DB can't do descending order here, it depends on the order defined in versions page!  So we have to
-				 * do some magic sorting below.
-				 */
-				
-				$res = $dbr->select( 'categorylinks', 'cl_to', 
-									 "LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $matches[1] . ':' . $matches[3] . ':' . $matches[4] )) . ":%'",
-									 __METHOD__ );
-
-				if( !$res->numRows( ))
-				{
-					/**
-					 * What happened here is we requested a topic that does not exist or is not linked to any version.
-					 * Perhaps setup a default redirect, Main_Page or something?
-					 */
-					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __CLASS__ . "::" . __METHOD__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . " [" . __FILE__ . ":" . __LINE__ . "]");}
-					header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
-					exit( 0 );
-				}
-
-				/**
-				 * Based on our list, get the PonyDocsVersion for each version tag and store in an array.  Then pass this array
-				 * to our custom sort function via usort() -- the ending result is a sorted list in $existingVersions, with the
-				 * LATEST version at the front.
-				 * 
-				 */
-				$existingVersions = array( );
-				while( $row = $dbr->fetchObject( $res ))
-				{
-					if( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ))
+				$versionSql = array();
+				$latestVersionSql = null;
+				foreach($versionList as $pV ) {
+					if( $latestVersionSql == null ) 
 					{
-						$pVersion = PonyDocsProductVersion::GetVersionByName( $vmatch[1], $vmatch[2] );
-						if( $pVersion && !in_array( $pVersion, $existingVersions )) {
-							$existingVersions[] = $pVersion;
-						}
+						$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName( );
 					}
+					$versionNameList[] = $pV->getVersionName( );
+					$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName( ) . '\'';
 				}
-				if(count($existingVersions) == 0) {
-					// If this happens, this is because it's possible the user 
-					// doesn't have access to any of the versions this topic is 
-					// linked to.  In this situation, our default behavior is to 
-					// redirect to our base homepage.
-					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __CLASS__ . "::" . __METHOD__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . " [" . __FILE__ . ":" . __LINE__ . "]");}
-					header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
-					exit(0);
+				$versionSql = '(' . implode( ",",$versionSql ) . ')';
+
+				$suggestions = array();
+				$primarySuggestions = array();
+
+				/**
+				 * Now build a list of suggestions in priority.
+				 * 1) Same product, different manual, current version.
+				 */
+				$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
+									 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
+									 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
+									 " AND cast(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
+									__METHOD__ );
+
+				if( $res->numRows( ) )
+				{
+					$tempSuggestions = $this->buildSuggestionsFromResults( $res );
+					// Take the top 5 and put them in primary suggestions
+					$primarySuggestions = array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
+					$suggestions = $suggestions + $tempSuggestions;
 				}
-				usort( $existingVersions, "PonyDocs_ProductVersionCmp" );
-				$existingVersions = array_reverse( $existingVersions );
-				
-				// Make it so we can use in_array below
-				foreach($existingVersions as $index => $object) $existingVersions[$index] = $object->getVersionName();
-				// $existingVersions[0] points to the latest version this document 
-				// is in
-				// If this document is in the latest version, then let's go 
-				// ahead and redirect over to it.
-				
-				if(count($existingVersions) && in_array($versionNameList[0], $existingVersions)) {
-					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __CLASS__ . "::" . __METHOD__ . "] redirecting to $wgScriptPath/$title [" . __FILE__ . ":" . __LINE__ . "]");}
-					header("Location: " . $wgScriptPath . "/" . $title);
-					exit(0);
+				/*
+				 * 2) Same product, same manual, earlier version
+				 */
+				$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
+									 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
+									 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) ) . "'" .
+									 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
+									__METHOD__ );
+
+				if( $res->numRows( ) )
+				{
+					$tempSuggestions = $this->buildSuggestionsFromResults( $res );
+					// Take the top 5 and put them in primary suggestions
+					$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
+					$suggestions = $suggestions + $tempSuggestions;
 				}
-				// If we are here, we should FORCE the user to be viewing the 
-				// latest documentation, and report the issue with the topic not 
-				// being in the latest.
-				$_SESSION['wsVersion'][$productName] = $versionNameList[0];
+
+				/*
+				 * 3) Same product, different manual, earlier version
+				 *
+				 * Note: The regular expression will match ALL manuals, including the passed manual. There is no good regex way to 
+				 * properly evaluate not matching a string but match others. So we will filter it out of the results.
+				 */
+				$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
+									 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
+									 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
+									 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
+									__METHOD__ );
+				if( $res->numRows( ) )
+				{
+					$tempSuggestions = $this->buildSuggestionsFromResults( $res );
+					// Take the top 5 and put them in primary suggestions
+					$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
+					$suggestions = $suggestions + $tempSuggestions;
+				}
+				ob_start();
 				?>
 				<p>
 				Hi! Just wanted to let you know:
@@ -165,21 +163,133 @@ class SpecialLatestDoc extends SpecialPage {
 				The topic you've asked to see does not apply to the most recent version.
 				</p>
 				<p>
-				<ul>
-					<li>To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
-					<li>To look at this topic anyway, click <a href="/<?php echo PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;?>/<?php echo $productName;?>/<?php echo $versionName;?>/<?php echo $matches[3];?>/<?php echo $matches[4];?>">here</a>.</li>
-				</ul>
+				To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
 				</p>
+				<?php
+				if( count( $primarySuggestions ) )
+				{
+					?>
+					<h2>Suggestions</h2>
+					<p>
+					The following suggestions for the topic you requested were found:
+					</p>
+					<ul id="suggestions">
+					<?php
+					foreach( $primarySuggestions as $key => &$suggestion ) {
+						?>
+						<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+						<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+						<?php
+					}
+					if( count( $suggestions ) )
+					{
+						foreach( $suggestions as $key => &$suggestion ) {
+							?>
+								<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+								<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+							<?php
+
+						}
+					}
+					?>
+					</ul>
+					<?php
+					if( count( $suggestions ) )
+					{
+						?>
+							<a href="#" id="suggestion_expand">Show Additional <?php echo count( $suggestions );?> Suggestion<?php echo count( $suggestions ) == 1 ? '' : 's';?></a>
+							<script type="text/javascript">
+							jQuery(function() {
+								   jQuery('#suggestion_expand').click( function(event) {
+										event.preventDefault();
+										jQuery('#suggestions li').show();
+										jQuery(this).hide();
+									});
+							});
+							</script>
+						<?php
+					}
+				}
+				?>
 				<?php
 			}
 		}
 
 		$htmlContent = ob_get_contents();
 		ob_end_clean();
-		$wgOut->addHTML($htmlContent);
+		$wgOut->addHTML( $htmlContent );
 		return true;
 	}
 
+	/**
+	 * Builds and returns a suggestion array from results retrieved from the 
+	 * categorylinks table.
+	 *
+	 * @param $res array A collection of records from the categorylinks table. Represents valid suggestions.
+	 * @return array A list of suggestions with populated information for url,title,manual,product and version.
+	 */
+	private function buildSuggestionsFromResults( $res )
+	{
+		$suggestions = array();
+		foreach( $res as $row ) 
+		{
+			$tags = explode( ":", $row->cl_to );
+			// tags[0] = V
+			// tags[1] = product name
+			// tags[2] = version name
+
+			$article = PonyDocsArticleFactory::getArticleByTitle( $row->cl_sortkey );
+			if( !$article )
+			{
+				continue;
+			}
+			$topic = new PonyDocsTopic( $article );
+			$ver = PonyDocsProductVersion::GetVersionByName( $tags[1], $tags[2] );
+			if( !$ver )
+			{
+				continue;
+			}
+			$meta = PonyDocsArticleFactory::getArticleMetadataFromTitle( $row->cl_sortkey );
+			$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $meta['product'] . '/' . $tags[2] . '/' . $meta['manual'] . '/' . $meta['topic'];
+			$suggestions[$url] = array(
+				'url' => $url,
+				'title' => $topic->FindH1ForTitle( $row->cl_sortkey ),
+				'manual' => $meta['manual'],
+				'product' => $meta['product'],
+				'version' => $tags[2]
+			);
+		}
+		// Sort array based on manual/version.
+		uasort( $suggestions, "SpecialLatestDoc::suggestionSort" );
+		return $suggestions;
+	}
+
+	/**
+	 * Sorts a suggestion array. For use in uasort call in 
+	 * buildSuggestionsFromResults
+	 *
+	 * @param $first array The first operator in comparison
+	 * @param $second array The second operator in comparison
+	 * @return 0 if same, -1 if less than, 1 if greater than.
+	 */
+	private static function suggestionSort($first, $second)
+	{
+		$manualCompare = strcmp( $first['manual'], $second['manual'] );
+		if( $manualCompare != 0 )
+		{
+			return $manualCompare;
+		}
+		$versionList = array_keys( array_reverse( PonyDocsProductVersion::GetReleasedVersions( $first['product'], true ) ) );
+		$firstIndex = array_search( $first['version'], $versionList );
+		$secondIndex = array_search( $second['version'], $versionList );
+		if( $firstIndex < $secondIndex )
+		{
+			return -1;
+		} else if( $firstIndex > $secondIndex )
+		{
+			return 1;
+		}
+		return 0;
+	}
 }
 
-?>
