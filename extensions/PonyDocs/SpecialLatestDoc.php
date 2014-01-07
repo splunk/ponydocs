@@ -234,9 +234,8 @@ class SpecialLatestDoc extends SpecialPage {
 		foreach( $res as $row ) 
 		{
 			$tags = explode( ":", $row->cl_to );
-			// tags[0] = V
-			// tags[1] = product name
-			// tags[2] = version name
+			$productName = $tags[1];
+			$versionName = $tags[2];
 
 			$article = PonyDocsArticleFactory::getArticleByTitle( $row->cl_sortkey );
 			if( !$article )
@@ -244,19 +243,19 @@ class SpecialLatestDoc extends SpecialPage {
 				continue;
 			}
 			$topic = new PonyDocsTopic( $article );
-			$ver = PonyDocsProductVersion::GetVersionByName( $tags[1], $tags[2] );
+			$ver = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if( !$ver )
 			{
 				continue;
 			}
 			$meta = PonyDocsArticleFactory::getArticleMetadataFromTitle( $row->cl_sortkey );
-			$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $meta['product'] . '/' . $tags[2] . '/' . $meta['manual'] . '/' . $meta['topic'];
+			$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $meta['product'] . '/' . $versionName . '/' . $meta['manual'] . '/' . $meta['topic'];
 			$suggestions[$url] = array(
 				'url' => $url,
 				'title' => $topic->FindH1ForTitle( $row->cl_sortkey ),
 				'manual' => $meta['manual'],
 				'product' => $meta['product'],
-				'version' => $tags[2]
+				'version' => $versionName
 			);
 		}
 		// Sort array based on manual/version.
