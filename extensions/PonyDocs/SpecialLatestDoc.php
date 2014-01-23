@@ -175,7 +175,7 @@ class SpecialLatestDoc extends SpecialPage {
 					</p>
 					<ul id="suggestions">
 					<?php
-					foreach( $primarySuggestions as $key => &$suggestion ) {
+					foreach( $primarySuggestions as $suggestion ) {
 						?>
 						<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
 						<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
@@ -183,7 +183,7 @@ class SpecialLatestDoc extends SpecialPage {
 					}
 					if( count( $suggestions ) )
 					{
-						foreach( $suggestions as $key => &$suggestion ) {
+						foreach( $suggestions as $suggestion ) {
 							?>
 								<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
 								<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
