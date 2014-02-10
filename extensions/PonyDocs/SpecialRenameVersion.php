@@ -81,15 +81,15 @@ class SpecialRenameVersion extends SpecialPage
 	 * @param $topics string JSON array representation of all topics
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersion, $targetVersion, $topics ) {
+	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersion, $targetVersion, $manualTopics ) {
 		global $wgScriptPath;
 		ob_start();
 
-		$topics = json_decode( $topics, true );
+		$manualTopics = json_decode( $manualTopics, true );
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
 		$startTime = (float)$msec + (float)$sec; 
 
-		if ( $topics == FALSE ) {
+		if ( $manualTopics == FALSE ) {
 			print 'Failed to read request.';
 			return TRUE ;
 		}
@@ -109,21 +109,21 @@ class SpecialRenameVersion extends SpecialPage
 		$numOfTopics = 0;
 		$numOfTopicsCompleted = 0;
 
-		foreach ( $topics as $manualIndex => $manualData ) {
-			foreach( $manualData['sections'] as $sectionName => $topicList ) {
+		foreach ( $manualTopics as $manualIndex => $manualData ) {
+			foreach( $manualData['sections'] as $sectionName => $topics ) {
 				// The following is a goofy fix for some browsers.
 				// Sometimes the JSON comes along with null values for the first element. 
 				// It's just an additional element, so we can drop it.
-				if ( empty( $topicList[0]['text'] )) {
-					array_shift( $topics[$manualIndex]['sections'][$sectionName] );
+				if ( empty( $topics[0]['text'] )) {
+					array_shift( $manualTopics[$manualIndex]['sections'][$sectionName] );
 				}
-				$numOfTopics += count( $topics[$manualIndex]['sections'][$sectionName] );
+				$numOfTopics += count( $manualTopics[$manualIndex]['sections'][$sectionName] );
 			}
 		}
 
 		$lastTopicTarget = null;
 
-		foreach ( $topics as $manualName => $manualData ) {
+		foreach ( $manualTopics as $manualName => $manualData ) {
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			// Determine if TOC already exists for target version.
 			if( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $targetVersion )) {
@@ -132,7 +132,7 @@ class SpecialRenameVersion extends SpecialPage
 			} else {
 				try {
 					print '<div class="normal">Attempting to update TOC for target version.</div>';
-					PonyDocsRenameVersionEngine::updateTOC( $product, $manual, $targetVersion);
+					PonyDocsRenameVersionEngine::changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion);
 					print '<div class="normal">Complete</div>' ;
 				} catch ( Exception $e ) {
 					print '<div class="error">Exception: ' . $e->getMessage() . '</div>';
@@ -152,7 +152,7 @@ class SpecialRenameVersion extends SpecialPage
 					fclose( $fp );
 					try {
 						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '</div>';
-						PonyDocsRenameVersionEngine::updateTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], true, false, true);
+						PonyDocsRenameVersionEngine::changeVersionOnTopic( $topic['title'], $sourceVersion, $targetVersion );
 					} catch( Exception $e ) {
 						print '<div class="error">Exception: ' . $e->getMessage() . '</div>';
 					}
@@ -202,7 +202,7 @@ class SpecialRenameVersion extends SpecialPage
 		$versions = PonyDocsProductVersion::GetVersions($forceProduct); ?>
 
 		<input type="hidden" id="force_product" value="<?php echo $forceProduct; ?>" />
-		<div id="docrenameversion">
+		<div id="renameversion">
 		<a name="top"></a>
 		<div class="versionselect">
 			<h1>Rename Version Console</h1>
@@ -231,18 +231,18 @@ class SpecialRenameVersion extends SpecialPage
 
 				<script language="javascript">
 					function AjaxChangeProduct1_callback( o ) {
-						document.getElementById('docsProductSelect1').disabled = true;
+						document.getElementById( 'docsProductSelect1' ).disabled = true;
 						var s = new String( o.responseText );
-						document.getElementById('docsProductSelect1').disabled = false;
+						document.getElementById( 'docsProductSelect1' ).disabled = false;
 						window.location.href = s;
 					}
 
-					function AjaxChangeProduct1( ) {
-						var productIndex = document.getElementById('docsProductSelect1').selectedIndex;
-						var product = document.getElementById('docsProductSelect1')[productIndex].value;
+					function AjaxChangeProduct1() {
+						var productIndex = document.getElementById( 'docsProductSelect1' ).selectedIndex;
+						var product = document.getElementById( 'docsProductSelect1' )[productIndex].value;
 						var title = '<?= $_SERVER['REQUEST_URI'] ?>'; // TODO fix this title
 						var force = true;
-						sajax_do_call( 'efPonyDocsAjaxChangeProduct', [product,title,force], AjaxChangeProduct1_callback,true);
+						sajax_do_call( 'efPonyDocsAjaxChangeProduct', [product, title, force], AjaxChangeProduct1_callback, true);
 					}
 				</script>
 
@@ -269,9 +269,13 @@ class SpecialRenameVersion extends SpecialPage
 				} ?>
 			</select>
 			<div>
-				<input type="button" id="versionselect_submit" value="Process Request" />
-				<div id="progressconsole"></div>
+				<input type="button" id="versionselect_submit" value="Prepare Rename" />
 			</div>
+		</div>
+		
+		<div class="processrequest" style="display: none;">	
+				<input type="button" id="renameversion_submit" value="Process Request" />
+				<div id="progressconsole"></div>
 		</div>
 
 		<div class="completed" style="display: none;">

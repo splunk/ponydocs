@@ -16,10 +16,13 @@ $(function(){
 	});
 
 	// Check for branch inherit
-	if($("#docbranchinherit").length > 0) {
+	if ( $( "#docbranchinherit" ).length > 0 ) {
 		SplunkBranchInherit.init();
 	}
-	if(typeof(ponydocsOnLoad) !== 'undefined') {
+	if ( $( "#renameversion" ).length > 0 ) {
+		SplunkRenameVersion.init();
+	}
+	if( typeof(ponydocsOnLoad) !== 'undefined' ) {
 		ponydocsOnLoad();
 	}
 });
@@ -270,9 +273,81 @@ SplunkBranchInherit = function() {
 				});
 			}
 	};
+};
 
+SplunkRenameVersion = function() {
+	var sourceProduct = '';
+	var sourceVersion = '';
+	var targetVersion = '';
+	var manuals = [];
+	var defaultAction = 'ignore';
+	var manualTopics = {};
+	var jobID = '';
+	var progressTimer = null;
+	var completed = false;
 
+	return {
+		init: function() {
+			$( '#versionselect_submit' ).click( function() {
+				sourceProduct = $( '#force_product' ).val();
+				sourceVersion = $( '#versionselect_sourceversion' ).val();
+				targetVersion = $( '#versionselect_targetversion' ).val();
+				if ( sourceVersion == targetVersion ) {
+					alert( 'Target version can not be the same as source version.' );
+				}
+				else {
+					$( '#renameversion .sourceversion' ).html( sourceVersion );
+					$( '#renameversion .targetversion' ).html( targetVersion );
+					$( '#versionselect_submit' ).attr( 'disabled', 'disabled' ).attr( 'value', 'Fetching Data...' );
+					sajax_do_call(
+						'SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function( res ) {
+						var manuals = eval( res.responseText );
+						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics',
+							[sourceProduct, sourceVersion, targetVersion, manuals.join(',')],
+							function( res ) {
+								var manualTopics = eval ( res.responseText );
+								$( '#renameversion .processrequest' ).fadeIn();
+						});
+					});
+				}
+			});
+			$( '#renameversion_submit' ).click( function() {
+				if( !confirm(
+					'Are you sure you want to process this job? '
+					+ 'Be sure to review all topics because there is no stopping it once it begins.\n'
+					+ 'Please note this will take some time, so please be patient.' )) {
+					return false;
+				}
+				$( '#renameversion_submit' ).attr( 'value', 'Processing...' ).attr( 'disabled', 'disabled' );
+				// Okay, time to submit.
+				// First grab the job ID.
+				sajax_do_call( 'SplunkRenameVersion::ajaxFetchJobID', [], function(res) {
+					SplunkRenameVersion.jobID = res.responseText;
+					sajax_request_type = 'POST';
+					SplunkRenameVersion.fetchProgress();
+					sajax_do_call( 'SplunkRenameVersion::ajaxProcessRequest',
+						[SplunkRenameVersion.jobID, sourceProduct, sourceVersion, targetVersion, $.toJSON( manualTopics )],
+						function( res ) {
+							completed = true;
+							clearTimeout( progressTimer );
+							progressTimer = null;
+							$( '#renameversion .completed .logconsole' ).html( res.responseText );
+							$( '#renameversion .topicactions' ).fadeOut( function() {
+								$( '#renameversion .completed' ).fadeIn();
+							});
+					});
+				});
+			});
+		},
+		fetchProgress: function() {
+			sajax_do_call('SplunkRenameVersion::ajaxFetchJobProgress', [SplunkRenameVersion.jobID], function( res ) {
+				$( '#progressconsole' ).html( res.responseText );
+				if ( !completed ) {
+					progressTimer = setTimeout( 'SplunkRenameVersion.fetchProgress();', 3000 );
+				}
+			});
+		}
+	};
 }();
 
 // Function defs
-
