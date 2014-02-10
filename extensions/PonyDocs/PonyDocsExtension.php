@@ -34,11 +34,11 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsPdfBook.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
 
-
 require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
+require_once( "$IP/extensions/PonyDocs/SpecialRenameVersion.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocImport.php");
 
 // check for empty product list
