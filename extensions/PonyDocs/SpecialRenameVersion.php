@@ -217,11 +217,12 @@ class SpecialRenameVersion extends SpecialPage
 						. ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . '%' );
 					fclose( $fp );
 					try {
-						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '</div>';
+						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '...';
 						PonyDocsRenameVersionEngine::changeVersionOnTopic(
 							$topic['title'], $sourceVersion, $targetVersion );
+						print 'Complete</div>';
 					} catch( Exception $e ) {
-						print '<div class="error">Exception: ' . $e->getMessage() . '</div>';
+						print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 					}
 					$numOfTopicsCompleted++;
 				}
