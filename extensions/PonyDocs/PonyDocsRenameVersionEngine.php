@@ -24,6 +24,7 @@ class PonyDocsRenameVersionEngine {
 	static function changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion ) {
 		global $wgTitle;
 		$title = PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion );
+		error_log("TOC title: $title");
 		if ( $title == false ) {
 			throw new Exception( 'TOC does not exist for ' . $manual->getShortName()
 				. ' with version ' . $sourceVersion->getVersionName() );
@@ -38,10 +39,11 @@ class PonyDocsRenameVersionEngine {
 		
 		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
 		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
+		error_log("$oldCategory => $newCategory");
 		
 		// Okay, let's search for the content.
 		$content = $article->getContent();
-		preg_replace( preg_quote( $oldCategory ), preg_quote( $newCategory ), $content, -1, $count );
+		$content = preg_replace( '/' . preg_quote( $oldCategory ) . '/', $newCategory, $content, -1, $count );
 		$article->doEdit( $content, "Renamed version category $oldCategory to $newCategory in $count locations", EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
 		return true;
@@ -111,10 +113,10 @@ class PonyDocsRenameVersionEngine {
 		// Replace the old category with the new one
 		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
 		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
+		error_log("$oldCategory => $newCategory");
 		
-		$content = $existingArticle->getContent();
-		preg_replace( preg_quote( $oldCategory ), preg_quote( $newCategory ), $content, -1, $count );
-		$article->doEdit( $content, "Renamed version category $oldCategory to $newCategory in $count locations", EDIT_UPDATE );
+		$content = $article->getContent();
+		$content = preg_replace( '/' . preg_quote( $oldCategory ) . '/', $newCategory, $content, -1, $count );		$article->doEdit( $content, "Renamed version category $oldCategory to $newCategory in $count locations", EDIT_UPDATE );
 		return $title;
 	}
 }

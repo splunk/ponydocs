@@ -13,9 +13,9 @@ require_once( "$IP/includes/SpecialPage.php" );
 $wgSpecialPages['RenameVersion'] = 'SpecialRenameVersion';
 
 // Ajax Handlers
-$wgAjaxExportList[] = 'SpecialRenameVersion::ajaxProcessRequest';
 $wgAjaxExportList[] = 'SpecialRenameVersion::ajaxFetchJobID';
 $wgAjaxExportList[] = 'SpecialRenameVersion::ajaxFetchJobProgress';
+$wgAjaxExportList[] = 'SpecialRenameVersion::ajaxProcessRequest';
 
 /**
  * The Special page which handles the UI for renaming versions
@@ -78,7 +78,7 @@ class SpecialRenameVersion extends SpecialPage
 	 * @param $productName string product short name
 	 * @param $sourceVersion string String representation of the source version
 	 * @param $targetVersion string String representaiton of the target version
-	 * @param $topics string JSON array representation of all topics
+	 * @param $manualTopics string JSON array representation of all topics
 	 * @return string Full job log of the process by printing to stdout.
 	 */
 	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersion, $targetVersion, $manualTopics ) {
@@ -105,46 +105,50 @@ class SpecialRenameVersion extends SpecialPage
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersion );
 		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersion );
 
-		// Determine how many topics there are to process.
+		// Determine how many topics there are to process so that we can keep track of progress
 		$numOfTopics = 0;
 		$numOfTopicsCompleted = 0;
 
-		foreach ( $manualTopics as $manualIndex => $manualData ) {
-			foreach( $manualData['sections'] as $sectionName => $topics ) {
+		foreach ( $manualTopics as $manualName => $manualData ) {
+			foreach ( $manualData['sections'] as $sectionName => $section ) {
 				// The following is a goofy fix for some browsers.
 				// Sometimes the JSON comes along with null values for the first element. 
 				// It's just an additional element, so we can drop it.
-				if ( empty( $topics[0]['text'] )) {
-					array_shift( $manualTopics[$manualIndex]['sections'][$sectionName] );
+				if ( empty( $section['topics'][0]['text'] )) {
+					array_shift( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
 				}
-				$numOfTopics += count( $manualTopics[$manualIndex]['sections'][$sectionName] );
+				$numOfTopics += count( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
 			}
 		}
-
-		$lastTopicTarget = null;
+		
+		error_log("Topic count: $numOfTopics");
 
 		foreach ( $manualTopics as $manualName => $manualData ) {
+			error_log("Manual: $manualName");
+			print "<div class=\"normal\">Processing manual $manualName</div>";
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			// Determine if TOC already exists for target version.
-			if( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $targetVersion )) {
-				print '<div class="normal">TOC Does not exist for Manual ' . $manual->getShortName()
+			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion )) {
+				print '<div class="normal">TOC Does not exist in source version for Manual ' . $manual->getShortName()
 					. ' for version ' . $targetVersion->getVersionName() . '</div>';
 			} else {
 				try {
-					print '<div class="normal">Attempting to update TOC for target version.</div>';
+					print '<div class="normal">Attempting to update TOC...';
 					PonyDocsRenameVersionEngine::changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion);
-					print '<div class="normal">Complete</div>' ;
+					print 'Complete</div>' ;
 				} catch ( Exception $e ) {
-					print '<div class="error">Exception: ' . $e->getMessage() . '</div>';
+					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
 
 			// Okay, now let's go through each of the topics and update the version category
-			print "Processing topics.\n" ;
+			print '<div class="normal">Processing topics</div>';
 			$path = PonyDocsExtension::getTempDir() . $jobID;
-			foreach ( $manualData['sections'] as $sectionName => $topicList ) {
+			foreach ( $manualData['sections'] as $sectionName => $section ) {
+				error_log("Section: $sectionName");
 				print "<div class=\"normal\">Processing section $sectionName</div>" ;
-				foreach ( $topicList as $topic ) {
+				foreach ( $section['topics'] as $topic ) {
+					error_log("Topic: {$topic['title']}");
 					// Update log file
 					$fp = fopen( $path, "w+" );
 					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
@@ -174,7 +178,7 @@ class SpecialRenameVersion extends SpecialPage
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
-	public function execute() 	{
+	public function execute() {
 		global $wgOut, $wgArticlePath, $wgScriptPath;
 		global $wgUser;
 
