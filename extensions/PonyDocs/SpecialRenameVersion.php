@@ -63,6 +63,7 @@ class SpecialRenameVersion extends SpecialPage
 	 * @return string 
 	 */
 	public static function ajaxFetchJobProgress( $jobID ) {
+		error_log('fetching progress');
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents( $path );
@@ -77,19 +78,20 @@ class SpecialRenameVersion extends SpecialPage
 	 *
 	 * @param $jobID The unique id for this job (see ajaxFetchJobID)
 	 * @param $productName string product short name
-	 * @param $sourceVersion string String representation of the source version
-	 * @param $targetVersion string String representaiton of the target version
-	 * @param $manualTopics string JSON array representation of all topics
+	 * @param $sourceVersionName string String representation of the source version
+	 * @param $targetVersionName string String representaiton of the target version
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersion, $targetVersion ) {
+	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersionName, $targetVersionName ) {
 		global $wgScriptPath;
 		ob_start();
 
+		$path = PonyDocsExtension::getTempDir() . $jobID;
+		
 		// Validate product and versions
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
-		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersion );
-		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersion );
+		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersionName );
+		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersionName );
 		if ( !($product && $sourceVersion && $targetVersion )) {
 			$result = array( 'success', false );
 			$result = json_encode( $result );
@@ -98,7 +100,13 @@ class SpecialRenameVersion extends SpecialPage
 
 		// Get manuals
 		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
-		PonyDocsProductVersion::SetSelectedVersion( $productName, $sourceVersion );
+		PonyDocsProductVersion::SetSelectedVersion( $productName, $sourceVersionName );
+		
+		// Update log file
+		$fp = fopen( $path, "w+" );
+		fputs( $fp, 'Getting Manuals for source version' );
+		fclose( $fp );
+		
 		$manuals = PonyDocsProductManual::GetManuals( $productName );
 		
 		// Get topics
@@ -106,6 +114,12 @@ class SpecialRenameVersion extends SpecialPage
 		$manualTopics = array();
 		foreach ( $manuals as $manual ) {
 			$manualName = $manual->getShortName();
+
+			// Update log file
+			$fp = fopen( $path, "w+" );
+			fputs( $fp, "Getting Topics for $manualName" );
+			fclose( $fp );
+
 			$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
 			list( $toc, $prev, $next, $start ) = $TOC->loadContent();
 			// Time to iterate through all the items.
@@ -119,16 +133,14 @@ class SpecialRenameVersion extends SpecialPage
 				}
 				// actual topic
 				if ( $tocItem['level'] == 1 ) {
-					if ( $forcedTitle == null || $tocItem['title'] == $forcedTitle ) {
-						$tempEntry = array(
-							'title' => $tocItem['title'],
-							'text' => $tocItem['text'],
-							'toctitle' => $tocItem['toctitle'],
-							'conflicts' => PonyDocsBranchInheritEngine::getConflicts(
-								$product, $tocItem['title'], $targetVersion )
-						);
-						$manualTopics[$manualName]['sections'][$section]['topics'][] = $tempEntry;
-					}
+					$tempEntry = array(
+						'title' => $tocItem['title'],
+						'text' => $tocItem['text'],
+						'toctitle' => $tocItem['toctitle'],
+						'conflicts' => PonyDocsBranchInheritEngine::getConflicts(
+							$product, $tocItem['title'], $targetVersion )
+					);
+					$manualTopics[$manualName]['sections'][$section]['topics'][] = $tempEntry;
 				}
 			}
 			foreach ( $manualTopics as $manualName => $manual ) {
@@ -148,16 +160,12 @@ class SpecialRenameVersion extends SpecialPage
 			return TRUE ;
 		}
 
-		print "Beginning process job for source version: $productName:$sourceVersion<br />";
-		print "Target version is: $targetVersion<br />";
+		print "Beginning process job for source version: $productName:$sourceVersionName<br />";
+		print "Target version is: $targetVersionName<br />";
 
 		// Enable speed processing to avoid any unnecessary processing on topics modified by this tool.
-		// TODO: I'm not 100% sure this is necessary here
+		// TODO: I'm not 100% sure this is necessary or proper here -RU
 		PonyDocsExtension::setSpeedProcessing( TRUE );
-
-		$product = PonyDocsProduct::GetProductByShortName( $productName );
-		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersion );
-		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersion );
 
 		// Determine how many topics there are to process so that we can keep track of progress
 		$numOfTopics = 0;
@@ -175,8 +183,11 @@ class SpecialRenameVersion extends SpecialPage
 				$numOfTopics += count( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
 			}
 		}
+
+		error_log("Topic count: $numOfTopics");
 		
 		foreach ( $manualTopics as $manualName => $manualData ) {
+			error_log("Manual: $manualName");
 			print "<div class=\"normal\">Processing manual $manualName</div>";
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			// Determine if TOC already exists for target version.
@@ -195,10 +206,11 @@ class SpecialRenameVersion extends SpecialPage
 
 			// Okay, now let's go through each of the topics and update the version category
 			print '<div class="normal">Processing topics</div>';
-			$path = PonyDocsExtension::getTempDir() . $jobID;
 			foreach ( $manualData['sections'] as $sectionName => $section ) {
+				error_log("Section: $sectionName");
 				print "<div class=\"normal\">Processing section $sectionName</div>" ;
 				foreach ( $section['topics'] as $topic ) {
+					error_log("Topic: {$topic['title']}");
 					// Update log file
 					$fp = fopen( $path, "w+" );
 					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
@@ -206,7 +218,8 @@ class SpecialRenameVersion extends SpecialPage
 					fclose( $fp );
 					try {
 						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '</div>';
-						PonyDocsRenameVersionEngine::changeVersionOnTopic( $topic['title'], $sourceVersion, $targetVersion );
+						PonyDocsRenameVersionEngine::changeVersionOnTopic(
+							$topic['title'], $sourceVersion, $targetVersion );
 					} catch( Exception $e ) {
 						print '<div class="error">Exception: ' . $e->getMessage() . '</div>';
 					}
