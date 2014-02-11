@@ -24,7 +24,6 @@ class PonyDocsRenameVersionEngine {
 	static function changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion ) {
 		global $wgTitle;
 		$title = PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion );
-		error_log("TOC title: $title");
 		if ( $title == false ) {
 			throw new Exception( 'TOC does not exist for ' . $manual->getShortName()
 				. ' with version ' . $sourceVersion->getVersionName() );
@@ -38,13 +37,27 @@ class PonyDocsRenameVersionEngine {
 		}
 		
 		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
+		$oldCategoryRegex = '/' . preg_quote( $oldCategory ) . '/';
 		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
-		error_log("$oldCategory => $newCategory");
+		$newCategoryRegex = '/' . preg_quote( $newCategory ) . '/';
 		
 		// Okay, let's search for the content.
 		$content = $article->getContent();
-		$content = preg_replace( '/' . preg_quote( $oldCategory ) . '/', $newCategory, $content, -1, $count );
-		$article->doEdit( $content, "Renamed version category $oldCategory to $newCategory in $count locations", EDIT_UPDATE );
+		// If the TOC doesn't contain the source version, then something is odd.
+		// TODO: Should we add the new version here anyway?
+		if ( !preg_match( $oldCategoryRegex, $content )) {
+			throw new Exception(
+				'TOC for ' . $manual->getShortName() . ' does not contain source version ' . $sourceVersion->getVersionName());
+		// If the TOC already has the new version, then just delete the old version
+		} elseif ( preg_match( $newCategoryRegex, $content)) {
+			$content = str_replace( $oldCategory, '', $content );
+			$message = "Removed version category $oldCategory via RenameVersion";
+		// Otherwise replace old with new
+		} else {
+			$content = preg_replace( $oldCategoryRegex, $newCategory, $content, -1, $count );
+			$message = "Renamed version category $oldCategory to $newCategory in $count locations via RenameVersion";
+		}
+		$article->doEdit( $content, $message, EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
 		return true;
 	}
@@ -55,11 +68,9 @@ class PonyDocsRenameVersionEngine {
 	 * @param $topicTitle string The internal mediawiki title of the article.
 	 * @param $sourceVersion PonyDocsVersion The source Version
 	 * @param $targetVersion PonyDocsVersion The target Version
-	 * @param $deleteExisting boolean Should we purge any existing conflicts?
 	 * @returns boolean
 	 */
-	static function changeVersionOnTopic(
-		$topicTitle, $sourceVersion, $targetVersion, $deleteExisting = false ) {
+	static function changeVersionOnTopic(	$topicTitle, $sourceVersion, $targetVersion ) {
 
 		// TODO: modify to actually work
 				
@@ -77,30 +88,6 @@ class PonyDocsRenameVersionEngine {
 		// Get PonyDocsProduct
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 
-		// Get conflicts.
-		$conflicts = PonyDocsBranchInheritEngine::getConflicts( $product, $topicTitle, $targetVersion );
-		if ( !empty( $conflicts )) {
-			if ( !$deleteExisting ) {
-				// TODO: We should continue here, or check for conflicts in advance,
-				// otherwise we'll end up in an inconsistent state
-				throw new Exception( 'When calling rename version, there were conflicts and deleteExisting was false.' );
-			}
-			// We want to purge each conflicting title completely.
-			foreach ( $conflicts as $conflict ) {
-				$article = new Article( Title::newFromText( $conflict ));
-				if ( !$article->exists() ) {
-					// No big deal.  A conflict no longer exists?  Continue.
-					continue;
-				}
-				if ( $conflict == $topicTitle ) {
-					// Conflict was same as source material. Do nothing with it.
-					continue;
-				} else {
-					$article->doDelete( "Requested purge of conficting article when inheriting topic $topicTitle"
-						. ' with version: ' . $sourceVersion->getVersionName(), false);
-				}
-			}
-		}
 		$title = Title::newFromText( $topicTitle );
 		$wgTitle = $title;
 		$article = new Article( $title );
@@ -108,15 +95,56 @@ class PonyDocsRenameVersionEngine {
 			// No such title exists in the system
 			throw new Exception( "Invalid Title to Rename Version: $topicTitle");
 		}
-		
-		// Okay, source article exists.
-		// Replace the old category with the new one
-		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
-		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
-		error_log("$oldCategory => $newCategory");
-		
 		$content = $article->getContent();
-		$content = preg_replace( '/' . preg_quote( $oldCategory ) . '/', $newCategory, $content, -1, $count );		$article->doEdit( $content, "Renamed version category $oldCategory to $newCategory in $count locations", EDIT_UPDATE );
+
+		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
+		$oldCategoryRegex = '/' . preg_quote( $oldCategory ) . '/';
+		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
+		$newCategoryRegex = '/' . preg_quote( $newCategory ) . '/';
+
+		$message = '';
+		
+		// Get conflicts.
+		$conflicts = PonyDocsBranchInheritEngine::getConflicts( $product, $topicTitle, $targetVersion );
+		if ( !empty( $conflicts )) {
+			// If there's already a topic with the target version,
+			// then we just want to remove the source version from the source topic
+			foreach ( $conflicts as $conflict ) {
+				$conflictingArticle = new Article( Title::newFromText( $conflict ));
+				// No big deal.  A conflict no longer exists?  Continue.
+				if ( !$conflictingArticle->exists() ) {
+					continue;
+				}
+				// Conflict was same as source material. Do nothing with it.
+				if ( $conflict == $topicTitle ) {
+					continue;
+				// Remove source version from source article
+				} else {
+					$content = str_replace( $oldCategory, '', $content );
+					$message = "Removed version category $oldCategory via RenameVersion";
+				}
+			}
+		}
+
+		if ( empty( $message )) {
+			// If the Topic doesn't contain the source version, then something is odd.
+			// TODO: Should we add the new version here anyway?
+			if ( !preg_match( $oldCategoryRegex, $content )) {
+				throw new Exception(
+					"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName());
+			// If the Topic already has the new version, then just delete the old version
+			} elseif ( preg_match( $newCategoryRegex, $content)) {
+				$content = str_replace( $oldCategory, '', $content );
+				$message = "Removed version category $oldCategory via RenameVersion";
+			// Otherwise replace old with new
+			} else {
+				$content = preg_replace( $oldCategoryRegex, $newCategory, $content, -1, $count );
+				$message = "Renamed version category $oldCategory to $newCategory in $count locations via RenameVersion";
+			}
+		}
+		
+		// Replace the old category with the new one
+		$article->doEdit( $content, $message, EDIT_UPDATE );
 		return $title;
 	}
 }

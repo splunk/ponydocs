@@ -1,6 +1,7 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if( !defined( 'MEDIAWIKI' )) {
 	die( 'PonyDocs MediaWiki Extension' );
+}
 
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
@@ -121,16 +122,13 @@ class SpecialRenameVersion extends SpecialPage
 			}
 		}
 		
-		error_log("Topic count: $numOfTopics");
-
 		foreach ( $manualTopics as $manualName => $manualData ) {
-			error_log("Manual: $manualName");
 			print "<div class=\"normal\">Processing manual $manualName</div>";
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			// Determine if TOC already exists for target version.
 			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion )) {
-				print '<div class="normal">TOC Does not exist in source version for Manual ' . $manual->getShortName()
-					. ' for version ' . $targetVersion->getVersionName() . '</div>';
+				print '<div class="normal">TOC Does not exist for Manual ' . $manual->getShortName()
+					. ' with version ' . $targetVersion->getVersionName() . '</div>';
 			} else {
 				try {
 					print '<div class="normal">Attempting to update TOC...';
@@ -145,10 +143,8 @@ class SpecialRenameVersion extends SpecialPage
 			print '<div class="normal">Processing topics</div>';
 			$path = PonyDocsExtension::getTempDir() . $jobID;
 			foreach ( $manualData['sections'] as $sectionName => $section ) {
-				error_log("Section: $sectionName");
 				print "<div class=\"normal\">Processing section $sectionName</div>" ;
 				foreach ( $section['topics'] as $topic ) {
-					error_log("Topic: {$topic['title']}");
 					// Update log file
 					$fp = fopen( $path, "w+" );
 					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
