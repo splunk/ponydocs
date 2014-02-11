@@ -82,11 +82,64 @@ class SpecialRenameVersion extends SpecialPage
 	 * @param $manualTopics string JSON array representation of all topics
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersion, $targetVersion, $manualTopics ) {
+	public static function ajaxProcessRequest( $jobID, $productName, $sourceVersion, $targetVersion ) {
 		global $wgScriptPath;
 		ob_start();
 
-		$manualTopics = json_decode( $manualTopics, true );
+		// Validate product and versions
+		$product = PonyDocsProduct::GetProductByShortName( $productName );
+		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersion );
+		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersion );
+		if ( !($product && $sourceVersion && $targetVersion )) {
+			$result = array( 'success', false );
+			$result = json_encode( $result );
+			return $result;
+		}
+
+		// Get manuals
+		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
+		PonyDocsProductVersion::SetSelectedVersion( $productName, $sourceVersion );
+		$manuals = PonyDocsProductManual::GetManuals( $productName );
+		
+		// Get topics
+		// TODO: This is copied form SpecialBranchInherit::ajaxFetchTopics() and should get DRYed out
+		$manualTopics = array();
+		foreach ( $manuals as $manual ) {
+			$manualName = $manual->getShortName();
+			$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
+			list( $toc, $prev, $next, $start ) = $TOC->loadContent();
+			// Time to iterate through all the items.
+			$section = '';
+			foreach ( $toc as $tocItem ) {
+				if ( $tocItem['level'] == 0 ) {
+					$section = $tocItem['text'];
+					$manualTopics[$manualName]['sections'][$section] = array();
+					$manualTopics[$manualName]['sections'][$section]['meta'] = array();
+					$manualTopics[$manualName]['sections'][$section]['topics'] = array();
+				}
+				// actual topic
+				if ( $tocItem['level'] == 1 ) {
+					if ( $forcedTitle == null || $tocItem['title'] == $forcedTitle ) {
+						$tempEntry = array(
+							'title' => $tocItem['title'],
+							'text' => $tocItem['text'],
+							'toctitle' => $tocItem['toctitle'],
+							'conflicts' => PonyDocsBranchInheritEngine::getConflicts(
+								$product, $tocItem['title'], $targetVersion )
+						);
+						$manualTopics[$manualName]['sections'][$section]['topics'][] = $tempEntry;
+					}
+				}
+			}
+			foreach ( $manualTopics as $manualName => $manual ) {
+				foreach ( $manual['sections'] as $sectionIndex => $section ) {
+					if ( count($section['topics']) == 0 ) {
+						unset( $manualTopics[$manualName]['sections'][$sectionIndex] );
+					}
+				}
+			}
+		}
+
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
 		$startTime = (float)$msec + (float)$sec; 
 
@@ -115,6 +168,7 @@ class SpecialRenameVersion extends SpecialPage
 				// The following is a goofy fix for some browsers.
 				// Sometimes the JSON comes along with null values for the first element. 
 				// It's just an additional element, so we can drop it.
+				// TODO: Since we're no longer getting this from JSON, this is probably removeable
 				if ( empty( $section['topics'][0]['text'] )) {
 					array_shift( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
 				}
@@ -269,15 +323,11 @@ class SpecialRenameVersion extends SpecialPage
 				} ?>
 			</select>
 			<div>
-				<input type="button" id="versionselect_submit" value="Prepare Rename" />
+				<input type="button" id="renameversion_submit" value="Rename Version" />
+				<div id="progressconsole"></div>
 			</div>
 		</div>
 		
-		<div class="processrequest" style="display: none;">	
-				<input type="button" id="renameversion_submit" value="Process Request" />
-				<div id="progressconsole"></div>
-		</div>
-
 		<div class="completed" style="display: none;">
 			<p class="summary">
 				<strong>Source Version:</strong> <span class="sourceversion"></span>
