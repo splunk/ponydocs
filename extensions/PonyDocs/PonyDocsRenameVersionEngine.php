@@ -127,11 +127,19 @@ class PonyDocsRenameVersionEngine {
 		}
 
 		if ( empty( $message )) {
-			// If the Topic doesn't contain the source version, then something is odd.
-			// TODO: Should we add the new version here anyway?
+			// If the Topic doesn't contain the source version, it may have been branched.
 			if ( !preg_match( $oldCategoryRegex, $content )) {
-				throw new Exception(
-					"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName());
+				$lastColon = strrpos($topicTitle, ':');
+				$baseTopic = substr_replace($topicTitle, '', $lastColon);
+				$topicTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $baseTopic, $productName );
+				// We found the title in the source version, let's recurse just this once to handle it.
+				if ( $topicTitle ) {
+					$title = self::changeVersionOnTopic( $topicTitle, $sourceVersion, $targetVersion );
+				// We can't find a topic with the source version, so something is odd. Let's complain
+				} else {
+					throw new Exception(
+						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName());
+				}
 			// If the Topic already has the new version, then just delete the old version
 			} elseif ( preg_match( $newCategoryRegex, $content)) {
 				$content = str_replace( $oldCategory, '', $content );
@@ -143,8 +151,11 @@ class PonyDocsRenameVersionEngine {
 			}
 		}
 		
-		// Replace the old category with the new one
-		$article->doEdit( $content, $message, EDIT_UPDATE );
+		// Finally we can edit the topic
+		if (! empty( $message )) {
+			$article->doEdit( $content, $message, EDIT_UPDATE );
+		}
+		
 		return $title;
 	}
 }

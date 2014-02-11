@@ -273,7 +273,7 @@ SplunkBranchInherit = function() {
 				});
 			}
 	};
-};
+}();
 
 SplunkRenameVersion = function() {
 	var sourceProduct = '';

@@ -63,7 +63,6 @@ class SpecialRenameVersion extends SpecialPage
 	 * @return string 
 	 */
 	public static function ajaxFetchJobProgress( $jobID ) {
-		error_log('fetching progress');
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents( $path );
@@ -184,10 +183,7 @@ class SpecialRenameVersion extends SpecialPage
 			}
 		}
 
-		error_log("Topic count: $numOfTopics");
-		
 		foreach ( $manualTopics as $manualName => $manualData ) {
-			error_log("Manual: $manualName");
 			print "<div class=\"normal\">Processing manual $manualName</div>";
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			// Determine if TOC already exists for target version.
@@ -207,10 +203,8 @@ class SpecialRenameVersion extends SpecialPage
 			// Okay, now let's go through each of the topics and update the version category
 			print '<div class="normal">Processing topics</div>';
 			foreach ( $manualData['sections'] as $sectionName => $section ) {
-				error_log("Section: $sectionName");
 				print "<div class=\"normal\">Processing section $sectionName</div>" ;
 				foreach ( $section['topics'] as $topic ) {
-					error_log("Topic: {$topic['title']}");
 					// Update log file
 					$fp = fopen( $path, "w+" );
 					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
