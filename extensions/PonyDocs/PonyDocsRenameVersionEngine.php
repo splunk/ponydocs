@@ -67,9 +67,6 @@ class PonyDocsRenameVersionEngine {
 	 * @returns boolean
 	 */
 	public static function changeVersionOnTopic(	$topicTitle, $sourceVersion, $targetVersion ) {
-
-		// TODO: modify to actually work
-				
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the change
 		$wgHooks['ArticleSave'] = array();
@@ -82,6 +79,7 @@ class PonyDocsRenameVersionEngine {
 		$title = $match[3];
 
 		// Get PonyDocsProduct
+		// TODO: Why don't we just pass the product in instead of re-deriving it from something else and then loading it?
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 
 		$title = Title::newFromText( $topicTitle );
@@ -122,12 +120,12 @@ class PonyDocsRenameVersionEngine {
 		}
 
 		if ( empty( $message ) ) {
-			// If the Topic doesn't contain the source version, it may have been branched.
+			// If the Topic doesn't contain the source version, it may have been branched, or already processed
 			if ( strpos( $content, $oldCategory ) === FALSE ) {
 				$lastColon = strrpos($topicTitle, ':');
 				$baseTopic = substr_replace($topicTitle, '', $lastColon);
 				$topicTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $baseTopic, $productName );
-				// We found the title in the source version, let's recurse just this once to handle it.
+				// We found an instance of this title with the source version! Let's recurse just this once to handle it.
 				if ( $topicTitle ) {
 					$editTopic = FALSE;
 					$title = self::changeVersionOnTopic( $topicTitle, $sourceVersion, $targetVersion );
@@ -136,7 +134,7 @@ class PonyDocsRenameVersionEngine {
 					throw new Exception(
 						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName() );
 				}
-			// If the Topic already has the new version, then just delete the old version
+			// If the Topic already has the new version, just remove the old version
 			} elseif ( strpos( $content, $newCategory ) !== FALSE ) {
 				$content = str_replace( $oldCategory, '', $content );
 				$message = "Removed version category $oldCategory via RenameVersion";
@@ -149,6 +147,7 @@ class PonyDocsRenameVersionEngine {
 		
 		// Finally we can edit the topic
 		if ( $editTopic ) {
+			// TODO: doEdit returns a status that we should check
 			$article->doEdit( $content, $message, EDIT_UPDATE );
 		}
 		

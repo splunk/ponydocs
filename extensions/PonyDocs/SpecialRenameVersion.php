@@ -85,8 +85,11 @@ class SpecialRenameVersion extends SpecialPage
 		global $wgScriptPath;
 		ob_start();
 
+		list ( $msec, $sec ) = explode( ' ', microtime() ); 
+		$startTime = (float)$msec + (float)$sec; 
+
 		$path = PonyDocsExtension::getTempDir() . $jobID;
-		
+
 		// Validate product and versions
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersionName );
@@ -151,14 +154,6 @@ class SpecialRenameVersion extends SpecialPage
 			}
 		}
 
-		list ( $msec, $sec ) = explode( ' ', microtime() ); 
-		$startTime = (float)$msec + (float)$sec; 
-
-		if ( $manualTopics == FALSE ) {
-			print 'Failed to read request.';
-			return TRUE ;
-		}
-
 		print "Beginning process job for source version: $productName:$sourceVersionName<br />";
 		print "Target version is: $targetVersionName<br />";
 
@@ -185,7 +180,38 @@ class SpecialRenameVersion extends SpecialPage
 
 		foreach ( $manualTopics as $manualName => $manualData ) {
 			print "<div class=\"normal\">Processing manual $manualName</div>";
+			// TODO: We already got the manual above, why make another? We could add the manual to $manualTopics somewhere..
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
+
+			// First update all the topics
+			print '<div class="normal">Processing topics</div>';
+			foreach ( $manualData['sections'] as $sectionName => $section ) {
+				print "<div class=\"normal\">Processing section $sectionName</div>" ;
+				foreach ( $section['topics'] as $topic ) {
+					// Update log file
+					$fp = fopen( $path, "w+" );
+					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
+						. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
+					fclose( $fp );
+					try {
+						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '...';
+						PonyDocsRenameVersionEngine::changeVersionOnTopic(
+							$topic['title'], $sourceVersion, $targetVersion );
+							$logFields = "action=topic status=success product=$productName manual=$manualName "
+								. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+						error_log( 'INFO [' . __METHOD__ . ", RenameVersion] $logFields" );
+						print 'Complete</div>';
+					} catch( Exception $e ) {
+						$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+						error_log( 'WARNING [' . __METHOD__ . ", RenameVersion] $logFields" );
+						print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
+					}
+					$numOfTopicsCompleted++;
+				}
+			}
+
+			// Now we can update the TOC
 			// Determine if TOC already exists for target version.
 			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion ) ) {
 				print '<div class="normal">TOC Does not exist for Manual ' . $manual->getShortName()
@@ -205,41 +231,13 @@ class SpecialRenameVersion extends SpecialPage
 					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
-
-			// Okay, now let's go through each of the topics and update the version category
-			print '<div class="normal">Processing topics</div>';
-			foreach ( $manualData['sections'] as $sectionName => $section ) {
-				print "<div class=\"normal\">Processing section $sectionName</div>" ;
-				foreach ( $section['topics'] as $topic ) {
-					// Update log file
-					$fp = fopen( $path, "w+" );
-					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
-						. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
-					fclose( $fp );
-					try {
-						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '...';
-						PonyDocsRenameVersionEngine::changeVersionOnTopic(
-							$topic['title'], $sourceVersion, $targetVersion );
-						$logFields = "action=topic status=success product=$productName manual=$manualName "
-							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-						error_log( 'INFO [' . __METHOD__ . ", RenameVersion] $logFields" );
-						print 'Complete</div>';
-					} catch( Exception $e ) {
-						$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-						error_log( 'WARNING [' . __METHOD__ . ", RenameVersion] $logFields" );
-						print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
-					}
-					$numOfTopicsCompleted++;
-				}
-			}
 		}
+
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
 		$endTime = (float)$msec + (float)$sec; 
 		print( "All done!\n" );
 		print( 'Execution Time: ' . round($endTime - $startTime, 3) . ' seconds' );
 
-		// Okay, let's start the process!
 		unlink($path);
 		$buffer = ob_get_clean();
 		return $buffer;
@@ -365,6 +363,6 @@ class SpecialRenameVersion extends SpecialPage
 		<?php
 		$buffer = ob_get_clean();
 		$wgOut->addHTML($buffer);
-		return true;
+		return TRUE;
 	}
 }
