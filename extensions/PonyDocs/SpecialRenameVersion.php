@@ -194,8 +194,14 @@ class SpecialRenameVersion extends SpecialPage
 				try {
 					print '<div class="normal">Attempting to update TOC...';
 					PonyDocsRenameVersionEngine::changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion);
+					$logFields = "action=TOC status=success product=$productName manual=$manualName "
+						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( "INFO [__METHOD__, RenameVersion] $logFields" );
 					print 'Complete</div>' ;
 				} catch ( Exception $e ) {
+					$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( "WARNING [__METHOD__, RenameVersion] $logFields" );
 					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
@@ -214,8 +220,14 @@ class SpecialRenameVersion extends SpecialPage
 						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '...';
 						PonyDocsRenameVersionEngine::changeVersionOnTopic(
 							$topic['title'], $sourceVersion, $targetVersion );
+						$logFields = "action=topic status=success product=$productName manual=$manualName "
+							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+						error_log( "INFO [__METHOD__, RenameVersion] $logFields" );
 						print 'Complete</div>';
 					} catch( Exception $e ) {
+						$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+						error_log( "WARNING [__METHOD__, RenameVersion] $logFields" );
 						print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 					}
 					$numOfTopicsCompleted++;

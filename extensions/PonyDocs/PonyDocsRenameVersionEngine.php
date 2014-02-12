@@ -1,7 +1,5 @@
 <?php
 
-require_once( 'PonyDocsArticleFactory.php' );
-
 /**
  * Engine to perform version rename functions for PonyDocs Documentation System.
  * Never instantiated, just a container for static methods.
@@ -21,7 +19,7 @@ class PonyDocsRenameVersionEngine {
 	 * @param $targetVersion PonyDocsVersion The version being added
 	 * @returns boolean
 	 */
-	static function changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion ) {
+	public static function changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion ) {
 		global $wgTitle;
 		$title = PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion );
 		if ( $title == false ) {
@@ -37,24 +35,22 @@ class PonyDocsRenameVersionEngine {
 		}
 		
 		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
-		$oldCategoryRegex = '/' . preg_quote( $oldCategory ) . '/';
 		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
-		$newCategoryRegex = '/' . preg_quote( $newCategory ) . '/';
 		
 		// Okay, let's search for the content.
 		$content = $article->getContent();
 		// If the TOC doesn't contain the source version, then something is odd.
 		// TODO: Should we add the new version here anyway?
-		if ( !preg_match( $oldCategoryRegex, $content )) {
+		if ( strpos( $content, $oldCategory ) === FALSE ) {
 			throw new Exception(
 				'TOC for ' . $manual->getShortName() . ' does not contain source version ' . $sourceVersion->getVersionName());
 		// If the TOC already has the new version, then just delete the old version
-		} elseif ( preg_match( $newCategoryRegex, $content)) {
+		} elseif ( strpos( $content, $newCategory ) !== FALSE ) {
 			$content = str_replace( $oldCategory, '', $content );
 			$message = "Removed version category $oldCategory via RenameVersion";
 		// Otherwise replace old with new
 		} else {
-			$content = preg_replace( $oldCategoryRegex, $newCategory, $content, -1, $count );
+			$content = str_replace( $oldCategory, $newCategory, $content, $count );
 			$message = "Renamed version category $oldCategory to $newCategory in $count locations via RenameVersion";
 		}
 		$article->doEdit( $content, $message, EDIT_UPDATE );
@@ -70,7 +66,7 @@ class PonyDocsRenameVersionEngine {
 	 * @param $targetVersion PonyDocsVersion The target Version
 	 * @returns boolean
 	 */
-	static function changeVersionOnTopic(	$topicTitle, $sourceVersion, $targetVersion ) {
+	public static function changeVersionOnTopic(	$topicTitle, $sourceVersion, $targetVersion ) {
 
 		// TODO: modify to actually work
 				
@@ -98,9 +94,7 @@ class PonyDocsRenameVersionEngine {
 		$content = $article->getContent();
 
 		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
-		$oldCategoryRegex = '/' . preg_quote( $oldCategory ) . '/';
 		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
-		$newCategoryRegex = '/' . preg_quote( $newCategory ) . '/';
 
 		$message = '';
 		
@@ -128,7 +122,7 @@ class PonyDocsRenameVersionEngine {
 
 		if ( empty( $message )) {
 			// If the Topic doesn't contain the source version, it may have been branched.
-			if ( !preg_match( $oldCategoryRegex, $content )) {
+			if ( strpos( $content, $oldCategory ) === FALSE ) {
 				$lastColon = strrpos($topicTitle, ':');
 				$baseTopic = substr_replace($topicTitle, '', $lastColon);
 				$topicTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $baseTopic, $productName );
@@ -141,12 +135,12 @@ class PonyDocsRenameVersionEngine {
 						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName());
 				}
 			// If the Topic already has the new version, then just delete the old version
-			} elseif ( preg_match( $newCategoryRegex, $content)) {
+			} elseif ( strpos( $content, $newCategory ) !== FALSE ) {
 				$content = str_replace( $oldCategory, '', $content );
 				$message = "Removed version category $oldCategory via RenameVersion";
 			// Otherwise replace old with new
 			} else {
-				$content = preg_replace( $oldCategoryRegex, $newCategory, $content, -1, $count );
+				$content = str_replace( $oldCategory, $newCategory, $content, $count );
 				$message = "Renamed version category $oldCategory to $newCategory in $count locations via RenameVersion";
 			}
 		}
