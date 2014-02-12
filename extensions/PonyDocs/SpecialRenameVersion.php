@@ -1,5 +1,5 @@
 <?php
-if( !defined( 'MEDIAWIKI' )) {
+if( !defined( 'MEDIAWIKI' ) ) {
 	die( 'PonyDocs MediaWiki Extension' );
 }
 
@@ -91,7 +91,7 @@ class SpecialRenameVersion extends SpecialPage
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersionName );
 		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersionName );
-		if ( !($product && $sourceVersion && $targetVersion )) {
+		if ( !($product && $sourceVersion && $targetVersion ) ) {
 			$result = array( 'success', false );
 			$result = json_encode( $result );
 			return $result;
@@ -176,7 +176,7 @@ class SpecialRenameVersion extends SpecialPage
 				// Sometimes the JSON comes along with null values for the first element. 
 				// It's just an additional element, so we can drop it.
 				// TODO: Since we're no longer getting this from JSON, this is probably removeable
-				if ( empty( $section['topics'][0]['text'] )) {
+				if ( empty( $section['topics'][0]['text'] ) ) {
 					array_shift( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
 				}
 				$numOfTopics += count( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
@@ -187,7 +187,7 @@ class SpecialRenameVersion extends SpecialPage
 			print "<div class=\"normal\">Processing manual $manualName</div>";
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			// Determine if TOC already exists for target version.
-			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion )) {
+			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion ) ) {
 				print '<div class="normal">TOC Does not exist for Manual ' . $manual->getShortName()
 					. ' with version ' . $targetVersion->getVersionName() . '</div>';
 			} else {
@@ -214,7 +214,7 @@ class SpecialRenameVersion extends SpecialPage
 					// Update log file
 					$fp = fopen( $path, "w+" );
 					fputs( $fp, "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
-						. ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . '%' );
+						. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
 					fclose( $fp );
 					try {
 						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '...';
@@ -264,7 +264,7 @@ class SpecialRenameVersion extends SpecialPage
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct );
 		$groups = $wgUser->getGroups();
-		if ( !in_array( $authProductGroup, $groups )) {
+		if ( !in_array( $authProductGroup, $groups ) ) {
 			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
 			return;
 		}
@@ -287,7 +287,7 @@ class SpecialRenameVersion extends SpecialPage
 			<h2>Choose a Product</h2>
 
 			<?php
-			if (!count($products)) {
+			if ( !count($products) ) {
 				print "<p>No products defined.</p>";
 			} else { ?>
 				<div class="product">
@@ -295,7 +295,7 @@ class SpecialRenameVersion extends SpecialPage
 						<?php
 						foreach ( $products as $idx => $data ) {
 							echo '<option value="' . $data['name'] . '" ';
-							if( !strcmp( $data['name'], $forceProduct )) {
+							if( !strcmp( $data['name'], $forceProduct ) ) {
 								echo 'selected';
 							}
 							echo '>' . $data['label'] . '</option>';

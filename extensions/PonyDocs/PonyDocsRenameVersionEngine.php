@@ -43,7 +43,7 @@ class PonyDocsRenameVersionEngine {
 		// TODO: Should we add the new version here anyway?
 		if ( strpos( $content, $oldCategory ) === FALSE ) {
 			throw new Exception(
-				'TOC for ' . $manual->getShortName() . ' does not contain source version ' . $sourceVersion->getVersionName());
+				'TOC for ' . $manual->getShortName() . ' does not contain source version ' . $sourceVersion->getVersionName() );
 		// If the TOC already has the new version, then just delete the old version
 		} elseif ( strpos( $content, $newCategory ) !== FALSE ) {
 			$content = str_replace( $oldCategory, '', $content );
@@ -74,7 +74,7 @@ class PonyDocsRenameVersionEngine {
 		// Clear any hooks so no weirdness gets called after we save the change
 		$wgHooks['ArticleSave'] = array();
 
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match )) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Rename Version: $topicTitle" );
 		}
 
@@ -101,11 +101,11 @@ class PonyDocsRenameVersionEngine {
 		
 		// Get conflicts.
 		$conflicts = PonyDocsBranchInheritEngine::getConflicts( $product, $topicTitle, $targetVersion );
-		if ( !empty( $conflicts )) {
+		if ( !empty( $conflicts ) ) {
 			// If there's already a topic with the target version,
 			// then we just want to remove the source version from the source topic
 			foreach ( $conflicts as $conflict ) {
-				$conflictingArticle = new Article( Title::newFromText( $conflict ));
+				$conflictingArticle = new Article( Title::newFromText( $conflict ) );
 				// No big deal.  A conflict no longer exists?  Continue.
 				if ( !$conflictingArticle->exists() ) {
 					continue;
@@ -121,7 +121,7 @@ class PonyDocsRenameVersionEngine {
 			}
 		}
 
-		if ( empty( $message )) {
+		if ( empty( $message ) ) {
 			// If the Topic doesn't contain the source version, it may have been branched.
 			if ( strpos( $content, $oldCategory ) === FALSE ) {
 				$lastColon = strrpos($topicTitle, ':');
@@ -134,7 +134,7 @@ class PonyDocsRenameVersionEngine {
 				// We can't find a topic with the source version, so something is odd. Let's complain
 				} else {
 					throw new Exception(
-						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName());
+						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName() );
 				}
 			// If the Topic already has the new version, then just delete the old version
 			} elseif ( strpos( $content, $newCategory ) !== FALSE ) {

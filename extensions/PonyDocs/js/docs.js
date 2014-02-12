@@ -299,7 +299,7 @@ SplunkRenameVersion = function() {
 					if( !confirm(
 						'Are you sure you want to rename ' + sourceVersion + ' to ' + targetVersion + '?\n'
 						+ 'Be sure your selection is correct because there is no stopping it once it begins.\n'
-						+ 'Please note this will take some time, so please be patient.' )) {
+						+ 'Please note this will take some time, so please be patient.' ) ) {
 						return false;
 					}
 					$( '#renameversion .sourceversion' ).html( sourceVersion );
