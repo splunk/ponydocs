@@ -297,7 +297,8 @@ SplunkRenameVersion = function() {
 				}
 				else {
 					if( !confirm(
-						'Are you sure you want to rename ' + sourceVersion + ' to ' + targetVersion + '?\n'
+						'Are you sure you want to rename ' + sourceVersion + ' to ' + targetVersion
+						+ ' in ' + sourceProduct + '?\n'
 						+ 'Be sure your selection is correct because there is no stopping it once it begins.\n'
 						+ 'Please note this will take some time, so please be patient.' ) ) {
 						return false;
