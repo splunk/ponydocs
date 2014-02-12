@@ -88,7 +88,9 @@ class SpecialRenameVersion extends SpecialPage
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
 		$startTime = (float)$msec + (float)$sec; 
 
-		$path = PonyDocsExtension::getTempDir() . $jobID;
+		$logFields = "action=start status=success product=$productName manual=$manualName "
+			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+		error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );
 
 		// Validate product and versions
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
@@ -101,17 +103,23 @@ class SpecialRenameVersion extends SpecialPage
 			return $result;
 		}
 
-		// TODO: Is this necessary? Haven't we done this before?
+		// TODO: Is this necessary? Haven't we done this already?
 		PonyDocsProductVersion::SetSelectedVersion( $productName, $sourceVersionName );
 		
+		print "Beginning process job for manual: $manualName<br />";
+		print "Source version is $productName:$sourceVersionName<br />";
+		print "Target version is $targetVersionName<br />";
+		
 		// Get topics
-		// TODO: This is copied form SpecialBranchInherit::ajaxFetchTopics() and should get DRYed out
-		$manualTopics = array();
-
 		// Update log file
+		// TODO: Pull this out into a separate method somewhere
+		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$fp = fopen( $path, "w+" );
 		fputs( $fp, "Getting Topics for $manualName" );
 		fclose( $fp );
+
+		// TODO: This is copied form SpecialBranchInherit::ajaxFetchTopics() and should get DRYed out
+		$manualTopics = array();
 
 		$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
 		list( $toc, $prev, $next, $start ) = $TOC->loadContent();
@@ -144,9 +152,9 @@ class SpecialRenameVersion extends SpecialPage
 			}
 		}
 
-		print "Beginning process job for manual: $manualName<br />";
-		print "Source version is $productName:$sourceVersionName<br />";
-		print "Target version is $targetVersionName<br />";
+		$logFields = "action=topics status=success product=$productName manual=$manualName "
+			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+		error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );
 
 		// Enable speed processing to avoid any unnecessary processing on topics modified by this tool.
 		// TODO: I'm not 100% sure this is necessary or proper here -RU
