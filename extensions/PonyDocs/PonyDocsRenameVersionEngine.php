@@ -97,6 +97,7 @@ class PonyDocsRenameVersionEngine {
 		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
 
 		$message = '';
+		$editTopic = TRUE;
 		
 		// Get conflicts.
 		$conflicts = PonyDocsBranchInheritEngine::getConflicts( $product, $topicTitle, $targetVersion );
@@ -128,6 +129,7 @@ class PonyDocsRenameVersionEngine {
 				$topicTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $baseTopic, $productName );
 				// We found the title in the source version, let's recurse just this once to handle it.
 				if ( $topicTitle ) {
+					$editTopic = FALSE;
 					$title = self::changeVersionOnTopic( $topicTitle, $sourceVersion, $targetVersion );
 				// We can't find a topic with the source version, so something is odd. Let's complain
 				} else {
@@ -146,7 +148,7 @@ class PonyDocsRenameVersionEngine {
 		}
 		
 		// Finally we can edit the topic
-		if (! empty( $message )) {
+		if ( $editTopic ) {
 			$article->doEdit( $content, $message, EDIT_UPDATE );
 		}
 		
