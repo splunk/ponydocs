@@ -304,10 +304,10 @@ SplunkRenameVersion = function() {
 					// First get the list of manuals
 					$( '#versionselect_submit' ).attr( 'disabled', 'disabled' ).attr( 'value', 'Fetching Manuals...' );
 					sajax_do_call( 'SpecialBranchInherit::ajaxFetchManuals', [ sourceProduct, sourceVersion ], function( res ) {
-						SplunkRenameVersion.manuals = eval( res.responseText );
+						manuals = eval( res.responseText );
 						var manualHTML = '<h2>Manuals to be processed</h2><ul>';
-						for ( index in SplunkRenameVersion.manuals ) {
-							manualHTML += '<li>' + SplunkRenameVersion.manuals[index]['shortname'] + '</li>';
+						for ( index in manuals ) {
+							manualHTML += '<li>' + manuals[index]['shortname'] + '</li>';
 						}
 						manualHTML += '</ul>';
 						$( '#manuallist' ).html( manualHTML );
@@ -326,7 +326,7 @@ SplunkRenameVersion = function() {
 				$( '#renameversion_submit' ).attr( 'disabled', 'disabled' ).attr( 'value', 'Renaming Version...' );
 				// Grab the job ID.
 				sajax_do_call( 'SpecialRenameVersion::ajaxFetchJobID', [], function( res ) {
-					SplunkRenameVersion.jobID = res.responseText;
+					jobID = res.responseText;
 
 					// Set up the progress meter
 					sajax_request_type = 'POST';
@@ -340,11 +340,11 @@ SplunkRenameVersion = function() {
 		// Make an ajax call to process a single manual
 		// In order to fake a sychronous call (since sajax doesn't support such a thing), let's be recursively nested.
 		processNextManual: function() {
-			if ( SplunkRenameVersion.manuals.length > 0 ) {
-				var manual = SplunkRenameVersion.manuals.shift();
+			if ( manuals.length > 0 ) {
+				var manual = manuals.shift();
 				sajax_do_call(
 					'SpecialRenameVersion::ajaxProcessManual',
-					[ SplunkRenameVersion.jobID, sourceProduct, manual['shortname'], sourceVersion, targetVersion ],
+					[ jobID, sourceProduct, manual['shortname'], sourceVersion, targetVersion ],
 					function ( res ) {
 						// TODO append instead of replace
 						$( '#renameversion .completed .logconsole' ).append( res.responseText );
@@ -352,15 +352,18 @@ SplunkRenameVersion = function() {
 				});
 			} else {
 				completed = true;
+				// Update the progress console and cancel any scheduled call to fetchProgress
 				clearTimeout( progressTimer );
 				progressTimer = null;
-				$( '#renameversion .completed' ).fadeIn();
+				$( '#renameversion .versionselect, #renameversion .submitrequest' ).fadeOut(function () {
+					$( '#renameversion .completed' ).fadeIn();
+				});
 			}
 		},
 		// Read the contents of the temp file on the server and write them out to the progressconsole div
 		// TODO: Multiple webheads break this - we have a 1/7 chance of getting the progress data.
 		fetchProgress: function() {
-			sajax_do_call('SpecialRenameVersion::ajaxFetchJobProgress', [ SplunkRenameVersion.jobID ], function( res ) {
+			sajax_do_call('SpecialRenameVersion::ajaxFetchJobProgress', [ jobID ], function( res ) {
 				$( '#progressconsole' ).html( res.responseText );
 				if ( !completed ) {
 					progressTimer = setTimeout( 'SplunkRenameVersion.fetchProgress();', 3000 );

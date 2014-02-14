@@ -278,8 +278,7 @@ class SpecialRenameVersion extends SpecialPage
 			<h1>Rename Version Console</h1>
 
 			Begin by selecting your product, source version material and a target version below.
-			You will then be presented with additional screens to specify branch and inherit behavior.
-
+			You will then be presented with a list of Manuals to Rename which you can approve before starting the process.
 			<h2>Choose a Product</h2>
 
 			<?php
@@ -356,8 +355,8 @@ class SpecialRenameVersion extends SpecialPage
 			</p>
 
 			<h2>Process Complete</h2>
-			The following is the log of the processed job.  Look it over for any potential issues that may have 
-			occurred during the Rename Version job.
+			The following is the log of the processed job.
+			Look it over for any potential issues that may have occurred during the Rename Version job.
 			<div>
 				<div class="logconsole" style="font-family: monospace; font-size: 10px;"></div>
 			</div>
