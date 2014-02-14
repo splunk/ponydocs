@@ -276,9 +276,8 @@ class SpecialRenameVersion extends SpecialPage
 		<a name="top"></a>
 		<div class="versionselect">
 			<h1>Rename Version Console</h1>
-
-			Begin by selecting your product, source version material and a target version below.
-			You will then be presented with a list of Manuals to Rename which you can approve before starting the process.
+			Select product, source version, and target version.
+			You will be able to approve the list of manuals to rename before you launch the process.
 			<h2>Choose a Product</h2>
 
 			<?php
