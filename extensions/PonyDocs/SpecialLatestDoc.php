@@ -71,147 +71,155 @@ class SpecialLatestDoc extends SpecialPage {
 			$versionName = $matches[2];
 			$manualName = $matches[3];
 			$topicName = $matches[4];
-			if(strcasecmp('latest', $versionName)) {
+			if(strcasecmp('latest', $versionName) !== 0) { // version is NOT 'latest'
 				?>
 				<p>
 				Sorry, but <?php echo $title;?> is not a latest Documentation url.
 				</p>
 				<?php
-			}
-			if( !strcasecmp( 'latest', $versionName ))
-			{
-				/**
-				 * This will be a DESCENDING mapping of version name to PonyDocsVersion object and will ONLY contain the
-				 * versions available to the current user (i.e. LoadVersions() only loads the ones permitted).
-				 */
-				$versionList = array_reverse( PonyDocsProductVersion::GetReleasedVersions( $productName, true ));
-
-				$versionNameList = array( );
-				$versionSql = array();
-				$latestVersionSql = null;
-				foreach($versionList as $pV ) {
-					if( $latestVersionSql == null ) 
-					{
-						$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName( );
-					}
-					$versionNameList[] = $pV->getVersionName( );
-					$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName( ) . '\'';
-				}
-				$versionSql = '(' . implode( ",",$versionSql ) . ')';
-
-				$suggestions = array();
-				$primarySuggestions = array();
-
-				/**
-				 * Now build a list of suggestions in priority.
-				 * 1) Same product, different manual, current version.
-				 */
-				$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-									 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-									 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-									 " AND cast(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
-									__METHOD__ );
-
-				if( $res->numRows( ) )
-				{
-					$tempSuggestions = $this->buildSuggestionsFromResults( $res );
-					// Take the top 5 and put them in primary suggestions
-					$primarySuggestions = array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
-					$suggestions = $suggestions + $tempSuggestions;
-				}
-				/*
-				 * 2) Same product, same manual, earlier version
-				 */
-				$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-									 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-									 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) ) . "'" .
-									 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-									__METHOD__ );
-
-				if( $res->numRows( ) )
-				{
-					$tempSuggestions = $this->buildSuggestionsFromResults( $res );
-					// Take the top 5 and put them in primary suggestions
-					$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
-					$suggestions = $suggestions + $tempSuggestions;
-				}
-
-				/*
-				 * 3) Same product, different manual, earlier version
-				 *
-				 * Note: The regular expression will match ALL manuals, including the passed manual. There is no good regex way to 
-				 * properly evaluate not matching a string but match others. So we will filter it out of the results.
-				 */
-				$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-									 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-									 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-									 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-									__METHOD__ );
-				if( $res->numRows( ) )
-				{
-					$tempSuggestions = $this->buildSuggestionsFromResults( $res );
-					// Take the top 5 and put them in primary suggestions
-					$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
-					$suggestions = $suggestions + $tempSuggestions;
-				}
-				ob_start();
-				?>
-				<p>
-				Hi! Just wanted to let you know:
-				</p>
-				<p>
-				The topic you've asked to see does not apply to the most recent version.
-				</p>
-				<p>
-				To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
-				</p>
-				<?php
-				if( count( $primarySuggestions ) )
-				{
+			} else { // version is 'latest'
+				$versionList = PonyDocsProductVersion::GetReleasedVersions( $productName, true );
+				if (!is_array($versionList)) { // product is bunk or didn't return any released versions
 					?>
-					<h2>Suggestions</h2>
-					<p>
-					The following suggestions for the topic you requested were found:
-					</p>
-					<ul id="suggestions">
+						<p>
+						Sorry, but <?php echo $productName; ?> is not a valid Product.
+						</p>
 					<?php
-					foreach( $primarySuggestions as $suggestion ) {
-						?>
-						<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
-						<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
-						<?php
-					}
-					if( count( $suggestions ) )
-					{
-						foreach( $suggestions as $suggestion ) {
-							?>
-								<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
-								<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
-							<?php
+					} else { // we found some versions for this product. proceed.
+						$versionList = array_reverse( PonyDocsProductVersion::GetReleasedVersions( $productName, true ));
 
+					/**
+					 * This will be a DESCENDING mapping of version name to PonyDocsVersion object and will ONLY contain the
+					 * versions available to the current user (i.e. LoadVersions() only loads the ones permitted).
+					 */
+
+					$versionNameList = array( );
+					$versionSql = array();
+					$latestVersionSql = null;
+					foreach($versionList as $pV ) {
+						if( $latestVersionSql == null ) 
+						{
+							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName( );
+						}
+						$versionNameList[] = $pV->getVersionName( );
+						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName( ) . '\'';
+					}
+					$versionSql = '(' . implode( ",",$versionSql ) . ')';
+
+					$suggestions = array();
+					$primarySuggestions = array();
+
+					/**
+					 * Now build a list of suggestions in priority.
+					 * 1) Same product, different manual, current version.
+					 */
+					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
+										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
+										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
+										 " AND cast(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
+										__METHOD__ );
+
+					if( $res->numRows( ) )
+					{
+						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
+						// Take the top 5 and put them in primary suggestions
+						$primarySuggestions = array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
+						$suggestions = $suggestions + $tempSuggestions;
+					}
+					/*
+					 * 2) Same product, same manual, earlier version
+					 */
+					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
+										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
+										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) ) . "'" .
+										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
+										__METHOD__ );
+
+					if( $res->numRows( ) )
+					{
+						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
+						// Take the top 5 and put them in primary suggestions
+						$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
+						$suggestions = $suggestions + $tempSuggestions;
+					}
+
+					/*
+					 * 3) Same product, different manual, earlier version
+					 *
+					 * Note: The regular expression will match ALL manuals, including the passed manual. There is no good regex way to 
+					 * properly evaluate not matching a string but match others. So we will filter it out of the results.
+					 */
+					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
+										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
+										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
+										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
+										__METHOD__ );
+					if( $res->numRows( ) )
+					{
+						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
+						// Take the top 5 and put them in primary suggestions
+						$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
+						$suggestions = $suggestions + $tempSuggestions;
+					}
+					ob_start();
+					?>
+					<p>
+					Hi! Just wanted to let you know:
+					</p>
+					<p>
+					The topic you've asked to see does not apply to the most recent version.
+					</p>
+					<p>
+					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
+					</p>
+					<?php
+					if( count( $primarySuggestions ) )
+					{
+						?>
+						<h2>Suggestions</h2>
+						<p>
+						The following suggestions for the topic you requested were found:
+						</p>
+						<ul id="suggestions">
+						<?php
+						foreach( $primarySuggestions as $suggestion ) {
+							?>
+							<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+							<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+							<?php
+						}
+						if( count( $suggestions ) )
+						{
+							foreach( $suggestions as $suggestion ) {
+								?>
+									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+								<?php
+
+							}
+						}
+						?>
+						</ul>
+						<?php
+						if( count( $suggestions ) )
+						{
+							?>
+								<a href="#" id="suggestion_expand">Show Additional <?php echo count( $suggestions );?> Suggestion<?php echo count( $suggestions ) == 1 ? '' : 's';?></a>
+								<script type="text/javascript">
+								jQuery(function() {
+									   jQuery('#suggestion_expand').click( function(event) {
+											event.preventDefault();
+											jQuery('#suggestions li').show();
+											jQuery(this).hide();
+										});
+								});
+								</script>
+							<?php
 						}
 					}
 					?>
-					</ul>
 					<?php
-					if( count( $suggestions ) )
-					{
-						?>
-							<a href="#" id="suggestion_expand">Show Additional <?php echo count( $suggestions );?> Suggestion<?php echo count( $suggestions ) == 1 ? '' : 's';?></a>
-							<script type="text/javascript">
-							jQuery(function() {
-								   jQuery('#suggestion_expand').click( function(event) {
-										event.preventDefault();
-										jQuery('#suggestions li').show();
-										jQuery(this).hide();
-									});
-							});
-							</script>
-						<?php
-					}
 				}
-				?>
-				<?php
 			}
 		}
 
