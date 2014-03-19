@@ -544,7 +544,7 @@ class PonyDocsBranchInheritEngine {
 	static function getConflicts($product, $topicTitle, $targetVersion) {
 		$dbr = wfGetDB(DB_SLAVE);
 		if(!preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $topicTitle, $match)) {
-			throw new Exception("Invalid Title to Branch From");
+			throw new Exception("Invalid Title to get conflicts for");
 		}
 		$productName = $match[1];
 		$manual = $match[2];

@@ -16,10 +16,13 @@ $(function(){
 	});
 
 	// Check for branch inherit
-	if($("#docbranchinherit").length > 0) {
+	if ( $( "#docbranchinherit" ).length > 0 ) {
 		SplunkBranchInherit.init();
 	}
-	if(typeof(ponydocsOnLoad) !== 'undefined') {
+	if ( $( "#renameversion" ).length > 0 ) {
+		SplunkRenameVersion.init();
+	}
+	if( typeof(ponydocsOnLoad) !== 'undefined' ) {
 		ponydocsOnLoad();
 	}
 });
@@ -270,9 +273,104 @@ SplunkBranchInherit = function() {
 				});
 			}
 	};
+}();
 
+SplunkRenameVersion = function() {
+	var sourceProduct = '';
+	var sourceVersion = '';
+	var targetVersion = '';
+	var manuals = [];
+	var jobID = '';
+	var progressTimer = null;
+	var completed = false;
 
+	return {
+		// Set up event handlers for the Rename Version page
+		init: function() {
+			$( '#versionselect_submit' ).click( function() {
+				sourceProduct = $( '#force_product' ).val();
+				sourceVersion = $( '#versionselect_sourceversion' ).val();
+				targetVersion = $( '#versionselect_targetversion' ).val();
+				if ( sourceVersion == targetVersion ) {
+					alert( 'Target version can not be the same as source version.' );
+				}
+				else {
+					$( '#renameversion .sourceversion' ).html( sourceVersion );
+					$( '#renameversion .targetversion' ).html( targetVersion );
+					$( '#versionselect_sourceversion' ).attr( 'disabled', 'disabled' );
+					$( '#versionselect_targetversion' ).attr( 'disabled', 'disabled' );
+
+					// Okay, time to submit.
+					// First get the list of manuals
+					$( '#versionselect_submit' ).attr( 'disabled', 'disabled' ).attr( 'value', 'Fetching Manuals...' );
+					sajax_do_call( 'SpecialBranchInherit::ajaxFetchManuals', [ sourceProduct, sourceVersion ], function( res ) {
+						manuals = eval( res.responseText );
+						var manualHTML = '<h2>Manuals to be processed</h2><ul>';
+						for ( index in manuals ) {
+							manualHTML += '<li>' + manuals[index]['shortname'] + '</li>';
+						}
+						manualHTML += '</ul>';
+						$( '#manuallist' ).html( manualHTML );
+						$( '#renameversion .submitrequest' ).fadeIn();
+					});
+				}
+			});
+			$( '#renameversion_submit' ).click( function() {
+				if( !confirm(
+					'Are you sure you want to rename ' + sourceVersion + ' to ' + targetVersion
+					+ ' in ' + sourceProduct + '?\n'
+					+ 'Be sure your selection is correct because there is no stopping it once it begins.\n'
+					+ 'Please note this will take some time, so please be patient.' ) ) {
+					return false;
+				}
+				$( '#renameversion_submit' ).attr( 'disabled', 'disabled' ).attr( 'value', 'Renaming Version...' );
+				// Grab the job ID.
+				sajax_do_call( 'SpecialRenameVersion::ajaxFetchJobID', [], function( res ) {
+					jobID = res.responseText;
+
+					// Set up the progress meter
+					sajax_request_type = 'POST';
+					SplunkRenameVersion.fetchProgress();
+
+					// Iterate over the manuals
+					SplunkRenameVersion.processNextManual();
+				});
+			});
+		},
+		// Make an ajax call to process a single manual
+		// In order to fake a sychronous call (since sajax doesn't support such a thing), let's be recursively nested.
+		processNextManual: function() {
+			if ( manuals.length > 0 ) {
+				var manual = manuals.shift();
+				sajax_do_call(
+					'SpecialRenameVersion::ajaxProcessManual',
+					[ jobID, sourceProduct, manual['shortname'], sourceVersion, targetVersion ],
+					function ( res ) {
+						// TODO append instead of replace
+						$( '#renameversion .completed .logconsole' ).append( res.responseText );
+						SplunkRenameVersion.processNextManual();
+				});
+			} else {
+				completed = true;
+				// Update the progress console and cancel any scheduled call to fetchProgress
+				clearTimeout( progressTimer );
+				progressTimer = null;
+				$( '#renameversion .versionselect, #renameversion .submitrequest' ).fadeOut(function () {
+					$( '#renameversion .completed' ).fadeIn();
+				});
+			}
+		},
+		// Read the contents of the temp file on the server and write them out to the progressconsole div
+		// TODO: Multiple webheads break this - we have a 1/7 chance of getting the progress data.
+		fetchProgress: function() {
+			sajax_do_call('SpecialRenameVersion::ajaxFetchJobProgress', [ jobID ], function( res ) {
+				$( '#progressconsole' ).html( res.responseText );
+				if ( !completed ) {
+					progressTimer = setTimeout( 'SplunkRenameVersion.fetchProgress();', 3000 );
+				}
+			});
+		}
+	};
 }();
 
 // Function defs
-
