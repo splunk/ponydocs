@@ -1682,58 +1682,53 @@ HEREDOC;
 	 * @param boolean $result The result, which we store in;  true=allow, false=do not.
 	 * @return boolean Return true to continue checking, false to stop checking, null to not care.
 	 */
-	static public function onUserCan( &$title, &$user, $action, &$result )
-	{
+	static public function onUserCan( &$title, &$user, $action, &$result ) {
+
 		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
-		
-		if ( !strcmp('zipmanual', $action) )
-		{
+
+		$continueProcessing = true;
+
+		if ( !strcmp( 'zipmanual', $action ) ) {
 			/**
 			 * Users can only see and use "download manual as zip" link if they are a member of that product's docteam group
 			 */
 			$groups = $user->getGroups();
-			if( !in_array( $authProductGroup, $groups ) )
-			{
-				$result = false;
-				return false;
+			if( in_array( $authProductGroup, $groups ) ) {
+				$result = true;
+				$continueProcessing = false;
 			}
-			
 		}
 		
-		if( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ))
-		{
+		if ( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ) ) {
+
+			$groups = $user->getGroups();
+
 			/**
 			 * Only doc team can edit manuals/versions/products pages.
 			 */
-			if( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( ) ) ||
+			if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( ) ) ||
 				preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString( ) ) ||
-				!strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( ) ))
-			{
-				$groups = $user->getGroups();
-				if( !in_array( $authProductGroup, $groups ))
-				{
-					$result = false;
-					return false;
-				}
-			}
+				!strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( ) ) ) {
 
-			/**
-			 * Disallow edit/submit for documentation namespaces (and pages) unless
-			 * the user is in the employee or authors/docteam group.
-			 */
-			if(	( $title->getNamespace( ) == PONYDOCS_DOCUMENTATION_NAMESPACE_ID ) || ( !strcmp( $title->__toString( ), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ))) 
-			{
-				$groups = $user->getGroups();
-				if( !in_array($authProductGroup, $groups ) && !in_array( $wgPonyDocsEmployeeGroup, $groups ))
-				{
-					$result = false;
-					return false;
+				if ( in_array( $authProductGroup, $groups )) {
+					$result = true;
+					$continueProcessing = false;
+				}
+			} elseif ( ( $title->getNamespace( ) == PONYDOCS_DOCUMENTATION_NAMESPACE_ID ) ||
+				( !strcmp( $title->__toString( ), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) ) ) {
+
+				/**
+				 * Allow edits for employee or authors/docteam group only.
+				 */
+				if ( in_array( $authProductGroup, $groups ) || in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
+					$result = true;
+					$continueProcessing = false;
 				}
 			}
 		}
-		$result = true;
-		return true;
+
+		return $continueProcessing;
 	}
 
 	/**

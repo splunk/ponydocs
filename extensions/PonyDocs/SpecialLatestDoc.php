@@ -40,7 +40,8 @@ class SpecialLatestDoc extends SpecialPage {
 
 		$this->setHeaders();
 		$title =  $wgRequest->getVal('t');
-		$wgOut->setPagetitle("Latest Documentation For " .$title );
+		$sanitizedTitle = htmlspecialchars($title, ENT_QUOTES);
+		$wgOut->setPagetitle("Latest Documentation For " . $title );
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -54,7 +55,7 @@ class SpecialLatestDoc extends SpecialPage {
 		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS. ']*)\/(.*)\/(.*)\/(.*)$/i', $title, $matches )) {
 			?>
 			<p>
-			Sorry, but <?php echo htmlspecialchars($title);?> is not a valid Documentation url.
+			Sorry, but <?php echo $sanitizedTitle;?> is not a valid Documentation url.
 			</p>
 			<?php
 		}
@@ -74,7 +75,7 @@ class SpecialLatestDoc extends SpecialPage {
 			if(strcasecmp('latest', $versionName) !== 0) { // version is NOT 'latest'
 				?>
 				<p>
-				Sorry, but <?php echo $title;?> is not a latest Documentation url.
+				Sorry, but <?php echo $sanitizedTitle;?> is not a latest Documentation url.
 				</p>
 				<?php
 			} else { // version is 'latest'
