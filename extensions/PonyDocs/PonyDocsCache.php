@@ -28,8 +28,8 @@ class PonyDocsCache
 			try {
 				$this->dbr->query( $query );
 			} catch ( Exception $ex ){
-				error_log( "FATAL [PonyDocsCache::put] DB call failed on Line " . $ex->getLine() . " on file " . $ex->getFile()
-					. ", error Message is: \n" . $ex->getMessage() . "Stack Trace is:" . $ex->getTraceAsString() );
+				error_log( "FATAL [PonyDocsCache::put] action=put status=failure line=" . $ex->getLine() 
+					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
 			}
 		}
 		return true;		
@@ -45,8 +45,8 @@ class PonyDocsCache
 					return unserialize( $obj->data );
 				}
 			} catch ( Exception $ex ) {
-				error_log( "FATAL [PonyDocsCache::get] DB call failed on Line " . $ex->getLine() . " on file " . $ex->getFile()
-					. ", error Message is: \n" . $ex->getMessage() . " Stack Trace Is: " . $ex->getTraceAsString() );
+				error_log( "FATAL [PonyDocsCache::put] action=get status=failure line=" . $ex->getLine() 
+					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
 			}
 		}
 		return null;
@@ -58,8 +58,8 @@ class PonyDocsCache
 			try {
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
-				error_log( "FATAL [PonyDocsCache::remove] DB call failed on Line " . $ex->getLine() . " on file " . $ex->getFile()
-					. ", error Message is: \n" . $ex->getMessage() . " Stack Trace Is: " . $ex->getTraceAsString() );
+				error_log( "FATAL [PonyDocsCache::put] action=remove status=failure line=" . $ex->getLine() 
+					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
 			}
 		}
 		return true;
@@ -72,8 +72,8 @@ class PonyDocsCache
 			try {
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
-				error_log( "FATAL [PonyDocsCache::expire] DB call failed on Line " . $ex->getLine() . " on file " . $ex->getFile()
-					. ", error Message is: \n" . $ex->getMessage() . " Stack Trace Is: " . $ex->getTraceAsString());
+				error_log( "FATAL [PonyDocsCache::put] action=expire status=failure line=" . $ex->getLine() 
+					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
 			}
 		}
 		return true;
