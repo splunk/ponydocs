@@ -28,7 +28,7 @@ class PonyDocsCache
 			try {
 				$this->dbr->query( $query );
 			} catch ( Exception $ex ){
-				$this->logException('get', __METHOD__, $ex);
+				$this->logException('put', __METHOD__, $ex);
 			}
 		}
 		return true;		
