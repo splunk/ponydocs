@@ -27,6 +27,7 @@ class PonyDocsCache
 			$query = "INSERT IGNORE INTO ponydocs_cache VALUES('$key', '$expires',  '$data')";
 			try {
 				$this->dbr->query( $query );
+				throw new Exception('message');
 			} catch ( Exception $ex ){
 				$this->logException('get', __METHOD__, $ex);
 			}
@@ -45,6 +46,7 @@ class PonyDocsCache
 				}
 			} catch ( Exception $ex ) {
 				$this->logException('get', __METHOD__, $ex);
+				throw new Exception('message');
 			}
 		}
 		return null;
@@ -57,6 +59,7 @@ class PonyDocsCache
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
 				$this->logException('remove', __METHOD__, $ex);
+				throw new Exception('message');
 			}
 		}
 		return true;
@@ -70,11 +73,19 @@ class PonyDocsCache
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
 				$this->logException('expire', __METHOD__, $ex);
+				throw new Exception('message');
 			}
 		}
 		return true;
 	}
 	
+	/**
+	 * Log an exception so we don't have to repeat ourselves
+	 * 
+	 * @param string $action
+	 * @param string $method
+	 * @param Exception $exception 
+	 */
 	private function logException( $action, $method, $exception ) {
 		$logArray = array(
 			'action' => $action,
@@ -85,6 +96,7 @@ class PonyDocsCache
 			'trace' => $exception->getTraceAsString,
 		);
 		$logString = '';
+		// Surround value in quotes after escaping any existing double-quotes
 		foreach ( $logArray as $key => $value) {
 			$logString .= '$key="' . addcslashes( $value, '"' ) .'" ';
 		}
