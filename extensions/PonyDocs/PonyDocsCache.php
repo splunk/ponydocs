@@ -24,10 +24,10 @@ class PonyDocsCache
 	{
 		if(PONYDOCS_CACHE_ENABLED) {
 			if(!$expires) {
-				$expires = time() + 3600;
+				$expires = 'UNIX_TIMESTAMP() + 3600';
 			}
 			$data = mysql_real_escape_string(serialize($data));
-			$query = "REPLACE INTO ponydocs_cache VALUES('$key', '$expires',  '$data')";
+			$query = "REPLACE INTO ponydocs_cache VALUES('$key', $expires,  '$data')";
 			try {
 				$this->dbr->query($query);
 			} catch (Exception $ex){
