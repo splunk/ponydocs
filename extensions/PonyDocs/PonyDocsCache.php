@@ -28,8 +28,7 @@ class PonyDocsCache
 			try {
 				$this->dbr->query( $query );
 			} catch ( Exception $ex ){
-				error_log( "FATAL [PonyDocsCache::put] action=put status=failure line=" . $ex->getLine() 
-					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
+				$this->logException('get', __METHOD__, $ex);
 			}
 		}
 		return true;		
@@ -45,8 +44,7 @@ class PonyDocsCache
 					return unserialize( $obj->data );
 				}
 			} catch ( Exception $ex ) {
-				error_log( "FATAL [PonyDocsCache::put] action=get status=failure line=" . $ex->getLine() 
-					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
+				$this->logException('get', __METHOD__, $ex);
 			}
 		}
 		return null;
@@ -58,8 +56,7 @@ class PonyDocsCache
 			try {
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
-				error_log( "FATAL [PonyDocsCache::put] action=remove status=failure line=" . $ex->getLine() 
-					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
+				$this->logException('remove', __METHOD__, $ex);
 			}
 		}
 		return true;
@@ -72,10 +69,27 @@ class PonyDocsCache
 			try {
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
-				error_log( "FATAL [PonyDocsCache::put] action=expire status=failure line=" . $ex->getLine() 
-					. " file=" . $ex->getFile()	. "error=" . $ex->getMessage() . "trace=" . $ex->getTraceAsString() );
+				$this->logException('expire', __METHOD__, $ex);
 			}
 		}
 		return true;
+	}
+	
+	private function logException( $action, $method, $exception ) {
+		$logArray = array(
+			'action' => $action,
+			'status' => 'failure',
+			'line' => $exception->getLine(),
+			'file' => $exception->getFile(),
+			'message' => $exception->getMessage(),
+			'trace' => $exception->getTraceAsString,
+		);
+		$logString = '';
+		foreach ( $logArray as $key => $value) {
+			$logString .= '$key="' . addcslashes( $value, '"' ) .'" ';
+		}
+		$logString = trim( $logString );
+		
+		error_log( "FATAL [PonyDocsCache] [$method] $logString" );
 	}
 };
