@@ -518,7 +518,6 @@ class PonyDocsProductVersion {
 
 	static public function & GetLatestVersion( $productName ) {
 		if ( sizeof( self::$sVersionList[$productName] ) ) {
-			error_log('mooty');
 			return self::$sVersionList[$productName][sizeof( self::$sVersionList[$productName] ) - 1];
 		}
 		return null;
