@@ -95,7 +95,7 @@ class PonyDocsProductVersion {
 	 * @param string $status Version status: released, unreleased, preview.
 	 */
 	public function __construct( $productNameShort, $versionName, $versionStatus ) {
-		if( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
+		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
 			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort) ) {
 			$this->mStatusCode = self::STATUS_INVALID;
 			return;
@@ -369,14 +369,14 @@ class PonyDocsProductVersion {
 		$currentGroup = null;
 		$currentGroupMessage = null;
 		foreach( $versions as $v ) {
-			// if this is a version group definition line
+			// versiongroup
 			if ( preg_match( '/{{#versiongroup:\s*([^}]*)\s*}}/i', $v ) ) {
 				$matches = preg_replace( '/{{#versiongroup:\s*([^}]*)\s*}}/i', '\\1', $v );
 				$pcs = explode( '|', trim( $matches ), 2 );
 				if ( count( $pcs ) === 1 && trim( $pcs[0] ) === '' ) {
 					// reset group and message
-					$currentGroup = null;
-					$currentGroupMessage = null;
+					$currentGroup = NULL;
+					$currentGroupMessage = NULL;
 				} else {
 					// set group name and message, if present
 					$currentGroup = $pcs[0];
@@ -384,8 +384,8 @@ class PonyDocsProductVersion {
 						$currentGroupMessage = $pcs[1];
 					}
 				}
-			// else this should be a version definition
-			} else {
+			// version (if it's neither versiongroup nor version it's a blank line or other garbage and we can skip it)
+			} elseif ( preg_match( '/{{#version:/', $v ) ) {
 				$matches = preg_replace( '/{{#version:\s*(.*)\s*}}/i', '\\1', $v );
 				$pcs = explode( '|', trim( $matches ), 2 );
 			
@@ -518,6 +518,7 @@ class PonyDocsProductVersion {
 
 	static public function & GetLatestVersion( $productName ) {
 		if ( sizeof( self::$sVersionList[$productName] ) ) {
+			error_log('mooty');
 			return self::$sVersionList[$productName][sizeof( self::$sVersionList[$productName] ) - 1];
 		}
 		return null;
