@@ -209,7 +209,7 @@ class PonyDocsTopic {
 				}
 				$sections[] = array(
 					'level' => $level,
-					'link' => '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match[2] ) ),
+					'link' => '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match[2] ), 'noninitial' ),
 					'text' => $match[2],
 					'class' => 'toclevel-' . round( $level - 1, 0 )
 				);
