@@ -1,5 +1,5 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if ( !defined( 'MEDIAWIKI' ))
 	die( "PonyDocs MediaWiki Extension" );
 
 /**
@@ -8,8 +8,7 @@ if( !defined( 'MEDIAWIKI' ))
  * and static methods for general tool relation functions.
  */
 
-class PonyDocsTopic
-{
+class PonyDocsTopic {
 	/**
 	 * The Article instance this topic refers to.
 	 *
@@ -57,13 +56,12 @@ class PonyDocsTopic
 	 *
 	 * @param Article $article
 	 */
-	public function __construct( Article &$article )
-	{
+	public function __construct( Article &$article ) {
 		$this->pArticle = $article;
 		//$this->pArticle->loadContent( );
 		//echo '<pre>' . $article->getContent( ) . '</pre>';
-		$this->pTitle = $article->getTitle( );
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString( )))
+		$this->pTitle = $article->getTitle();
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString() ) )
 			$this->mIsDocumentationTopic = true;
 	}
 
@@ -72,8 +70,7 @@ class PonyDocsTopic
 	 *
 	 * @return Article
 	 */
-	public function & getArticle( )
-	{
+	public function & getArticle() {
 		return $this->pArticle;
 	}
 
@@ -82,8 +79,7 @@ class PonyDocsTopic
 	 *
 	 * @return Title
 	 */
-	public function & getTitle( )
-	{
+	public function & getTitle() {
 		return $this->pTitle;
 	}
 
@@ -143,40 +139,39 @@ class PonyDocsTopic
 	 * @param boolean $reload If true, force reload from database; else used cache copy (if found).
 	 * @return array
 	 */
-	public function getProductVersions( $reload = false )
-	{
-		if( sizeof( $this->versions ) && !$reload )
+	public function getProductVersions( $reload = false ) {
+		if( sizeof( $this->versions ) && !$reload ) {
 			return $this->versions;
-
+		}
+		
 		$dbr = wfGetDB( DB_SLAVE );
 		$revision = $this->pArticle->mRevision;
 
 		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
-		$res = $dbr->select( 'categorylinks', 'cl_to',
-							"cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
+		$res = $dbr->select(
+			'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
 
 		$tempVersions = array();
 
-		while ( $row = $dbr->fetchObject( $res ))
-		{
-			if( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ))
-			{
+		while ( $row = $dbr->fetchObject( $res ) ) {
+			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
 				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
-				if( $v )
+				if ( $v ) {
 					$tempVersions[] = $v;
+				}
 			}
 		}
 		// Sort by Version, by doing a natural sort
 		// Also remove any duplicates.
 		/// FIXME - what is this really doing? tempVersions index is int per above code!
 		$sortArray = array();
-		foreach($tempVersions as $index => $version) {
-			if(!in_array($version->getVersionName(), $sortArray)) {
+		foreach ( $tempVersions as $index => $version ) {
+			if ( !in_array($version->getVersionName(), $sortArray) ) {
 				$sortArray[(string)$index] = $version->getVersionName();
 			}
 		}
-		natsort($sortArray);
-		foreach($sortArray as $targetIndex => $verName) {
+		natsort( $sortArray );
+		foreach ( $sortArray as $targetIndex => $verName ) {
 			$this->versions[] = $tempVersions[$targetIndex];
 		}
 
@@ -191,16 +186,16 @@ class PonyDocsTopic
 	 * @param string $baseTopic
 	 * @param string $product
 	 */
-	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product )
-	{
+	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
-		$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%'",
-					"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
+		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array(
+			"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%'",
+			"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
 
-		if(!$res->numRows( ))
+		if ( !$res->numRows() ) {
 			return false;
+		}
 
 		$row = $dbr->fetchObject( $res );
 
@@ -216,14 +211,13 @@ class PonyDocsTopic
 	 * @param string $title The text form of the title to get the H1 content for.
 	 * @return string The resulting H1 content; or boolean false if title not found.
 	 */
-	static public function FindH1ForTitle( $title )
-	{
-		$article = new Article( Title::newFromText( $title ), 0);
-		$content = $article->loadContent( );
+	static public function FindH1ForTitle( $title ) {
+		$article = new Article( Title::newFromText( $title ), 0 );
+		$content = $article->loadContent();
 
-		//$content = preg_replace( '/\<nowiki\>(.*)\<\/nowiki\>/i', '', $article->getContent( ));		
-		if( !preg_match( '/^\s*=(.*)=/D', $article->getContent( ), $matches ))
+		if ( !preg_match( '/^\s*=(.*)=/D', $article->getContent(), $matches ) ) {
 			return false;
+		}
 		return $matches[1];
 	}
 
@@ -235,8 +229,7 @@ class PonyDocsTopic
 	 * @param string $text Text string to convert to a wiki topic.
 	 * @return string 
 	 */
-	static public function textToWikiTopic( $text )
-	{
+	static public function textToWikiTopic( $text ) {
 		return preg_replace( SPLUNK_TITLE_REMOVE_REGEX, '', $text );
 	}
 
@@ -249,24 +242,24 @@ class PonyDocsTopic
 	public function getSubContents() {
 		$sections = array();
 		
-		if (preg_match( '/__NOTOC__/', $this->pArticle->getContent())) {
+		if ( preg_match( '/__NOTOC__/', $this->pArticle->getContent() ) ) {
 			return $sections;
 		}
 		
 		$matches = $this->parseSections();
 		$h2 = FALSE;
-		foreach ($matches as $match) {
-			$level = strlen($match[1]);		
+		foreach ( $matches as $match ) {
+			$level = strlen( $match[1] );		
 			// We don't want to include any H3s that don't have an H2 parent
-			if ($level == 2 || ($level == 3 && $h2))  {
-				if ($level == 2) {
+			if ( $level == 2 || ( $level == 3 && $h2 ) )  {
+				if ( $level == 2 ) {
 					$h2 = TRUE;
 				}
 				$sections[] = array(
 					'level' => $level,
-					'link' => '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2])),
+					'link' => '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match[2] ) ),
 					'text' => $match[2],
-					'class' => 'toclevel-' . round($level - 1, 0)
+					'class' => 'toclevel-' . round( $level - 1, 0 )
 				);
 			}
 		}
@@ -284,12 +277,12 @@ class PonyDocsTopic
 	 * 
 	 * @returns array
 	 */
-	private function parseWikiLinks( )
-	{
+	private function parseWikiLinks() {
 		$re = "/\\[\\[([" . Title::legalChars() . "]+)(?:\\|?(.*?))\]\]/sD";
-		if( preg_match_all( $re, $this->pArticle->mContent, $matches, PREG_SET_ORDER ))
+		if ( preg_match_all( $re, $this->pArticle->mContent, $matches, PREG_SET_ORDER ) ) {
 			return $matches;
-		return array( );
+		}
+		return array();
 	}
 
 	/**
@@ -325,8 +318,7 @@ class PonyDocsTopic
 	 *
 	 * @return array
 	 */
-	public function parseSections( )
-	{
+	public function parseSections()	{
 
 		//$content = preg_replace( '/\<nowiki\>(.*)\<\/nowiki\>/i', '', $this->pArticle->mContent );
 		$content = str_replace("<nowiki>", "", $this->pArticle->mContent);
@@ -336,13 +328,13 @@ class PonyDocsTopic
 		// We don't need such a long regex.  Simply encapsulating everything in 
 		// header element.
 		$re = "/(=+)([^=]*)(=+)\n/";
-		if( preg_match_all( $re, $content, $matches, PREG_SET_ORDER )) {
-			foreach($matches as &$match) {
-				$match[2] = trim(str_replace("=", "", $match[2]));
+		if ( preg_match_all( $re, $content, $matches, PREG_SET_ORDER ) ) {
+			foreach ( $matches as &$match ) {
+				$match[2] = trim(str_replace( "=", "", $match[2] ) );
 			}
 			return $matches;
 		}
-		return array( );
+		return array();
 	}
 
 	/**
@@ -356,46 +348,46 @@ class PonyDocsTopic
 	 * 
 	 * @return integer
 	 */
-	public function getVersionClass( )
-	{
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $matches))
+	public function getVersionClass() {
+		if ( !preg_match(
+			'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $matches ) ) {
 			// This is not a documentation title.
 			return "unknown";
+		}
 		$productName = $matches[1];
 		/**
 		 * Test if topic applies to latest released version (current).
 		 */
-		$releasedVersions = PonyDocsProductVersion::GetReleasedVersions($productName);
+		$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName );
 		$releasedNames = array(); // Just the names of our released versions
-		foreach($releasedVersions as $ver) {
-			$releasedNames[] = strtolower($ver->getVersionName());
+		foreach ( $releasedVersions as $ver ) {
+			$releasedNames[] = strtolower( $ver->getVersionName() );
 		}
-		$previewVersions = PonyDocsProductVersion::GetPreviewVersions($productName);
+		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
 		$previewNames = array(); // Just the names of our preview versions
-		foreach($previewVersions as $ver) {
-			$previewNames[] = strtolower($ver->getVersionName());
+		foreach ( $previewVersions as $ver ) {
+			$previewNames[] = strtolower( $ver->getVersionName() );
 		}
 		$isPreview = false;
 		$isOlder = false;
-		foreach( $this->versions as $v )
-		{
+		foreach( $this->versions as $v ) {
 			$ver = strtolower($v->getVersionName());
-			if(PonyDocsProductVersion::GetLatestReleasedVersion($productName) != null &&  !strcasecmp( $ver, PonyDocsProductVersion::GetLatestReleasedVersion($productName)->getVersionName( )))
-			{
+			if ( PonyDocsProductVersion::GetLatestReleasedVersion( $productName ) != null
+				&& !strcasecmp( $ver, PonyDocsProductVersion::GetLatestReleasedVersion($productName)->getVersionName() ) ) {
 				// Return right away, as current is our #1 class
 				return "current";
 			}
-			if(in_array($ver, $releasedNames)) {
+			if ( in_array( $ver, $releasedNames ) ) {
 				$isOlder = true;
 			}
-			if(in_array($ver, $previewNames)) {
+			if ( in_array( $ver, $previewNames ) ) {
 				$isPreview = true;
 			}
 		}
-		if($isPreview) {
+		if ( $isPreview ) {
 			return "preview";
 		}
-		if($isOlder) {
+		if ( $isOlder ) {
 			return "older";
 		}
 		// Default return
@@ -407,10 +399,8 @@ class PonyDocsTopic
 	 *
 	 * @return string
 	 */
-	public function getBaseTopicName( )
-	{
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $match ))
-		{
+	public function getBaseTopicName() {
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(), $match ) ) {
 			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
 
@@ -421,4 +411,3 @@ class PonyDocsTopic
 /**
  * End of file.
  */
-
