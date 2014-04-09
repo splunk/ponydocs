@@ -118,7 +118,6 @@ class PonyDocsBranchInheritEngine {
 			$existingContent = preg_replace("/\[\[Category:V:" . $productName . ":" . $tempVersion . "\]\]/", "", $existingContent);
 		}
 		// Now let's do the edit on the original content.
-		$wgTitle = $existingTitle;
 		// Set version and manual
 		$existingArticle->doEdit($existingContent, "Removed versions from existing article when branching Topic " . $topicTitle, EDIT_UPDATE);
 		// Clear categories tags from new article content
@@ -129,7 +128,6 @@ class PonyDocsBranchInheritEngine {
 		}
 		$newContent .= "\n";
 		// doEdit on new article
-		$wgTitle = $newTitle;
 		$newArticle->doEdit($newContent, "Created new topic from branched topic " . $topicTitle, EDIT_NEW);
 
 		if(!$skipTOC) {

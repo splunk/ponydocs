@@ -2137,7 +2137,10 @@ HEREDOC;
 		$fromNamespace = $titlePieces[0];
 		$toAndFromLinksToInsert = array();
 		$fromLinksToDelete = array();
-		if ($fromNamespace == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
+		// $titlePieces[3] is the version
+		// if this is not set, we're not looking at a Topic (probably we're looking at a TOC) and we don't need doclinks
+		if ($fromNamespace == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME && isset( $titlePieces[3] ) ) {
+			// TODO only process this topic if it's not a TOC.
 			// Do PonyDocs-specific stuff (loop through all inherited versions)
 
 			// Get the versions associated with this topic
@@ -2171,7 +2174,7 @@ HEREDOC;
 					}
 				}
 			}
-		} else {
+		} elseif ( $fromNamespace != PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) {
 			// Do generic mediawiki stuff for non-PonyDocs namespaces
 
 			// Add this title to the array of titles to be deleted from the database
