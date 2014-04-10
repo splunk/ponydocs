@@ -642,7 +642,11 @@ if($this->data['copyrightico']) { ?>
 			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgTitle->__toString( )))
 			{
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:name|status}} to define a new version, where status is released, unreleased, or preview.  Valid chars in version name are A-Z, 0-9, period, comma, and dash.</i></span>');
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:name|status}} to define a new version,'
+					. ' where status is released, unreleased, or preview.'
+					. ' Valid chars in version name are A-Z, 0-9, period, comma, and dash.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#versiongroup:name|message}} to set a banner'
+					. ' message that will appear on every topic in every version following the versiongroup.</i></span>' );
 			}
 			else if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgTitle->__toString( )))
 			{
