@@ -8,7 +8,6 @@ class PonyDocsCache
 
 	private function __construct()	{
 		$this->dbr = wfGetDB(DB_MASTER);
-		$this->expire();
 	}
 	
 	static public function & getInstance() {
@@ -21,10 +20,10 @@ class PonyDocsCache
 	public function put( $key, $data, $expires = null )	{
 		if ( PONYDOCS_CACHE_ENABLED ) {
 			if ( !$expires ) {
-				$expires = time() + 3600;
+				$expires = 'UNIX_TIMESTAMP() + 3600';
 			}
 			$data = mysql_real_escape_string(serialize($data));
-			$query = "INSERT IGNORE INTO ponydocs_cache VALUES('$key', '$expires',  '$data')";
+			$query = "REPLACE INTO ponydocs_cache VALUES('$key', $expires,  '$data')";
 			try {
 				$this->dbr->query( $query );
 			} catch ( Exception $ex ){
@@ -36,7 +35,7 @@ class PonyDocsCache
 	
 	public function get( $key ) {
 		if ( PONYDOCS_CACHE_ENABLED ) {
-			$query = "SELECT *  FROM ponydocs_cache WHERE cachekey = '$key'";
+			$query = "SELECT *  FROM ponydocs_cache WHERE cachekey = '$key' AND expires > UNIX_TIMESTAMP()";
 			try {
 				$res = $this->dbr->query( $query );
 				$obj = $this->dbr->fetchObject( $res );
@@ -57,19 +56,6 @@ class PonyDocsCache
 				$res = $this->dbr->query( $query );
 			} catch ( Exception $ex ) {
 				$this->logException('remove', __METHOD__, $ex);
-			}
-		}
-		return true;
-	}	
-
-	public function expire() {
-		if ( PONYDOCS_CACHE_ENABLED ) {
-			$now = time();
-			$query = "DELETE FROM ponydocs_cache WHERE expires < $now";
-			try {
-				$res = $this->dbr->query( $query );
-			} catch ( Exception $ex ) {
-				$this->logException('expire', __METHOD__, $ex);
 			}
 		}
 		return true;
