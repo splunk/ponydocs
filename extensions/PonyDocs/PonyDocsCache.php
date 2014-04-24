@@ -6,64 +6,84 @@ class PonyDocsCache
 
 	private static $instance;
 
-	private function __construct()
-	{
+	private function __construct()	{
 		$this->dbr = wfGetDB(DB_MASTER);
 	}
 	
-	static public function & getInstance() 
-	{
-		if( !self::$instance )
-		{
+	static public function & getInstance() {
+		if ( !self::$instance )	{
 			self::$instance = new PonyDocsCache();
 		}
 		return self::$instance;
 	}
 	
-	public function put( $key, $data, $expires = null )
-	{
-		if(PONYDOCS_CACHE_ENABLED) {
-			if(!$expires) {
+	public function put( $key, $data, $expires = null )	{
+		if ( PONYDOCS_CACHE_ENABLED ) {
+			if ( !$expires ) {
 				$expires = 'UNIX_TIMESTAMP() + 3600';
 			}
 			$data = mysql_real_escape_string(serialize($data));
 			$query = "REPLACE INTO ponydocs_cache VALUES('$key', $expires,  '$data')";
 			try {
-				$this->dbr->query($query);
-			} catch (Exception $ex){
-				error_log("FATAL [PonyDocsCache::put] DB call failed on Line ".$ex->getLine()." on file ".$ex->getFile().", error Message is: \n".$ex->getMessage()."Stack Trace is:".$ex->getTraceAsString());
+				$this->dbr->query( $query );
+			} catch ( Exception $ex ){
+				$this->logException('put', __METHOD__, $ex);
 			}
 		}
 		return true;		
 	}
 	
-	public function get( $key )
-	{
-		if(PONYDOCS_CACHE_ENABLED) {
+	public function get( $key ) {
+		if ( PONYDOCS_CACHE_ENABLED ) {
 			$query = "SELECT *  FROM ponydocs_cache WHERE cachekey = '$key' AND expires > UNIX_TIMESTAMP()";
 			try {
-				$res = $this->dbr->query($query);
-				$obj = $this->dbr->fetchObject($res);
-				if($obj) {
-					return unserialize($obj->data);
+				$res = $this->dbr->query( $query );
+				$obj = $this->dbr->fetchObject( $res );
+				if ( $obj ) {
+					return unserialize( $obj->data );
 				}
-			} catch(Exception $ex) {
-				error_log("FATAL [PonyDocsCache::get] DB call failed on Line " . $ex->getLine()." on file " . $ex->getFile(). ", error Message is: \n" . $ex->getMessage(). " Stack Trace Is: " . $ex->getTraceAsString());
+			} catch ( Exception $ex ) {
+				$this->logException('get', __METHOD__, $ex);
 			}
 		}
 		return null;
 	}
 	
-	public function remove( $key )
-	{
-		if(PONYDOCS_CACHE_ENABLED) {
+	public function remove( $key ) {
+		if ( PONYDOCS_CACHE_ENABLED ) {
 			$query = "DELETE FROM ponydocs_cache WHERE cachekey = '$key'";
 			try {
-				$res = $this->dbr->query($query);
-			} catch(Exception $ex) {
-				error_log("FATAL [PonyDocsCache::remove] DB call failed on Line " . $ex->getLine()." on file " . $ex->getFile(). ", error Message is: \n" . $ex->getMessage(). " Stack Trace Is: " . $ex->getTraceAsString());
+				$res = $this->dbr->query( $query );
+			} catch ( Exception $ex ) {
+				$this->logException('remove', __METHOD__, $ex);
 			}
 		}
 		return true;
-	}	
+	}
+	
+	/**
+	 * Log an exception so we don't have to repeat ourselves
+	 * 
+	 * @param string $action
+	 * @param string $method
+	 * @param Exception $exception 
+	 */
+	private function logException( $action, $method, $exception ) {
+		$logArray = array(
+			'action' => $action,
+			'status' => 'failure',
+			'line' => $exception->getLine(),
+			'file' => $exception->getFile(),
+			'message' => $exception->getMessage(),
+			'trace' => $exception->getTraceAsString(),
+		);
+		$logString = '';
+		// Surround value in quotes after escaping any existing double-quotes
+		foreach ( $logArray as $key => $value) {
+			$logString .= "$key=\"" . addcslashes( $value, '"' ) .'" ';
+		}
+		$logString = trim( $logString );
+		
+		error_log( "FATAL [PonyDocsCache] [$method] $logString" );
+	}
 };
