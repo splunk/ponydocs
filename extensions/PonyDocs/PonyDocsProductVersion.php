@@ -250,7 +250,7 @@ class PonyDocsProductVersion {
 				$versionName = self::$sVersionListReleased[$productName][$versionIndex]->getVersionName();
 			} else {
 				$versionIndex = count( self::$sVersionList[$productName] ) - 1;
-				$versionName = self::$sVersionListReleased[$productName][$versionIndex]->getVersionName();
+				$versionName = self::$sVersionList[$productName][$versionIndex]->getVersionName();
 			}
 			self::SetSelectedVersion( $productName, $versionName );
 			if ( PONYDOCS_SESSION_DEBUG ) {
