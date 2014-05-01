@@ -206,6 +206,32 @@ class PonyDocsProductManual
 			return null;
 		return self::GetManualByShortName( $productName, $pcs[2] );
 	}
+
+	/**
+	 * Create a URL path (e.g. Documentation/Foo/latest/Manual) for a Manual
+	 * 
+	 * @param string $productName
+	 * @param string $manualName
+	 * @param string $versionName - Optional. We'll get the selected version (which defaults to 'latest') if empty
+	 * 
+	 * @return string
+	 */
+	static public function getManualURLPath( $productName, $manualName, $versionName = NULL ) {
+		if (! isset( $versionName ) ) {
+			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
+		}
+		
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+		if ( $latestVersion ) {
+			if ( $versionName == $latestVersion->getVersionName() ) {
+				$versionName = 'latest';
+			}
+		}
+		
+		
+		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		return "$base/$productName/$versionName/$manualName";
+	}
 };
 
 /**
