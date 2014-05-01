@@ -493,12 +493,9 @@ class PonyDocsTOC
 	 * @return string
 	 */
 	static public function getTOCURLPath( $productName, $TOCName ) {
+		global $wgArticlePath;
+
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 		return "$base/$productName/$TOCname";
 	}
 }
-
-/**
- * End of file.
- */
-?>

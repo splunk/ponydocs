@@ -217,6 +217,8 @@ class PonyDocsProductManual
 	 * @return string
 	 */
 	static public function getManualURLPath( $productName, $manualName, $versionName = NULL ) {
+		global $wgArticlePath;
+
 		if (! isset( $versionName ) ) {
 			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 		}
@@ -233,8 +235,3 @@ class PonyDocsProductManual
 		return "$base/$productName/$versionName/$manualName";
 	}
 };
-
-/**
- * End of file.
- */
-?>

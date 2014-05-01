@@ -599,6 +599,35 @@ class PonyDocsProductVersion
 		$cache->remove($key);
 	}
 
+	/**
+	 * Create a URL path (e.g. Documentation/Foo/latest) for a ProductVersion
+	 * 
+	 * @param string $productName - Optional. We'll get the selected product (which defaults to the default product) if empty
+	 * @param string $versionName - Optional. We'll get the selected version (which defaults to the latest release) if empty
+	 * 
+	 * @return string
+	 */
+	static public function getVersionURLPath( $productName = NULL, $versionName = NULL ) {
+		global $wgArticlePath;
+		
+		if ( !isset( $productName ) || ! PonyDocsProduct::isProduct( $productName ) ) {
+			$productName = getSelectedProduct()->getShortName();
+		}
+		
+		if ( !isset( $versionName ) ) {
+			$versionName = self::GetSelectedVersion( $productName );
+		}
+		
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+		if ( $latestVersion ) {
+			if ( $versionName == $latestVersion->getVersionName() ) {
+				$versionName = 'latest';
+			}
+		}
+		
+		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		return "$base/$productName/$versionName";
+	}
 }
 
 /**
@@ -648,9 +677,3 @@ function PonyDocs_ProductVersionCmp( PonyDocsProductVersion $vA, PonyDocsProduct
 
 	return ( $indexA < $indexB ) ? -1 : 1;
 }
-
-/**
- * End of file.
- */
-
-?>

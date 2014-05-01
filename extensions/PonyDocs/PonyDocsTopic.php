@@ -349,6 +349,8 @@ class PonyDocsTopic {
 	 * TODO: We should really be passing a topic object into this and not a string
 	 */
 	static public function getTopicURLPath( $productName, $manualName, $topicName, $versionName = NULL ) {
+		global $wgArticlePath;
+
 		if (! isset( $versionName ) ) {
 			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 		}
