@@ -629,8 +629,8 @@ class PonyDocsExtension
 	}
 
 	/**
-	 * This is an ArticleSave hook to ensure manual TOCs are proper -- meaning, no duplicate TOCs.  We should then regenerate
-	 * the TOC cache (PonyDocsTOC) for this TOC, either here or on an AFTER ArticleSave sort of hook.
+	 * This is an ArticleSave hook that creates topics which don't exist yet when saving a TOC.
+	 * We should then regenerate the TOC cache (PonyDocsTOC) for this TOC, either here or on an AFTER ArticleSave sort of hook.
 	 * 
 	 * @param Article $article
 	 * @param User $user
@@ -651,12 +651,6 @@ class PonyDocsExtension
 
 		$title = $article->getTitle();
 
-		/**
-		 * For manual TOCs we need to ensure the same topic is not listed twice.
-		 * If it is we output an error and return false.
-		 * This is not working, its like it doesn't recognize when I fix the edit box and submit again? 
-		 * It still captures and parses the old input =/
-		 */
 		$matches = array();
 
 		if ( preg_match(
@@ -665,17 +659,12 @@ class PonyDocsExtension
 			$title->__toString( ),
 			$match ) ) {
 			$dbr = wfGetDB( DB_MASTER );
-			$topics = array();
 
 			/**
-			 * Ignore duplicate topic names
+			 * Get all topics
 			 */
 			$topicRegex = '/' . PonyDocsTopic::getTopicRegex() . '/';
-			if ( preg_match_all( $topicRegex, $text, $matches, PREG_SET_ORDER ) ) {
-				foreach ( $matches as $m ) {
-					$topics[] = $m[1];
-				}
-			}
+			preg_match_all( $topicRegex, $text, $matches, PREG_SET_ORDER );
 
 			/**
 			 * Create any topics which do not already exist in the saved TOC.
