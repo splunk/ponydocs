@@ -414,7 +414,7 @@ class PonyDocsBranchInheritEngine {
 
 		// Okay, let's search for the content.
 		$content = $article->getContent();
-		$content = preg_replace( "/^ \* \{\{#topic:" . $tocTitle . "}}$/", "", $content );
+		$content = preg_replace( "/^ \*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", "", $content );
 		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
 		return TRUE;
@@ -467,7 +467,7 @@ class PonyDocsBranchInheritEngine {
 						$inSection = TRUE;
 						$newContent .= $line . "\n";
 						continue;
-					} elseif ( preg_match( "/\* \{\{#topic:" . $evalTopic . "\s*}}/", $evalLine ) ) {
+					} elseif ( preg_match( "/\*\s*{{\s*#topic:\s*" . $evalTopic . "\s*}}/", $evalLine ) ) {
 						if ( $inSection ) {
 							$found = TRUE;
 						}
@@ -541,7 +541,7 @@ class PonyDocsBranchInheritEngine {
 				$newContent .= $line . "\n";
 				continue;
 			}
-			if ( preg_match("/^\* \{\{#topic:" . $tocTitle . "}}$/", $line ) ) {
+			if ( preg_match("/^\*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", $line ) ) {
 				if ( $inSection ) {
 					$found = TRUE;
 				}

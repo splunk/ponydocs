@@ -667,7 +667,7 @@ class PonyDocsExtension
 			/**
 			 * Detect duplicate topic names.
 			 */
-			if( preg_match_all( '/{{#topic\s*:\s*(.*)}}/', $text, $matches, PREG_SET_ORDER ))
+			if( preg_match_all( '/{{\s*#topic:\s*(.*)\s*}}/', $text, $matches, PREG_SET_ORDER ))
 			{
 				foreach( $matches as $m )
 				{

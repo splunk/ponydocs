@@ -292,7 +292,7 @@ class PonyDocsTOC
 					if ( -1 == $section ) {
 						continue;
 					}
-					if ( !preg_match( '/{{#topic:(.*)}}/i', $line, $matches ) ) {
+					if ( !preg_match( '/{{\s*#topic:\s*(.*)\s*}}/i', $line, $matches ) ) {
 						continue ;
 					}
 
