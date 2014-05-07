@@ -392,6 +392,7 @@ class PonyDocsBranchInheritEngine {
 
 	/**
 	 * Remove entry from TOC. Will remove any instance of the entry from the TOC.
+	 * TODO: This method is never called. Should we remove it?
 	 *
 	 * @param $manual PonyDocsManual The manual the TOC belongs to.
 	 * @param $version PonyDocsVersion The version the TOC belongs to.
@@ -414,6 +415,7 @@ class PonyDocsBranchInheritEngine {
 
 		// Okay, let's search for the content.
 		$content = $article->getContent();
+		// TODO: The space after the ^ is dubious.
 		$content = preg_replace( "/^ \*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", "", $content );
 		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
