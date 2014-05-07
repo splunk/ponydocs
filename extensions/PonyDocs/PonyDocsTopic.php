@@ -347,6 +347,6 @@ class PonyDocsTopic {
 		if ( !isset( $title ) ) {
 			$title = '(.*)';
 		}
-		return "{{\s*#topic:\s*$title\s*))";
+		return "{{\s*#topic:\s*$title\s*}}";
 	}
 }
