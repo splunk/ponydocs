@@ -67,10 +67,12 @@ Failure to do so will result in frustration and keyboard tossing.
 	RewriteRule ^/$	/Documentation [R]
 
 	# Send all other requests to MediaWiki
-	RewriteCond %{REQUEST_FILENAME}	!-f
-	RewriteCond %{REQUEST_FILENAME}	!-d
-	RewriteCond %{REQUEST_URI}		!=/favicon.ico
-	RewriteRule ^					/index.php [PT,QSA]
+	# NB: If you are not using vhosts, or are using apache < 2.2, remove %{DOCUMENT_ROOT}
+	#     See discussion of REQUEST_FILENAME in http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-f
+	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-d
+	RewriteCond %{REQUEST_URI}						!=/favicon.ico
+	RewriteRule ^									/index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
