@@ -335,4 +335,18 @@ class PonyDocsTopic {
 
 		return '';
 	}
-};
+	
+	/**
+	 * Return a regex to match the topic parser function
+	 * 
+	 * @param string $title An optional title to search for. If not supplied, we'll search for any title, using a capture group.
+	 * 
+	 * @return string
+	 */
+	static public function getTopicRegex( $title = NULL ) {
+		if ( !isset( $title ) ) {
+			$title = '(.*)';
+		}
+		return "{{\s*#topic:\s*$title\s*))";
+	}
+}

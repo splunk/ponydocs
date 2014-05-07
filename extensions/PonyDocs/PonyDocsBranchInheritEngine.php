@@ -416,6 +416,8 @@ class PonyDocsBranchInheritEngine {
 		// Okay, let's search for the content.
 		$content = $article->getContent();
 		// TODO: The space after the ^ is dubious.
+		// TODO: We should use PonyDocsTopic::getTopicRegex() here
+		//       But since we can't currently test this method, we shouldn't refactor yet
 		$content = preg_replace( "/^ \*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", "", $content );
 		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
@@ -465,11 +467,12 @@ class PonyDocsBranchInheritEngine {
 				$newContent = '';
 				foreach ( $content as $line ) {
 					$evalLine = trim(str_replace( '?', '', strtolower($line) ) );
+					$topicRegex = PonyDocsTopic::getTopicRegex($evalTopic);
 					if ( preg_match( "/^" . $evalSectionName . "$/", $evalLine ) ) {
 						$inSection = TRUE;
 						$newContent .= $line . "\n";
 						continue;
-					} elseif ( preg_match( "/\*\s*{{\s*#topic:\s*" . $evalTopic . "\s*}}/", $evalLine ) ) {
+					} elseif ( preg_match( "/\*\s*$topicRegex/", $evalLine ) ) {
 						if ( $inSection ) {
 							$found = TRUE;
 						}
@@ -537,13 +540,14 @@ class PonyDocsBranchInheritEngine {
 		$found = FALSE;
 		$inSection = FALSE;
 		$newContent = '';
+		$topicRegex = PonyDocsTopic::getTopicRegex($tocTitle);
 		foreach ( $content as $line ) {
 			if ( preg_match("/^" . $tocSection . "$/", $line ) ) {
 				$inSection = TRUE;
 				$newContent .= $line . "\n";
 				continue;
 			}
-			if ( preg_match("/^\*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", $line ) ) {
+			if ( preg_match("/^\*\s*$topicRegex$/", $line ) ) {
 				if ( $inSection ) {
 					$found = TRUE;
 				}

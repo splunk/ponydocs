@@ -292,7 +292,8 @@ class PonyDocsTOC
 					if ( -1 == $section ) {
 						continue;
 					}
-					if ( !preg_match( '/{{\s*#topic:\s*(.*)\s*}}/i', $line, $matches ) ) {
+					$topicRegex = '/' . PonyDocsTopic::getTopicRegex() . '/i';
+					if ( !preg_match( $topicRegex, $line, $matches ) ) {
 						continue ;
 					}
 

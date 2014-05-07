@@ -670,7 +670,8 @@ class PonyDocsExtension
 			/**
 			 * Ignore duplicate topic names
 			 */
-			if ( preg_match_all( '/{{\s*#topic:\s*(.*)\s*}}/', $text, $matches, PREG_SET_ORDER ) ) {
+			$topicRegex = '/' . PonyDocsTopic::getTopicRegex() . '/';
+			if ( preg_match_all( $topicRegex, $text, $matches, PREG_SET_ORDER ) ) {
 				foreach ( $matches as $m ) {
 					$topics[] = $m[1];
 				}
