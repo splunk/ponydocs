@@ -476,7 +476,7 @@ class PonyDocsBranchInheritEngine {
 					} elseif ( preg_match( "/^\s?$/", $evalLine ) ) {
 						if ( $inSection && !$found ) {
 							$newContent .= "* {{#topic:" . $topic . "}}\n\n";
-							$found = true;
+							$found = TRUE;
 							continue;
 						}
 						$inSection = FALSE;
@@ -497,7 +497,7 @@ class PonyDocsBranchInheritEngine {
 		// Okay, do the edit
 		$article->doEdit( $content, "Updated TOC in bulk branch operation.", EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
-		return true;
+		return TRUE;
 	}
 
 	/**

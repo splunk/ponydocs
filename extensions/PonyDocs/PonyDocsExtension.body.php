@@ -641,40 +641,37 @@ class PonyDocsExtension
 	 * @param unknown_type $sectionanchor
 	 * @param unknown_type $flags
 	 */
-	static public function onArticleSave_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags )
-	{
+	static public function onArticleSave_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
 
-		// Dangerous.  Only set the flag if you know that you should be skipping 
-		// this processing.  Currently used for branch/inherit.
-		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
-			return true;
+		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
+		// Currently used for branch/inherit.
+		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
+			return TRUE;
 		}
 
-		$title = $article->getTitle( );
+		$title = $article->getTitle();
 
 		/**
-		 * For manual TOCs we need to ensure the same topic is not listed twice.  If it is we output an error and return
-		 * false.  This is not working, its like it doesn't recognize when I fix the edit box and submit again?  It still
-		 * captures and parses the old input =/
+		 * For manual TOCs we need to ensure the same topic is not listed twice.
+		 * If it is we output an error and return false.
+		 * This is not working, its like it doesn't recognize when I fix the edit box and submit again? 
+		 * It still captures and parses the old input =/
 		 */
-		$matches = array( );
+		$matches = array();
 
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)/i', $title->__toString( ), $match ))
-		{
+		if ( preg_match(
+			'/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):(['
+				. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)/i',
+			$title->__toString( ),
+			$match ) ) {
 			$dbr = wfGetDB( DB_MASTER );
-			$topics = array( );
+			$topics = array();
 
 			/**
-			 * Detect duplicate topic names.
+			 * Ignore duplicate topic names
 			 */
-			if( preg_match_all( '/{{\s*#topic:\s*(.*)\s*}}/', $text, $matches, PREG_SET_ORDER ))
-			{
-				foreach( $matches as $m )
-				{
-					/*
-					if( in_array( $m[1], $topics ))
-						return "You have one or more duplicate topics in your Table of Contents.  Please fix then save again.";
-					*/
+			if ( preg_match_all( '/{{\s*#topic:\s*(.*)\s*}}/', $text, $matches, PREG_SET_ORDER ) ) {
+				foreach ( $matches as $m ) {
 					$topics[] = $m[1];
 				}
 			}
@@ -686,58 +683,67 @@ class PonyDocsExtension
 			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2] );
 			$pManualTopic = new PonyDocsTopic( $article );
 
-			$manVersionList = $pManualTopic->getProductVersions( );
-			if( !sizeof( $manVersionList ))
-			{
-				return true;
+			$manVersionList = $pManualTopic->getProductVersions();
+			if ( !sizeof( $manVersionList ) ) {
+				return TRUE;
 			}
 
 			// Clear all TOC cache entries for each version.
-			if($pManual) {
-				foreach($manVersionList as $version) {
-					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct);
-					PonyDocsProductVersion::clearNAVCache($version);
+			if ( $pManual ) {
+				foreach ( $manVersionList as $version ) {
+					PonyDocsTOC::clearTOCCache( $pManual, $version, $pProduct );
+					PonyDocsProductVersion::clearNAVCache( $version );
 				}
 			}
 
 			$earliestVersion = PonyDocsProductVersion::findEarliest( $pProduct->getShortName(), $manVersionList );
 
-			foreach( $matches as $m )
-			{
-				$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $m[1] );
+			foreach ( $matches as $m ) {
+				$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $m[1] );
 				$wikiPath = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ':' . $wikiTopic;
 
-				$versionIn = array( );
-				foreach( $manVersionList as $pV )
-					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName( );
+				$versionIn = array();
+				foreach ( $manVersionList as $pV ) {
+					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName();
+				}
 
-				$res = $dbr->select( 'categorylinks', 'cl_sortkey',
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
-							"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ), __METHOD__ );
+				$res = $dbr->select(
+					'categorylinks',
+					'cl_sortkey',
+					array(
+						"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX
+							. $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
+						"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
+					__METHOD__ );
 
 				$topicName = '';
-				if( !$res->numRows( ))
-				{
+				if ( !$res->numRows() ) {
 					/**
 					 * No match -- so this is a "new" topic.  Set name and create.
 					 */
-					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':' . $earliestVersion->getVersionName( );
-					//die( $topicName );
+					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':'
+						. $earliestVersion->getVersionName();
 
-					$topicArticle = new Article( Title::newFromText( $topicName ));
-					if( !$topicArticle->exists( ))
-					{
+					$topicArticle = new Article( Title::newFromText( $topicName ) );
+					if ( !$topicArticle->exists() ) {
 						$content = 	"= " . $m[1] . "=\n\n" ;
-						foreach( $manVersionList as $pVersion )
+						foreach ( $manVersionList as $pVersion ) {
 							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionName( ) . ']]';
+						}
 
-						$topicArticle->doEdit( $content, 'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ), EDIT_NEW );
-						if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC " . $title->__toString( ));}
+						$topicArticle->doEdit(
+							$content,
+							'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ),
+							EDIT_NEW );
+						if ( PONYDOCS_AUTOCREATE_DEBUG ) {
+							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
+								. $title->__toString() );
+						}
 					}
 				}
 			}
 		}
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -2393,8 +2399,3 @@ HEREDOC;
 	}
 
 }
-
-/**
- * End of file.
- */
-?>
