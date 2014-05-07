@@ -293,6 +293,7 @@ class PonyDocsTOC
 						continue;
 					}
 					$topicRegex = '/' . PonyDocsTopic::getTopicRegex() . '/i';
+					error_log($topicRegex);
 					if ( !preg_match( $topicRegex, $line, $matches ) ) {
 						continue ;
 					}

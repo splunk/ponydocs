@@ -391,40 +391,6 @@ class PonyDocsBranchInheritEngine {
 	}
 
 	/**
-	 * Remove entry from TOC. Will remove any instance of the entry from the TOC.
-	 * TODO: This method is never called. Should we remove it?
-	 *
-	 * @param $manual PonyDocsManual The manual the TOC belongs to.
-	 * @param $version PonyDocsVersion The version the TOC belongs to.
-	 * @returns boolean
-	 */
-	static function removeFromTOC( $product, $manual, $version, $tocTitle ) {
-		global $wgTitle;
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == false ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText($title);
-		$wgTitle = $title;
-		$article = new Article($title);
-		if ( !$article->exists() ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		// TODO: The space after the ^ is dubious.
-		// TODO: We should use PonyDocsTopic::getTopicRegex() here
-		//       But since we can't currently test this method, we shouldn't refactor yet
-		$content = preg_replace( "/^ \*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", "", $content );
-		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return TRUE;
-	}
-
-	/**
 	 * Do a bulk add operation. Take a collection of topics and add them to the TOC if it doesn't already exist.
 	 *
 	 * @param $manual PonyDocsManual The manual the TOC belongs to.
@@ -501,79 +467,6 @@ class PonyDocsBranchInheritEngine {
 		}
 		// Okay, do the edit
 		$article->doEdit( $content, "Updated TOC in bulk branch operation.", EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return TRUE;
-	}
-
-	/**
-	 * Adds entry to TOC. Will not add if entry already exists in TOC under section.
-	 * Note, this isn't used anymore in the inherit/branch process, but is kept for historical purposes in case it's needed.
-	 * 
-	 * @param $manual PonyDocsManual The Manual the TOC belongs to.
-	 * @param $version PonyDocsVersion the Version the TOC belongs to.
-	 * @param $tocSection string The TOC section of the title.
-	 * @param $tocTitle string The topic title to add.
-	 * @returns boolean
-	 */
-	static function addToTOC( $product, $manual, $version, $tocSection, $tocTitle ) {
-		global $wgTitle;
-
-		// Cleanup title
-		$tocTitle = preg_replace( "/[^a-zA-Z0-9\s]/", "", $tocTitle );
-
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == FALSE ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText( $title );
-		$wgTitle = $title;
-		$article = new Article( $title );
-		if(!$article->exists()) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		$content = explode( "\n", $content );
-		$found = FALSE;
-		$inSection = FALSE;
-		$newContent = '';
-		$topicRegex = PonyDocsTopic::getTopicRegex($tocTitle);
-		foreach ( $content as $line ) {
-			if ( preg_match("/^" . $tocSection . "$/", $line ) ) {
-				$inSection = TRUE;
-				$newContent .= $line . "\n";
-				continue;
-			}
-			if ( preg_match("/^\*\s*$topicRegex$/", $line ) ) {
-				if ( $inSection ) {
-					$found = TRUE;
-				}
-				$newContent .= $line . "\n";
-				continue;
-			}
-			if ( preg_match("/^\s?$/", $line ) ) {
-				if ( $inSection && !$found ) {
-					$newContent .= "* {{#topic:" . $tocTitle . "}}\n\n";
-					$found = TRUE;
-					continue;
-				}
-				$inSection = FALSE;
-			}
-			$newContent .= $line . "\n";
-		}
-		
-		if ( !$found ) {
-			// Then the section didn't event exist, we should add to TOC and add the item.
-			// We need to add it before the Category line.
-			$text = $tocSection . "\n" . "* {{#topic:" . $tocTitle . "}}\n\n[[Category";
-			$newContent = preg_replace( "/\[\[Category/", $text, $newContent );
-		}
-
-		// Okay, do the edit
-		$article->doEdit( $newContent, "Updated TOC with " . $tocTitle . " in Section " . $tocSection, EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
 		return TRUE;
 	}
