@@ -307,7 +307,8 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "branchpurge") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and remove existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], true, false, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
+								$topic['title'], $targetVersion, $sectionName, $topic['text'], true, false );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -316,7 +317,8 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "branch") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . "</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], false, true, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
+								$topic['title'], $targetVersion, $sectionName, $topic['text'], false, true );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -325,7 +327,8 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "branchsplit") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and split from existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], false, true, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
+								$topic['title'], $targetVersion, $sectionName, $topic['text'], false, true );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -334,7 +337,8 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "inherit") {
 						try {
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . "</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], false, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
+								$topic['title'], $targetVersion, $sectionName, $topic['text'], false );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -343,7 +347,8 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "inheritpurge") {
 						try {
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . " and remove existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], true, true, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
+								$topic['title'], $targetVersion, $sectionName, $topic['text'], true, true );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
