@@ -391,40 +391,6 @@ class PonyDocsBranchInheritEngine {
 	}
 
 	/**
-	 * Remove entry from TOC. Will remove any instance of the entry from the TOC.
-	 * TODO: This method is never called. Should we remove it?
-	 *
-	 * @param $manual PonyDocsManual The manual the TOC belongs to.
-	 * @param $version PonyDocsVersion The version the TOC belongs to.
-	 * @returns boolean
-	 */
-	static function removeFromTOC( $product, $manual, $version, $tocTitle ) {
-		global $wgTitle;
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == false ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText($title);
-		$wgTitle = $title;
-		$article = new Article($title);
-		if ( !$article->exists() ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		// TODO: The space after the ^ is dubious.
-		// TODO: We should use PonyDocsTopic::getTopicRegex() here
-		//       But since we can't currently test this method, we shouldn't refactor yet
-		$content = preg_replace( "/^ \*\s*{{\s*#topic:\s*" . $tocTitle . "\s*}}$/", "", $content );
-		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return TRUE;
-	}
-
-	/**
 	 * Do a bulk add operation. Take a collection of topics and add them to the TOC if it doesn't already exist.
 	 *
 	 * @param $manual PonyDocsManual The manual the TOC belongs to.
