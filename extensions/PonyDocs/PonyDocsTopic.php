@@ -349,4 +349,35 @@ class PonyDocsTopic {
 		}
 		return "{{\s*#topic:\s*$title\s*}}";
 	}
+
+	/**
+	 * Create a URL path (e.g. Documentation/Foo/latest/Bar/Bas) for a Topic
+	 * 
+	 * @param string $productName
+	 * @param string $manualName
+	 * @param string $topicName
+	 * @param string $versionName - Optional. We'll get the selected version (which defaults to 'latest') if empty
+	 * 
+	 * @return string
+	 * 
+	 * TODO: We should really be passing a topic object into this and not a string
+	 */
+	static public function getTopicURLPath( $productName, $manualName, $topicName, $versionName = NULL ) {
+		global $wgArticlePath;
+
+		if (! isset( $versionName ) ) {
+			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
+		}
+		
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+		if ( $latestVersion ) {
+			if ( $versionName == $latestVersion->getVersionName() ) {
+				$versionName = 'latest';
+			}
+		}
+		
+		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+
+		return "$base/$productName/$versionName/$manualName/$topicName";
+	}
 }

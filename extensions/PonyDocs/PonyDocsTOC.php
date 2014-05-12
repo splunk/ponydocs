@@ -471,4 +471,19 @@ class PonyDocsTOC
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
 	}
+	
+	/**
+	 * Create a URL path (e.g. Documentation/Foo/BARTOC1.0) for a TOC
+	 * 
+	 * @param string $productName
+	 * @param string $TOCName
+	 * 
+	 * @return string
+	 */
+	static public function getTOCURLPath( $productName, $TOCName ) {
+		global $wgArticlePath;
+
+		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		return "$base/$productName/$TOCname";
+	}
 }
