@@ -20,11 +20,12 @@ class PonyDocsBranchInheritEngine {
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
+	 * @param $split Should we create a new page?
 	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
 	 * @returns boolean
 	 */
 	static function branchTopic(
-		$topicTitle, $version, $tocSection, $tocTitle, $deleteExisting = false, $split = true, $skipTOC = false ) {
+		$topicTitle, $version, $tocSection, $tocTitle, $deleteExisting, $split, $skipTOC ) {
 		// Clear any hooks so no weirdness gets called after we create the 
 		// branch
 		$wgHooks['ArticleSave'] = array();
@@ -146,11 +147,10 @@ class PonyDocsBranchInheritEngine {
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
-	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance 
-	 * 							reasons)
+	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
 	 * @returns boolean
 	 */
-	static function inheritTopic( $topicTitle, $version, $tocSection, $tocTitle, $deleteExisting = false, $skipTOC = false ) {
+	static function inheritTopic( $topicTitle, $version, $tocSection, $tocTitle, $deleteExisting, $skipTOC ) {
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the inherit
 		$wgHooks['ArticleSave'] = array();
