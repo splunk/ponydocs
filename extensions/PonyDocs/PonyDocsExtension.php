@@ -393,7 +393,7 @@ function efProductParserFunction_Render(&$parser, $shortName = '', $longName = '
 
 /**
  * Our topic parser functions used in TOC management to define a topic to be listed within a section.  This is simply the form:
- *   {#topic:Name of Topic}
+ *   {{#topic:Name of Topic}}
  */
 
 function efTopicParserFunction_Setup()

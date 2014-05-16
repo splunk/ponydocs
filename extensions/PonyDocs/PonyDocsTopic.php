@@ -337,6 +337,20 @@ class PonyDocsTopic {
 	}
 	
 	/**
+	 * Return a regex to match the topic parser function
+	 * 
+	 * @param string $title An optional title to search for. If not supplied, we'll search for any title, using a capture group.
+	 * 
+	 * @return string
+	 */
+	static public function getTopicRegex( $title = NULL ) {
+		if ( !isset( $title ) ) {
+			$title = '(.*)';
+		}
+		return "{{\s*#topic:\s*$title\s*}}";
+	}
+
+	/**
 	 * Create a URL path (e.g. Documentation/Foo/latest/Bar/Bas) for a Topic
 	 * 
 	 * @param string $productName
@@ -366,4 +380,4 @@ class PonyDocsTopic {
 
 		return "$base/$productName/$versionName/$manualName/$topicName";
 	}
-};
+}

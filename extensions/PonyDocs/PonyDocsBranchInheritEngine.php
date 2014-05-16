@@ -381,36 +381,6 @@ class PonyDocsBranchInheritEngine {
 	}
 
 	/**
-	 * Remove entry from TOC. Will remove any instance of the entry from the TOC.
-	 *
-	 * @param $manual PonyDocsManual The manual the TOC belongs to.
-	 * @param $version PonyDocsVersion The version the TOC belongs to.
-	 * @returns boolean
-	 */
-	static function removeFromTOC( $product, $manual, $version, $tocTitle ) {
-		global $wgTitle;
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == false ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText($title);
-		$wgTitle = $title;
-		$article = new Article($title);
-		if ( !$article->exists() ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		$content = preg_replace( "/^ \* \{\{#topic:" . $tocTitle . "}}$/", "", $content );
-		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return TRUE;
-	}
-
-	/**
 	 * Do a bulk add operation. Take a collection of topics and add them to the TOC if it doesn't already exist.
 	 *
 	 * @param $manual PonyDocsManual The manual the TOC belongs to.
@@ -453,11 +423,12 @@ class PonyDocsBranchInheritEngine {
 				$newContent = '';
 				foreach ( $content as $line ) {
 					$evalLine = trim(str_replace( '?', '', strtolower($line) ) );
+					$topicRegex = PonyDocsTopic::getTopicRegex($evalTopic);
 					if ( preg_match( "/^" . $evalSectionName . "$/", $evalLine ) ) {
 						$inSection = TRUE;
 						$newContent .= $line . "\n";
 						continue;
-					} elseif ( preg_match( "/\* \{\{#topic:" . $evalTopic . "\s*}}/", $evalLine ) ) {
+					} elseif ( preg_match( "/\*\s*$topicRegex/", $evalLine ) ) {
 						if ( $inSection ) {
 							$found = TRUE;
 						}
@@ -466,7 +437,7 @@ class PonyDocsBranchInheritEngine {
 					} elseif ( preg_match( "/^\s?$/", $evalLine ) ) {
 						if ( $inSection && !$found ) {
 							$newContent .= "* {{#topic:" . $topic . "}}\n\n";
-							$found = true;
+							$found = TRUE;
 							continue;
 						}
 						$inSection = FALSE;
@@ -487,7 +458,7 @@ class PonyDocsBranchInheritEngine {
 		// Okay, do the edit
 		$article->doEdit( $content, "Updated TOC in bulk branch operation.", EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
-		return true;
+		return TRUE;
 	}
 
 	/**

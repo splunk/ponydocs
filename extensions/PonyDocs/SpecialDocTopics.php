@@ -178,6 +178,7 @@ class SpecialDocTopics extends SpecialPage
 
 				$content = $article->getContent( );
 
+				#TODO: Use PonyDocsTopic::topicFunctionPattern if we ever revive this page
 				if( preg_match_all( '/{{#topic:(.*)}}/i', $content, $matches, PREG_SET_ORDER ))
 				{
 					$topicList = array( );
