@@ -21,11 +21,10 @@ class PonyDocsBranchInheritEngine {
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
 	 * @param $split Should we create a new page?
-	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
 	 * @returns boolean
 	 */
 	static function branchTopic(
-		$topicTitle, $version, $tocSection, $tocTitle, $deleteExisting, $split, $skipTOC ) {
+		$topicTitle, $version, $tocSection, $tocTitle, $deleteExisting, $split ) {
 		// Clear any hooks so no weirdness gets called after we create the 
 		// branch
 		$wgHooks['ArticleSave'] = array();
@@ -132,9 +131,6 @@ class PonyDocsBranchInheritEngine {
 		// doEdit on new article
 		$newArticle->doEdit( $newContent, "Created new topic from branched topic " . $topicTitle, EDIT_NEW );
 
-		if ( !$skipTOC ) {
-			self::addToTOC( $product, $manual, $version, $tocSection, $tocTitle );
-		}
 		return $title;
 	}
 
@@ -147,10 +143,9 @@ class PonyDocsBranchInheritEngine {
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
-	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
 	 * @returns boolean
 	 */
-	static function inheritTopic( $topicTitle, $version, $tocSection, $tocTitle, $deleteExisting, $skipTOC ) {
+	static function inheritTopic( $topicTitle, $version, $tocSection, $tocTitle, $deleteExisting ) {
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the inherit
 		$wgHooks['ArticleSave'] = array();
@@ -210,11 +205,6 @@ class PonyDocsBranchInheritEngine {
 				EDIT_UPDATE );
 		}
 		
-		// Okay, update our toc.
-		if ( !$skipTOC ) {
-			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manual );
-			self::addToTOC( $product, $manual, $version, $tocSection, $tocTitle );
-		}
 		return $title;
 	}
 
@@ -498,78 +488,6 @@ class PonyDocsBranchInheritEngine {
 		$article->doEdit( $content, "Updated TOC in bulk branch operation.", EDIT_UPDATE );
 		PonyDocsExtension::ClearNavCache();
 		return true;
-	}
-
-	/**
-	 * Adds entry to TOC. Will not add if entry already exists in TOC under section.
-	 * Note, this isn't used anymore in the inherit/branch process, but is kept for historical purposes in case it's needed.
-	 * 
-	 * @param $manual PonyDocsManual The Manual the TOC belongs to.
-	 * @param $version PonyDocsVersion the Version the TOC belongs to.
-	 * @param $tocSection string The TOC section of the title.
-	 * @param $tocTitle string The topic title to add.
-	 * @returns boolean
-	 */
-	static function addToTOC( $product, $manual, $version, $tocSection, $tocTitle ) {
-		global $wgTitle;
-
-		// Cleanup title
-		$tocTitle = preg_replace( "/[^a-zA-Z0-9\s]/", "", $tocTitle );
-
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == FALSE ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText( $title );
-		$wgTitle = $title;
-		$article = new Article( $title );
-		if(!$article->exists()) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		$content = explode( "\n", $content );
-		$found = FALSE;
-		$inSection = FALSE;
-		$newContent = '';
-		foreach ( $content as $line ) {
-			if ( preg_match("/^" . $tocSection . "$/", $line ) ) {
-				$inSection = TRUE;
-				$newContent .= $line . "\n";
-				continue;
-			}
-			if ( preg_match("/^\* \{\{#topic:" . $tocTitle . "}}$/", $line ) ) {
-				if ( $inSection ) {
-					$found = TRUE;
-				}
-				$newContent .= $line . "\n";
-				continue;
-			}
-			if ( preg_match("/^\s?$/", $line ) ) {
-				if ( $inSection && !$found ) {
-					$newContent .= "* {{#topic:" . $tocTitle . "}}\n\n";
-					$found = TRUE;
-					continue;
-				}
-				$inSection = FALSE;
-			}
-			$newContent .= $line . "\n";
-		}
-		
-		if ( !$found ) {
-			// Then the section didn't event exist, we should add to TOC and add the item.
-			// We need to add it before the Category line.
-			$text = $tocSection . "\n" . "* {{#topic:" . $tocTitle . "}}\n\n[[Category";
-			$newContent = preg_replace( "/\[\[Category/", $text, $newContent );
-		}
-
-		// Okay, do the edit
-		$article->doEdit( $newContent, "Updated TOC with " . $tocTitle . " in Section " . $tocSection, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return TRUE;
 	}
 
 	/**
