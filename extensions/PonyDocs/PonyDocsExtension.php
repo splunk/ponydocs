@@ -25,7 +25,6 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsAjax.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsAliasArticle.php" );
 require_once( "$IP/extensions/PonyDocs/SpecialTOCList.php" );
 require_once( "$IP/extensions/PonyDocs/SpecialTopicList.php" );
-require_once( "$IP/extensions/PonyDocs/SpecialDocTopics.php" );
 require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryLinks.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryPageHandler.php");
@@ -33,7 +32,6 @@ require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsPdfBook.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
-
 require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
