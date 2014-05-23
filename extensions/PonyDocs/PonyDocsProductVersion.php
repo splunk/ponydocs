@@ -331,7 +331,6 @@ class PonyDocsProductVersion {
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
 		global $wgUser;
 		global $splunkMediaWiki, $wgPonyDocsEmployeeGroup;
-		error_log(print_r($splunkMediaWiki, TRUE));
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
