@@ -1797,6 +1797,8 @@ HEREDOC;
 	 * Clears the navigation cache for all versions.
 	 * Warning: This removes ALL regular files inside the navcachedir specified 
 	 * in the server.config.php.
+	 * 
+	 * TODO: We don't use the navcachedir anymore, so this method is deprecated and should be removed.
 	 */
 	static public function ClearNavCache() {
 		global $ponydocsMediaWiki;
@@ -1824,7 +1826,6 @@ HEREDOC;
 	 * @return array of manual navigation items
 	 */
 	static public function fetchNavDataForVersion($product, $version) {
-		global $ponydocsMediaWiki;
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get($key);
