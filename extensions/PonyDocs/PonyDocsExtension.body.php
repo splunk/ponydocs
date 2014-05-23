@@ -833,15 +833,6 @@ class PonyDocsExtension
 		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( )))
 			return true;
 
-		// check if this is a TOC page.  If so, the navigation cache should 
-		// expire.
-		// Unfortunately, we can't do this on a per version basis, because 
-		// someone could modify a version TOC directly without modifying their 
-		// selected version.
-		if(preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ))) {
-			PonyDocsExtension::ClearNavCache();
-		}
-
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -1789,29 +1780,6 @@ HEREDOC;
 				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$currentProduct/$targetVersion/$2/$3", $url);
 			}
 			return true;
-		}
-		return true;
-	}
-
-	/**
-	 * Clears the navigation cache for all versions.
-	 * Warning: This removes ALL regular files inside the navcachedir specified 
-	 * in the server.config.php.
-	 */
-	static public function ClearNavCache() {
-		global $ponydocsMediaWiki;
-		// Need to delete all regular files (if possible) in the cache directory
-		if(!$dbh = @opendir($ponydocsMediaWiki['navcachedir'])) {
-			return;
-		}
-		while(false !== ($fileName = readdir($dbh))) {
-			if($fileName == "." || $fileName == "..") {
-				continue;
-			}
-			if(!is_dir($ponydocsMediaWiki['navcachedir'] . "/" . $fileName)) {
-				// Regular file, attempt to unlink
-				unlink($ponydocsMediaWiki['navcachedir'] . "/" . $fileName);
-			}
 		}
 		return true;
 	}
