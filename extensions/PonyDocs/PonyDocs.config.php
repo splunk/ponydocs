@@ -1,6 +1,4 @@
 <?php
-define('PONYDOCS_CRAWLER_AGENT_REGEX', '/gsa-crawler/');
-
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation');
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_ID', 100);
 

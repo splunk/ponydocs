@@ -401,8 +401,6 @@ class PonyDocsProductVersion {
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
-						|| ( isset( $_SERVER['HTTP_USER_AGENT'] ) 
-							&& preg_match( PONYDOCS_CRAWLER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT'] ) )
 						|| ( isset( $_SERVER['REMOTE_ADDR'] ) 
 							&& $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions) {
@@ -418,8 +416,6 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
-						|| ( isset( $_SERVER['HTTP_USER_AGENT'] )
-							&& preg_match(PONYDOCS_CRAWLER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT'] ) )
 						|| ( isset( $_SERVER['REMOTE_ADDR'] ) && $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions ) {
 							self::$sVersionList[$productName][] = self::$sVersionListPreview[$productName][]
@@ -566,7 +562,6 @@ class PonyDocsProductVersion {
 
 		if ( in_array( $authProductGroup, $groups )
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
-			|| preg_match( PONYDOCS_CRAWLER_AGENT_REGEX,$_SERVER['HTTP_USER_AGENT'] )
 			|| $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] ) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
