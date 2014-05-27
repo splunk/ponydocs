@@ -2,17 +2,30 @@ $(function(){
 	// Editing check to make sure there are matching <search> and </search> elements.
 	$("#editform").submit(function(event) {
 		// Let's evaluate the content
+		var returnedValue = false;
 		var content = $("#wpTextbox1").val();
 		var opened = content.match(/<search>/gi);
 		var closed = content.match(/<\/search>/gi);
 		if((opened == null && closed == null) || (opened != null && closed != null && opened.length == closed.length)) {
-			return true;
-		}
-		else {
+			returnedValue = true;
+		} else {
 			event.preventDefault();
 			alert("You have a mismatched number of opened/closed search elements in the edit text.  Please note, we only accept '<search>' and not '<search   >' (note spaces).  Correct and re-submit.");
-			return false;
 		}
+		/**
+		 * When editing a topic, make sure it does not contain some special characters
+		 */
+		var matchedTopics = content.match( /({{#topic:)(.*)/gi );
+		var forbiddenCharsInTopics = new RegExp( /[*\/)(&?]/ );
+		for ( var i = 0; i < matchedTopics.length; i++ ) {
+			topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
+			if ( forbiddenCharsInTopics.test( topic ) ) {
+				event.preventDefault();
+				alert( "You have forbidden characters in your topics' names. * / ) ( & ? are not allowed" );
+				returnedValue = false;
+			}
+		}
+		return returnedValue;
 	});
 
 	// Check for branch inherit
