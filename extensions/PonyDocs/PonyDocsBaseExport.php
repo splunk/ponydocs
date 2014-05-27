@@ -128,14 +128,14 @@ EOT;
 					if($currentSection != $section) {
 						$html .= '<h1>' . $section . '</h1>';
 						$currentSection = $section;
-					}		
+					}
 					$article = new Article($title, 0);
 					$text = $article->fetchContent();
 					$text   .= '__NOTOC__';
 
 					$opt->setEditSection(false);	// remove section-edit links
 					$wgOut->setHTMLTitle($ttext);   // use this so DISPLAYTITLE magic works
-					
+
 					$out = $wgParser->parse($text, $title, $opt, true, true);
 					$ttext = $wgOut->getHTMLTitle();
 					$text = $out->getText();
@@ -185,7 +185,7 @@ EOT;
 					 * 8 - cell padding
 					 * 9 - th bgcolor
 					 * 10 - td valign, align and font size
-					 * 
+					 *
 					 */
 					$regex_search = array(
 						'|<a([^\>]+)href="(' . str_replace('/', '\/', $wgServer) . ')+\/'
@@ -198,15 +198,15 @@ EOT;
 						'|<div\s*class=[\'"]?noprint["\']?>.+?</div>|s',
 						'|@{4}([^@]+?)@{4}|s',
 						'/(<table[^>]*)/',
-						'/(<th[^>]*)/',
+						'/(<th[^>]*)>([^<]*)/',
 						'/(<td[^>]*)>([^<]*)/'
 					);
-					
+
 					// Table vars
 					$table_extra = ' cellpadding="6"';
-					$th_extra = ' bgcolor="#C0C0C0"';
+					$th_extra = ' bgcolor="#C0C0C0" align="left"';
 					$td_extra = ' valign="center" align="left"';
-					
+
 					$regex_replace = array(
 						'<a${1}href="#${3}"${4}>',
 						'${1}',
@@ -216,10 +216,10 @@ EOT;
 						'',
 						'<!--$1-->',
 						"$1$table_extra",
-						"$1$th_extra",
-						"$1$td_extra>$2"
+						"$1$th_extra><font size='2'>$2</font>",
+						"$1$td_extra><font size='2'>$2</font>"
 					);
-					
+
 					$text = preg_replace($regex_search, $regex_replace, $text);
 
 					// Make all anchor tags uniformly lower case (wkhtmltopdf is case sensitive for internal links)
