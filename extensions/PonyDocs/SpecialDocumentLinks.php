@@ -44,7 +44,6 @@ class SpecialDocumentLinks extends SpecialPage {
 		$version = $partialUrlParts[3];
 		if (isset($version) && isset($currentVersion)) {
 			$partialUrl = str_replace($version, $currentVersion, $partialUrl);
-			//$partialUrl = preg_replace("/$version/", $currentVersion, $partialUrl);
 		}
 		
 		return $partialUrl;
