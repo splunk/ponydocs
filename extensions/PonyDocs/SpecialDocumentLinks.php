@@ -33,7 +33,7 @@ class SpecialDocumentLinks extends SpecialPage {
 	 * Return the colon-separated link with actual version (not base version) for the link to SpecialDocumentLinks
 	 */
 	
-	public function getDocumentLinksArticle() {
+	public static function getDocumentLinksArticle() {
 		
 		global $wgTitle;
 		
