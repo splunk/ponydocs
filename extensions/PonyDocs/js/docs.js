@@ -16,12 +16,12 @@ $(function(){
 		 * When editing a topic, make sure it does not contain some special characters
 		 */
 		var matchedTopics = content.match( /({{#topic:)(.*)/gi );
-		var forbiddenCharsInTopics = new RegExp( /[*\/)(&?]/ );
+		var forbiddenCharsInTopics = new RegExp( /[*\/)(&?<>]/ );
 		for ( var i = 0; i < matchedTopics.length; i++ ) {
 			topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
 			if ( forbiddenCharsInTopics.test( topic ) ) {
 				event.preventDefault();
-				alert( "You have forbidden characters in your topics' names. * / ) ( & ? are not allowed" );
+				alert( "You have forbidden characters in your topics' names. * / ) ( & ? < > are not allowed" );
 				returnedValue = false;
 			}
 		}
