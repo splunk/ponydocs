@@ -54,8 +54,7 @@ class PonyDocsRenameVersionEngine {
 			$message = "Renamed version category $oldCategory to $newCategory in $count locations via RenameVersion";
 		}
 		$article->doEdit( $content, $message, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return true;
+		return TRUE;
 	}
 	
 	/**

@@ -304,7 +304,6 @@ class PonyDocsBranchInheritEngine {
 			"Branched TOC For Version: " . $product->getShortName() . ':' . $sourceVersion->getVersionName() . " from Version: "
 				. $product->getShortName() . ':' . $sourceVersion->getVersionName(),
 			EDIT_NEW);
-		PonyDocsExtension::ClearNavCache();
 		return $title;
 	}
 
@@ -340,7 +339,6 @@ class PonyDocsBranchInheritEngine {
 			$newContent,
 			"Created TOC For Version: " . $product->getShortName() . ":" . $version->getVersionName(),
 			EDIT_NEW);
-		PonyDocsExtension::ClearNavCache();
 		return $title;
 	}
 
@@ -376,7 +374,6 @@ class PonyDocsBranchInheritEngine {
 			$lastTag . "[[Category:V:" . $product->getShortName() . ':' . $newVersion->getVersionName() . "]]",
 			$content );
 		$article->doEdit( $content, "Added version " . $product->getShortName() . ':' . $version->getVersionName(), EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
 		return TRUE;
 	}
 
@@ -457,7 +454,6 @@ class PonyDocsBranchInheritEngine {
 		}
 		// Okay, do the edit
 		$article->doEdit( $content, "Updated TOC in bulk branch operation.", EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
 		return TRUE;
 	}
 

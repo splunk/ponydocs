@@ -804,42 +804,33 @@ class PonyDocsExtension
 	 * @param unknown_type $sectionanchor
 	 * @param unknown_type $flags
 	 */
-	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags )
-	{
+	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath, $wgHooks, $wgPonyDocsEmployeeGroup;
 
-		$editPonyDocsProduct = $wgRequest->getVal("ponydocsproduct");
-		$editPonyDocsVersion = $wgRequest->getVal("ponydocsversion");
-		if($editPonyDocsVersion != null) {
-			PonyDocsProductVersion::SetSelectedVersion($editPonyDocsProduct, $editPonyDocsVersion);
+		$editPonyDocsProduct = $wgRequest->getVal( "ponydocsproduct" );
+		$editPonyDocsVersion = $wgRequest->getVal( "ponydocsversion" );
+		if ( $editPonyDocsVersion != NULL ) {
+			PonyDocsProductVersion::SetSelectedVersion( $editPonyDocsProduct, $editPonyDocsVersion );
 		}
 
-		// Dangerous.  Only set the flag if you know that you should be skipping 
-		// this processing.  Currently used for branch/inherit.
-		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
-			return true;
+		// Dangerous. Only set the flag if you know that you should be skipping this processing.
+		// Currently used for branch/inherit.
+		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
+			return TRUE;
 		}
 
-		// We're going to add a entry into the error_log to dictate who edited, 
-		// if they're an employee, and what topic they modified.
+		// Add a entry into the error_log to dictate who edited, if they're an employee, and what topic they modified.
 		$groups = $user->getGroups();
-		$isEmployee = false;
-		if(in_array( $wgPonyDocsEmployeeGroup, $groups )) {
-			$isEmployee = true;
+		$isEmployee = FALSE;
+		if ( in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
+			$isEmployee = TRUE;
 		}
-		error_log("INFO [wikiedit] username=\"" . $user->getName() . "\" usertype=\"" . ($isEmployee ? 'employee' : 'nonemployee') . "\" url=\"" . $article->getTitle()->getFullURL() . "\"");
+		error_log( "INFO [wikiedit] username=\"" . $user->getName() . "\" usertype=\""
+			. ($isEmployee ? 'employee' : 'nonemployee') . "\" url=\"" . $article->getTitle()->getFullURL() . "\"" );
 
-		$title = $article->getTitle( );
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( )))
-			return true;
-
-		// check if this is a TOC page.  If so, the navigation cache should 
-		// expire.
-		// Unfortunately, we can't do this on a per version basis, because 
-		// someone could modify a version TOC directly without modifying their 
-		// selected version.
-		if(preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ))) {
-			PonyDocsExtension::ClearNavCache();
+		$title = $article->getTitle();
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString() ) ) {
+			return TRUE;
 		}
 
 		$dbr = wfGetDB( DB_SLAVE );
@@ -847,79 +838,81 @@ class PonyDocsExtension
 		/**
 		 * Check to see if we have any version tags -- if we don't we don't care about this and can skip and return true.
 		 */
-		if( preg_match_all( '/\[\[Category:V:([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*)\]\]/i', $text, $matches, PREG_SET_ORDER ))
-		{
+		if ( preg_match_all( '/\[\[Category:V:([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*)\]\]/i', $text, $matches, PREG_SET_ORDER ) ) {
 
-			$categories = array( );
-			foreach( $matches as $m )
+			$categories = array();
+			foreach ( $matches as $m ) {
 				$categories[] = $m[2];
+			}
 
 			/**
 			 * Ensure ALL Category tags present reference defined versions.
 			 */
-			foreach( $categories as $c )
-			{
+			foreach ( $categories as $c ) {
 				$v = PonyDocsProductVersion::GetVersionByName( $editPonyDocsProduct, $c );
-				if( !$v )
-				{
-					$wgOut->addHTML( '<h3>The version <span style="color:red;">' . $c . '</span> does not exist.  Please update version list if you wish to use it.</h3>' );
-					return false;
+				if ( !$v ) {
+					$wgOut->addHTML('<h3>The version <span style="color:red;">' . $c . '</span> does not exist.'
+						. 'Please update version list if you wish to use it.</h3>' );
+					return FALSE;
 				}
 			}
 
 			/**
-			 * Now let's find out topic name.  From that we can look in categorylinks for all tags for this topic, regardless
-			 * of topic name (i.e. PONYDOCS_DOCUMENTATION_PREFIX . 'User:HowToFoo:%').  We need to restrict this so that we do not query ourselves
-			 * (our own topic name) and we need to check for 'cl_to' to be in $categories generated above.  If we get 1 or more
-			 * hits then we need to inject a form element (or something) and return FALSE.
+			 * Now let's find out topic name.
+			 * From that we can look in categorylinks for all tags for this topic, regardless of topic name
+			 * (i.e. PONYDOCS_DOCUMENTATION_PREFIX . 'User:HowToFoo:%').
+			 * We need to restrict this so that we do not query ourselves (our own topic name)
+			 * and we need to check for 'cl_to' to be in $categories generated above.
+			 * If we get 1 or more hits then we need to inject a form element (or something) and return FALSE.
 			 *
 			 * @FIXME:  Should also work on TOC management pages!
 			 */
 
 			$q = '';
 
-			if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ))
-			{
+			if ( preg_match(
+				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
+				$q = "SELECT cl_to, cl_sortkey FROM categorylinks " .
+					"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
+						. $titleMatch[3] )) . ":%' " .
+					"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
+						. $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
+					"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
+			} elseif ( preg_match(
+				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/', $title->__toString(), $titleMatch ) ) {
 				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
-						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':' . $titleMatch[3] )) . ":%' " .
-						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':' . $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
-						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
-			}
-			else if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/', $title->__toString( ), $titleMatch ))
-			{
-				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
-						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' )) . "%' " .
-						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' . $titleMatch[3] )) . "' " .
-						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
-			}
-			else
-			{
-				return true;
+						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' ))
+							. "%' " .
+						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC'
+							. $titleMatch[3] )) . "' " .
+						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories )
+							. "')";
+			} else {
+				return TRUE;
 			}
 			$res = $dbr->query( $q, __METHOD__ );
-			if( !$res->numRows( )) {
-				return true;
+			if ( !$res->numRows() ) {
+				return TRUE;
 			}
+			
 			$duplicateVersions = array( );
 			$topic = '';
 
-			while( $row = $dbr->fetchObject( $res ))
-			{
-				if( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*)/i', $row->cl_to, $vmatch ))
-				{
+			while( $row = $dbr->fetchObject( $res ) ) {
+				if ( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*)/i', $row->cl_to, $vmatch ) ) {
 					$topic = $row->cl_sortkey;
 					$duplicateVersions[] = $vmatch[1];
 				}
 			}
 
-			//echo '<pre>'; print_r( $duplicateVersions ); die();
-
 			/**
-			 * Produce a warning message with a link to the topic which has the duplicates.  This will list the topic which
-			 * is already tagged to these versions and the versions tagged for.  It will also contain a simple link to click,
-			 * which uses AJAX to call the special action 'removetags' (see onUnknownAction method) and passes it a string of
-			 * colon delimited versions.  This will strip the version tags from the topic and then hide the output message
-			 * (the warning) and allow the user to submit again.
+			 * Produce a warning message with a link to the topic which has the duplicates.
+			 * This will list the topic which is already tagged to these versions and the versions tagged for.
+			 * It will also contain a simple link to click, which uses AJAX to call the special action 'removetags'
+			 * (see onUnknownAction method)
+			 * and passes it a string of colon delimited versions.
+			 * This will strip the version tags from the topic and then hide the output message (the warning)
+			 * and allow the user to submit again.
 			 *
 			 * @FIXME:  Update this to use the stuff from PonyDocsAjax.php to be cleaner.
 			 */
@@ -964,26 +957,28 @@ HEREDOC;
 			$wgOut->addInLineScript( $msg );
 
 			$msg = '<div id="version-warning"><h3>There\'s already a topic with the same name as this topic.' .
-					'That other topic is already tagged with version(s): ' . implode(',', $duplicateVersions) .  '.' .
-					' Click <a href="#" onClick="ajaxRemoveVersions(\'' . $wgScriptPath . '/index.php?title=' . $topic . '&action=ajax-removetags&product=' . $editPonyDocsProduct . '&versions=' . implode(',', $duplicateVersions) . '\');">here</a> to remove the version tag(s) from the other topic and use this one instead.' .
-					' Here\'s a link to that topic so you can decide which one you want to use: ' .
-					'<a href="' . str_replace('$1', $topic, $wgArticlePath) . '">' . $topic . '</a></div>' . 
+				'That other topic is already tagged with version(s): ' . implode( ',', $duplicateVersions ) .  '.' .
+				' Click <a href="#" onClick="ajaxRemoveVersions(\'' . $wgScriptPath . '/index.php?title=' . $topic .
+				'&action=ajax-removetags&product=' . $editPonyDocsProduct . '&versions=' . implode( ',', $duplicateVersions ) .
+				'\');">here</a> to remove the version tag(s) from the other topic and use this one instead.' .
+				' Here\'s a link to that topic so you can decide which one you want to use: ' .
+				'<a href="' . str_replace( '$1', $topic, $wgArticlePath ) . '">' . $topic . '</a></div>' . 
 
-					'<div id="version-warning-done" style="display:none;"><h4>Version tags removed from article ' .
-					'<a href="' . str_replace( '$1', $topic, $wgArticlePath ) . '">' . $topic . '</a> ' .
-					'- Submit to save changes to this topic.</h4></div>';
+				'<div id="version-warning-done" style="display:none;"><h4>Version tags removed from article ' .
+				'<a href="' . str_replace( '$1', $topic, $wgArticlePath ) . '">' . $topic . '</a> ' .
+				'- Submit to save changes to this topic.</h4></div>';
 
 			$wgOut->addHTML( $msg );
 
 			/**
 			 * No idea why but things were interfering and causing this to not work.
 			 */
-			$wgHooks['ArticleSave'] = array( );
+			$wgHooks['ArticleSave'] = array();
 
-			return false;
+			return FALSE;
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -1789,29 +1784,6 @@ HEREDOC;
 				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$currentProduct/$targetVersion/$2/$3", $url);
 			}
 			return true;
-		}
-		return true;
-	}
-
-	/**
-	 * Clears the navigation cache for all versions.
-	 * Warning: This removes ALL regular files inside the navcachedir specified 
-	 * in the server.config.php.
-	 */
-	static public function ClearNavCache() {
-		global $ponydocsMediaWiki;
-		// Need to delete all regular files (if possible) in the cache directory
-		if(!$dbh = @opendir($ponydocsMediaWiki['navcachedir'])) {
-			return;
-		}
-		while(false !== ($fileName = readdir($dbh))) {
-			if($fileName == "." || $fileName == "..") {
-				continue;
-			}
-			if(!is_dir($ponydocsMediaWiki['navcachedir'] . "/" . $fileName)) {
-				// Regular file, attempt to unlink
-				unlink($ponydocsMediaWiki['navcachedir'] . "/" . $fileName);
-			}
 		}
 		return true;
 	}
