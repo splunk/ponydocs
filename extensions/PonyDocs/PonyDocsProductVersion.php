@@ -330,7 +330,7 @@ class PonyDocsProductVersion {
 	 */
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
 		global $wgUser;
-		global $splunkMediaWiki, $wgPonyDocsEmployeeGroup;
+		global $splunkMediaWiki, $wgIP, $wgPonyDocsEmployeeGroup;
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
@@ -416,7 +416,7 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
-						|| ( isset( $_SERVER['REMOTE_ADDR'] ) && $_SERVER['REMOTE_ADDR'] == $splunkMediaWiki['CrawlerAddress'] )
+						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions ) {
 							self::$sVersionList[$productName][] = self::$sVersionListPreview[$productName][]
 								= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapPreview[$productName][$pcs[0]]
