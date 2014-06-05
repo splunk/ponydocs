@@ -323,6 +323,64 @@ class PonyDocsTopic {
 	}
 
 	/**
+	 * This function returns information about the versions on this topic.
+	 * This information can be used by skins to change UI based on the version features.
+	 * 
+	 * @return array
+	 */
+	public function getVersionClasses() {
+		
+		$productName = PonyDocsProduct::getSelectedProduct();
+		$versionClasses = array();
+		
+		$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName );
+		// Just the names of our released versions
+		$releasedNames = array();
+		foreach ( $releasedVersions as $ver ) {
+			$releasedNames[] = strtolower( $ver->getVersionName() );
+		}
+		
+		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
+		// Just the names of our preview versions
+		$previewNames = array();
+		foreach ( $previewVersions as $ver ) {
+			$previewNames[] = strtolower( $ver->getVersionName() );
+		}
+		
+		$currentVersion = FALSE;
+		if ( PonyDocsProductVersion::GetLatestReleasedVersion( $productName ) != null ) {
+			$currentVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName )->getVersionName();
+		}
+		
+		foreach( $this->versions as $v ) {
+			$ver = strtolower($v->getVersionName());
+			
+			// Is this the current version?
+			if ( $currentVersion && !strcasecmp( $ver, $currentVersion ) ) {
+				$versionClasses['current'] = TRUE;
+			}
+			
+			// Is this version released, preview, or unreleased?
+			if ( in_array( $ver, $releasedNames ) ) {
+				$versionClasses['released'] = TRUE;
+			} elseif ( in_array( $ver, $previewNames ) ) {
+				$versionClasses['preview'] = TRUE;
+			} else {
+				$versionClasses['unreleased'] = TRUE;
+			}
+
+			// Is this version older or later than the current version?
+			if ( $currentVersion && $ver < $currentVersion ) {
+				$versionClasses['older'] = TRUE;
+			} elseif ( $currentVersion && $ver > $currentVersion ) {
+				$versionClasses['later'] = TRUE;
+			}
+		}
+
+		return array_keys($versionClasses);
+	}
+
+	/**
 	 * Get 'base' topic name, meaning with version stripped off.
 	 * Only works if a Documentation NS topic, else returns empty string.
 	 *
