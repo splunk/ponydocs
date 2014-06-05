@@ -1,48 +1,64 @@
 $( function() {
-	// Editing check to make sure there are matching <search> and </search> elements.
+	// Validate the edit form
 	$( "#editform" ).submit( function( event ) {
-		var alertString = "";
-		var returnValue = true;
-		var content = $( "#wpTextbox1" ).val();
-		
-		if ( ! Validation.search( content ) ) {
-			alertString += "You have a mismatched number of opened/closed search elements in the edit text.\n"
-			alertString	+="Please note, we only accept '<search>' and not '<search   >' (note spaces).\n";
-			alertString += "Correct and re-submit.\n\n";
-			returnValue = false;
-		}
-
-		badTopics = Validation.topicTitle( content );
-		if ( badTopics.length > 0 ) {
-			returnValue = false;
-			alertString += "The following topics have forbidden characters: * / ) ( & ? < > ' \" are not allowed.\n";
-			for ( var i = 0; i < badTopics.length; i++ ) {
-				alertString += "* " + badTopics[i] + "\n";
-			}
-			alertString += "\n";
-		}
-		
-		if ( !returnValue ) {
-			event.preventDefault();
-			alert(alertString);
-		}
-		
-		return returnValue;
+		return PonyDocsEventHandlers.editFormSubmit( event );
 	});
 
 	// Check for branch inherit
 	if ( $( "#docbranchinherit" ).length > 0 ) {
 		SplunkBranchInherit.init();
 	}
+	
+	// Check for Rename Version
 	if ( $( "#renameversion" ).length > 0 ) {
 		SplunkRenameVersion.init();
 	}
+	
 	if ( typeof( ponydocsOnLoad ) !== 'undefined' ) {
 		ponydocsOnLoad();
 	}
 });
 
-Validation = function() {
+PonyDocsEventHandlers = function() {
+	return {
+		/**
+		 * Validate the edit form
+		 * @param event event
+		 * @return boolean
+		 */
+		editFormSubmit: function( event ) {
+			var alertString = "";
+			var returnValue = true;
+			var content = $( "#wpTextbox1" ).val();
+
+			if ( ! PonyDocsValidators.search( content ) ) {
+				alertString += "You have a mismatched number of opened/closed search elements in the edit text.\n"
+				alertString	+= "Please note, we only accept '<search>' and not '<search   >' (note spaces).\n";
+				alertString += "Correct and re-submit.\n\n";
+				returnValue = false;
+			}
+
+			badTopics = PonyDocsValidators.topicTitle( content );
+			if ( badTopics.length > 0 ) {
+				returnValue = false;
+				alertString += "The following topics have forbidden characters: * / ) ( & ? < > ' \" are not allowed.\n";
+				for ( var i = 0; i < badTopics.length; i++ ) {
+					alertString += "* " + badTopics[i] + "\n";
+				}
+				alertString += "\n";
+			}
+
+			if ( !returnValue ) {
+				event.preventDefault();
+				alert(alertString);
+			}
+
+			return returnValue;
+		}
+	}
+}();
+
+PonyDocsValidators = function() {
 	return {
 		/**
 		 * Look for any un-closed search tags
