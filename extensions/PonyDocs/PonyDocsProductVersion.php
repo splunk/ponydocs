@@ -401,8 +401,7 @@ class PonyDocsProductVersion {
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
-						|| ( isset( $_SERVER['REMOTE_ADDR'] ) 
-							&& $_SERVER['REMOTE_ADDR'] == $splunkMediaWiki['CrawlerAddress'] )
+						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions) {
 							self::$sVersionList[$productName][] = self::$sVersionListUnreleased[$productName][]
 								= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapUnreleased[$productName][$pcs[0]]
@@ -555,7 +554,7 @@ class PonyDocsProductVersion {
 	 * @return array Map of PonyDocsProductVersion instances (name => object).
 	 */
 	static public function GetVersionsForUser( $productName ) {
-		global $wgUser, $wgPonyDocsEmployeeGroup;
+		global $wgIP, $wgPonyDocsEmployeeGroup, $wgUser;
 		$groups = $wgUser->getGroups( );
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
@@ -564,7 +563,7 @@ class PonyDocsProductVersion {
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
 			// TODO: $ponydocsMediaWiki is not globalled here, and doesn't exist, so this condition never matches.
 			//       But maybe we do want to allow the crawler through here?
-			|| $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] ) {
+			|| ( isset( $wgIP ) && $wgIP == $ponydocsMediaWiki['CrawlerAddress'] )) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
 			$retList = array( );
