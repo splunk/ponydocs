@@ -13,8 +13,6 @@ class PonyDocsProductVersion {
 	/**
 	 * Constants for status types available.
 	 *
-	 * @FIXME:  Use these instead!
-	 *
 	 * @staticvar
 	 */
 	const STATUS_RELEASED = 0;
@@ -43,8 +41,12 @@ class PonyDocsProductVersion {
 	 *
 	 * @var integer
 	 */
-	protected $vStatusCode = 0;
+	protected $vStatusCode = self::STATUS_UNKNOWN;
 
+	/**
+	 * Product Name
+	 * @var string
+	 */
 	protected $pName = '';
 
 	/**
@@ -97,7 +99,7 @@ class PonyDocsProductVersion {
 	public function __construct( $productNameShort, $versionName, $versionStatus ) {
 		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
 			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort) ) {
-			$this->mStatusCode = self::STATUS_INVALID;
+			$this->vStatusCode = self::STATUS_INVALID;
 			return;
 		}
 		$this->pName = $productNameShort;
@@ -167,6 +169,7 @@ class PonyDocsProductVersion {
 	 * @return boolean
 	 */
 	public function isValid( ) {
+		error_log("testing");
 		return (( $this->vStatusCode == self::STATUS_UNKNOWN ) || ( $this->vStatusCode == self::STATUS_INVALID )) ? false : true;
 	}
 
