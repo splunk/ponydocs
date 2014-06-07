@@ -95,8 +95,8 @@ class PonyDocsProductVersion {
 	 * @param string $status Version status: released, unreleased, preview.
 	 */
 	public function __construct( $productNameShort, $versionName, $versionStatus ) {
-		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
-			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort) ) {
+		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName )
+			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort ) ) {
 			$this->mStatusCode = self::STATUS_INVALID;
 			return;
 		}
