@@ -82,8 +82,8 @@ PonyDocsValidators = function() {
 		 */
 		topicTitle: function( content ) {
 			var badTitles = [];
-			var matchedTopics = content.match( /({{#topic:)(.*)/gi );
-			var forbiddenCharsInTopics = new RegExp( /[*\/)(&?<>'"]/ );
+			var matchedTopics = content.match( /{{#topic:(.*)/gi );
+			var forbiddenCharsInTopics = /[*\/)(&?<>'"]/;
 			for ( var i = 0; i < matchedTopics.length; i++ ) {
 				topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
 				if ( forbiddenCharsInTopics.test( topic ) ) {
