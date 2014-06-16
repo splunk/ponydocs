@@ -13,6 +13,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
+// TODO: can we use $wgAutoLoadClasses[] for this instead?
 require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.body.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsAjax.php" );
@@ -38,6 +39,7 @@ require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRenameVersion.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocImport.php");
+require_once( "$IP/extensions/PonyDocs/SpecialStaticDocServer.php");
 require_once( "$IP/extensions/PonyDocs/SpecialTOCList.php" );
 require_once( "$IP/extensions/PonyDocs/SpecialTopicList.php" );
 
