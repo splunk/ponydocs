@@ -56,7 +56,7 @@ class SpecialStaticDocServer extends SpecialPage {
 			// TODO: Maybe GetVersionByName should LoadVersions if necessary so we don't need to call this explicitly?
 			&& PonyDocsProductVersion::GetVersions( $productName )
 			&& PonyDocsProductVersion::GetVersionByName( $productName, $versionName ) ) {
-			$filename = PONYDOCS_STATIC_DOCS_DIR . "/$par";
+			$filename = PONYDOCS_STATIC_DIR . "/$par";
 			if ( file_exists( $filename ) ) {
 				$found = TRUE;
 			}

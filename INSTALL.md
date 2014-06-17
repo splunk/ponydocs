@@ -65,8 +65,9 @@ Failure to do so will result in frustration and keyboard tossing.
 	# Rewrite /Documentation/ to /Documentation
 	RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
 
-	# Rewrite /DocumentationStatic to Special:StaticDocServer
-	RewriteRule ^/DocumentationStatic/(.*)	/index.php?title=Special:StaticDocServer/$1 [PT,QSA]
+	# Proxy /DocumentationStatic to Special:StaticDocServer
+	RewriteRule ^/DocumentationStatic	- [L]
+	ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
 
 	# Rewrite rule to handle passing ugly doc urls to pretty urls
 	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
@@ -164,7 +165,6 @@ Failure to do so will result in frustration and keyboard tossing.
 	define('PONYDOCS_PDF_TITLE_IMAGE_PATH', '/extensions/PonyDocs/images/pony.png');
 	define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
 	define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
-	define('PONYDOCS_STATIC_DOCS_DIR', '/path/to/static/docs');
 
 	// NOTE: this *must* match what is in Documentation:Products.
 	// This will be fixed in later versions
