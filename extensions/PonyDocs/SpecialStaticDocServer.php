@@ -40,7 +40,7 @@ class SpecialStaticDocServer extends SpecialPage {
 		#TODO: switch to $this->getOuput() and $this->getRequest() when we upgrade MW
 		global $wgOut, $wgRequest;
 		$wgOut->disable();
-
+		
 		$found = FALSE;
 		list( $productName, $versionName, $path ) = explode( '/', $par, 3 );
 		if ( !$path ) {
@@ -53,6 +53,8 @@ class SpecialStaticDocServer extends SpecialPage {
 			// Validate product exists
 			&& PonyDocsProduct::GetProductByShortName( $productName )
 			// Validate version exists/is accessible by the current user
+			// TODO: Maybe GetVersionByName should LoadVersions if necessary so we don't need to call this explicitly?
+			&& PonyDocsProductVersion::GetVersions( $productName )
 			&& PonyDocsProductVersion::GetVersionByName( $productName, $versionName ) ) {
 			$filename = PONYDOCS_STATIC_DOCS_DIR . "/$par";
 			if ( file_exists( $filename ) ) {
