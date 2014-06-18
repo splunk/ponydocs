@@ -69,6 +69,11 @@ class SpecialStaticDocServer extends SpecialPage {
 			echo '<div>The documentation you have requested does not exist.';
 			echo '</body></html>';
 		} else {
+			$mimeMagic = MimeMagic::singleton();
+			$pathParts = pathinfo($filename);
+
+			/* get mime-type for a specific file */
+			header('Content-type: ' .  $mimeMagic->guessTypesForExtension($pathParts['extension']));
 			readfile( $filename );
 		}
 	}
