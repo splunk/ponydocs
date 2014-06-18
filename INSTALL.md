@@ -73,7 +73,7 @@ Failure to do so will result in frustration and keyboard tossing.
 	RewriteRule ^/$ /Documentation [R]
 
 	# All other requests go through MW router
-	RewriteRule ^.*$ /index.php [PT,QSA]
+	RewriteRule ^/.*$ /index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
