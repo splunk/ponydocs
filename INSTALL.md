@@ -69,11 +69,11 @@ Failure to do so will result in frustration and keyboard tossing.
 	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*) /Documentation/$1/$4/$2/$3  [L,QSA,R=301]
 	RewriteRule ^/Documentation:(.*):(.*):(.*)	  /Documentation/$1/latest/$2/$3  [L,QSA,R=301]
 
-	# get home page requests to Documentation
+	# Get home page requests to Documentation
 	RewriteRule ^/$ /Documentation [R]
 
-	# all other requests go to specific page
-	RewriteRule ^/(\/*)(.*)$ /index.php?title=$3 [PT,QSA]
+	# All other requests go through MW router
+	RewriteRule ^.*$ /index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
