@@ -53,8 +53,6 @@ class SpecialStaticDocServer extends SpecialPage {
 			// Validate product exists
 			&& PonyDocsProduct::GetProductByShortName( $productName )
 			// Validate version exists/is accessible by the current user
-			// TODO: Maybe GetVersionByName should LoadVersions if necessary so we don't need to call this explicitly?
-			&& PonyDocsProductVersion::GetVersions( $productName )
 			&& PonyDocsProductVersion::GetVersionByName( $productName, $versionName ) ) {
 			$filename = PONYDOCS_STATIC_DIR . "/$par";
 			if ( file_exists( $filename ) ) {
