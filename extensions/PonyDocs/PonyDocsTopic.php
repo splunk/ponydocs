@@ -103,28 +103,19 @@ class PonyDocsTopic {
 		$res = $dbr->select(
 			'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
 
-		$tempVersions = array();
-
+		$this->versions = array();
+		
 		while ( $row = $dbr->fetchObject( $res ) ) {
 			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
 				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if ( $v ) {
-					$tempVersions[] = $v;
+					$this->versions[] = $v;
 				}
 			}
 		}
-		// Sort by Version, by doing a natural sort. Also remove any duplicates.
-		/// FIXME - what is this really doing? tempVersions index is int per above code!
-		$sortArray = array();
-		foreach ( $tempVersions as $index => $version ) {
-			if ( !in_array($version->getVersionName(), $sortArray) ) {
-				$sortArray[(string)$index] = $version->getVersionName();
-			}
-		}
-		natsort( $sortArray );
-		foreach ( $sortArray as $targetIndex => $verName ) {
-			$this->versions[] = $tempVersions[$targetIndex];
-		}
+
+		// Sort by the order on the versions admin page
+		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
 
 		return $this->versions;
 	}
@@ -349,34 +340,33 @@ class PonyDocsTopic {
 		
 		$currentVersion = FALSE;
 		if ( PonyDocsProductVersion::GetLatestReleasedVersion( $productName ) != null ) {
-			$currentVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName )->getVersionName();
+			$currentVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 		}
-		
-		foreach( $this->versions as $v ) {
-			$ver = strtolower($v->getVersionName());
-			
-			// Is this the current version?
-			if ( $currentVersion && !strcasecmp( $ver, $currentVersion ) ) {
-				$versionClasses['current'] = TRUE;
-			}
+
+	
+		foreach( $this->versions as $version ) {
+			$versionName = strtolower($version->getVersionName());
 			
 			// Is this version released, preview, or unreleased?
-			if ( in_array( $ver, $releasedNames ) ) {
+			if ( in_array( $versionName, $releasedNames ) ) {
 				$versionClasses['released'] = TRUE;
-			} elseif ( in_array( $ver, $previewNames ) ) {
+			} elseif ( in_array( $versionName, $previewNames ) ) {
 				$versionClasses['preview'] = TRUE;
 			} else {
 				$versionClasses['unreleased'] = TRUE;
 			}
 
-			// Is this version older or later than the current version?
-			if ( $currentVersion && $ver < $currentVersion ) {
+			// Is this version older or later or equal to the current version?
+			if ( $currentVersion && PonyDocs_ProductVersionCmp( $version, $currentVersion ) < 0 ) {
 				$versionClasses['older'] = TRUE;
-			} elseif ( $currentVersion && $ver > $currentVersion ) {
+			} elseif ( $currentVersion && PonyDocs_ProductVersionCmp( $version, $currentVersion ) > 0 ) {
 				$versionClasses['later'] = TRUE;
+			} else {
+				$versionClasses['current'] = TRUE;
 			}
 		}
 
+		error_log(print_r($versionClasses, TRUE));
 		return array_keys($versionClasses);
 	}
 
