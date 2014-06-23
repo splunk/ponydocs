@@ -366,7 +366,6 @@ class PonyDocsTopic {
 			}
 		}
 
-		error_log(print_r($versionClasses, TRUE));
 		return array_keys($versionClasses);
 	}
 
