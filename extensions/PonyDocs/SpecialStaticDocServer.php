@@ -62,10 +62,13 @@ class SpecialStaticDocServer extends SpecialPage {
 		
 		if ( !$found ) {
 			$wgRequest->response()->header( "HTTP/1.1 404 Not Found" );
-			echo '<html><body>';
-			echo '<h2>Bad Request</h2>';
-			echo '<div>The documentation you have requested does not exist.';
-			echo '</body></html>';
+			echo "<html>\n";
+			echo "<head><title>Not Found</title></head>\n";
+			echo "<body>\n";
+			echo "<h1>Bad Request</h1>\n";
+			echo "<div>The documentation you have requested does not exist.</div>\n";
+			echo "</body>\n";
+			echo "</html>\n";
 		} else {
 			$mimeMagic = MimeMagic::singleton();
 			$pathParts = pathinfo($filename);
