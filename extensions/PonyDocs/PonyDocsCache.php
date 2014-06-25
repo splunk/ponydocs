@@ -23,7 +23,7 @@ class PonyDocsCache
 				$expires = 'UNIX_TIMESTAMP() + 3600';
 			}
 			$data = mysql_real_escape_string(serialize($data));
-			$query = "REPLACE INTO ponydocs_cache VALUES('$key', $expires,  '$data')";
+			$query = "INSERT IGNORE INTO ponydocs_cache VALUES('$key', $expires,  '$data')";
 			try {
 				$this->dbr->query( $query );
 			} catch ( Exception $ex ){
@@ -35,7 +35,7 @@ class PonyDocsCache
 	
 	public function get( $key ) {
 		if ( PONYDOCS_CACHE_ENABLED ) {
-			$query = "SELECT *  FROM ponydocs_cache WHERE cachekey = '$key' AND expires > UNIX_TIMESTAMP()";
+			$query = "SELECT * FROM ponydocs_cache WHERE cachekey = '$key' AND expires > UNIX_TIMESTAMP() ORDER BY expires DESC LIMIT 1";
 			try {
 				$res = $this->dbr->query( $query );
 				$obj = $this->dbr->fetchObject( $res );
