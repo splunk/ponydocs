@@ -28,6 +28,27 @@ class SpecialDocumentLinks extends SpecialPage {
 	public function getDescription() {
 		return "View the inbound links from other Documentation topics that links to a specific Documentation topic.";
 	}
+	
+	/**
+	 * Return the colon-separated link with actual version (not base version) for the link to SpecialDocumentLinks
+	 */
+	
+	public static function getDocumentLinksArticle() {
+		
+		global $wgTitle;
+		
+		$partialUrl = '';
+		$currentVersion = PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct(), false);
+		$partialUrl = htmlspecialchars($wgTitle->getPartialURL());
+		$partialUrlParts = explode(':', $partialUrl);
+		$version = $partialUrlParts[3];
+		if (isset($version) && isset($currentVersion)) {
+			$partialUrl = str_replace($version, $currentVersion, $partialUrl);
+		}
+		
+		return $partialUrl;
+		
+	}
 
 	/**
 	 * This is called upon loading the special page.  It should write output to 
