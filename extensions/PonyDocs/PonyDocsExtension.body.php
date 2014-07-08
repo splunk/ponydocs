@@ -1796,7 +1796,6 @@ HEREDOC;
 	 * @return array of manual navigation items
 	 */
 	static public function fetchNavDataForVersion($product, $version) {
-		global $ponydocsMediaWiki;
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get($key);

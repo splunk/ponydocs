@@ -897,10 +897,12 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['nav_urls']['documentation_manuals'] = array(
 				'href' => str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . 'Manuals', $wgArticlePath ),
 				'text' => 'Manuals' );
+			
+			$partialUrl = SpecialDocumentLinks::getDocumentLinksArticle();
 
 			$this->data['nav_urls']['document_links'] = array(
 				'href' => str_replace( '$1', 'Special:SpecialDocumentLinks?t=' . $wgTitle->getNsText() . ':'
-					. htmlspecialchars( $wgTitle->getPartialURL() ), $wgArticlePath),
+					. $partialUrl, $wgArticlePath),
 				'text' => 'Document Links');
 		}
 	}
