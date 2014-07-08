@@ -450,6 +450,8 @@ class PonyDocsProductVersion {
 	 * @return PonyDocsProductVersion
 	 */
 	static public function & GetVersionByName( $productName, $name ) {
+		// Ensure versions list has been initialized
+		self::LoadVersionsForProduct( $productName );
 		if ( preg_match( '/^v:(.*)/i', $name, $match ) ) {
 			$name = $match[1];
 		}

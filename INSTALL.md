@@ -65,9 +65,13 @@ Failure to do so will result in frustration and keyboard tossing.
 	# Rewrite /Documentation/ to /Documentation
 	RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
 
+	# Proxy /DocumentationStatic to Special:StaticDocServer
+	RewriteRule ^/DocumentationStatic	- [L]
+	ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
+
 	# Rewrite rule to handle passing ugly doc urls to pretty urls
-	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*) /Documentation/$1/$4/$2/$3  [L,QSA,R=301]
-	RewriteRule ^/Documentation:(.*):(.*):(.*)	  /Documentation/$1/latest/$2/$3  [L,QSA,R=301]
+	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+	RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
 	# get home page requests to Documentation
 	RewriteRule ^/$ /Documentation [R]

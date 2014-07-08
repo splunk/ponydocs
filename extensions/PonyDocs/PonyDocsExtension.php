@@ -13,33 +13,35 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsCache.php" );
+// TODO: can we use $wgAutoLoadClasses[] for this instead?
 require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.body.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsProduct.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsProductVersion.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsProductManual.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsTOC.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsAjax.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsAliasArticle.php" );
-require_once( "$IP/extensions/PonyDocs/SpecialTOCList.php" );
-require_once( "$IP/extensions/PonyDocs/SpecialTopicList.php" );
-require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsCache.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryLinks.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryPageHandler.php");
-require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
-require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsPdfBook.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsProduct.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsProductManual.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsProductVersion.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsRenameVersionEngine.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsTOC.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
-require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
+require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
+require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
-require_once( "$IP/extensions/PonyDocs/PonyDocsRenameVersionEngine.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRenameVersion.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocImport.php");
+require_once( "$IP/extensions/PonyDocs/SpecialStaticDocServer.php");
+require_once( "$IP/extensions/PonyDocs/SpecialTOCList.php" );
+require_once( "$IP/extensions/PonyDocs/SpecialTopicList.php" );
 
 // check for empty product list
 if ( !isset ( $ponyDocsProductsList ) || sizeof( $ponyDocsProductsList ) == 0) {
