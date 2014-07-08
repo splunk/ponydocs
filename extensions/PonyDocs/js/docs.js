@@ -1,44 +1,100 @@
-$(function(){
-	// Editing check to make sure there are matching <search> and </search> elements.
-	$("#editform").submit(function(event) {
-		// Let's evaluate the content
-		var returnedValue = false;
-		var content = $("#wpTextbox1").val();
-		var opened = content.match(/<search>/gi);
-		var closed = content.match(/<\/search>/gi);
-		if((opened == null && closed == null) || (opened != null && closed != null && opened.length == closed.length)) {
-			returnedValue = true;
-		} else {
-			event.preventDefault();
-			alert("You have a mismatched number of opened/closed search elements in the edit text.  Please note, we only accept '<search>' and not '<search   >' (note spaces).  Correct and re-submit.");
-		}
-		/**
-		 * When editing a topic, make sure it does not contain some special characters
-		 */
-		var matchedTopics = content.match( /({{#topic:)(.*)/gi );
-		var forbiddenCharsInTopics = new RegExp( /[*\/)(&?<>'"]/ );
-		for ( var i = 0; i < matchedTopics.length; i++ ) {
-			topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
-			if ( forbiddenCharsInTopics.test( topic ) ) {
-				event.preventDefault();
-				alert( "You have forbidden characters in your topics' names. * / ) ( & ? < > ' \" are not allowed" );
-				returnedValue = false;
-			}
-		}
-		return returnedValue;
+$( function() {
+	// Validate the edit form
+	$( "#editform" ).submit( function( event ) {
+		return PonyDocsEventHandlers.editFormSubmit( event );
 	});
 
 	// Check for branch inherit
 	if ( $( "#docbranchinherit" ).length > 0 ) {
 		SplunkBranchInherit.init();
 	}
+	
+	// Check for Rename Version
 	if ( $( "#renameversion" ).length > 0 ) {
 		SplunkRenameVersion.init();
 	}
-	if( typeof(ponydocsOnLoad) !== 'undefined' ) {
+	
+	if ( typeof( ponydocsOnLoad ) !== 'undefined' ) {
 		ponydocsOnLoad();
 	}
 });
+
+PonyDocsEventHandlers = function() {
+	return {
+		/**
+		 * Validate the edit form
+		 * @param event event
+		 * @return boolean
+		 */
+		editFormSubmit: function( event ) {
+			var alertString = "";
+			var returnValue = true;
+			var content = $( "#wpTextbox1" ).val();
+
+			if ( ! PonyDocsValidators.search( content ) ) {
+				alertString += "You have a mismatched number of opened/closed search elements in the edit text.\n"
+				alertString	+= "Please note, we only accept '<search>' and not '<search   >' (note spaces).\n";
+				alertString += "Correct and re-submit.\n\n";
+				returnValue = false;
+			}
+
+			badTopics = PonyDocsValidators.topicTitle( content );
+			if ( badTopics.length > 0 ) {
+				returnValue = false;
+				alertString += "The following topics have forbidden characters: * / ) ( & ? < > ' \" are not allowed.\n";
+				for ( var i = 0; i < badTopics.length; i++ ) {
+					alertString += "* " + badTopics[i] + "\n";
+				}
+				alertString += "\n";
+			}
+
+			if ( !returnValue ) {
+				event.preventDefault();
+				alert(alertString);
+			}
+
+			return returnValue;
+		}
+	}
+}();
+
+PonyDocsValidators = function() {
+	return {
+		/**
+		 * Look for any un-closed search tags
+		 * @param string content
+		 * @return boolean
+		 */
+		search: function( content ) {
+			var returnValue = false;
+			var opened = content.match( /<search>/gi );
+			var closed = content.match( /<\/search>/gi );
+			if ( ( opened == null && closed == null )
+				|| ( opened != null && closed != null && opened.length == closed.length ) ) {
+				returnValue = true;
+			}
+			return returnValue;
+		},
+		/**
+		 * Ensure no invalid characters in topic titles
+		 * @param string content
+		 * @return array of topic names with invalid characters
+		 */
+		topicTitle: function( content ) {
+			var badTitles = [];
+			var matchedTopics = content.match( /{{#topic:(.*)/gi );
+			var forbiddenCharsInTopics = /[*\/)(&?<>'"]/;
+			for ( var i = 0; i < matchedTopics.length; i++ ) {
+				topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
+				if ( forbiddenCharsInTopics.test( topic ) ) {
+					badTitles.push( topic );
+				}
+			}
+			
+			return badTitles;
+		}
+	}
+}();
 
 SplunkBranchInherit = function() {
 	var sourceProduct = '';

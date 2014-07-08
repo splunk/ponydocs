@@ -315,22 +315,23 @@ class PonyDocsProductVersion {
 	 * This updates our internal static maps and lists of versions (total and by each state) from this page.
 	 * The first call will load from the file, subsequent will just return the stored list (unless $reload=true).
 	 *
-	 * The list created does NOT simply contain all versions in the defined page -- it is dependent upon the GROUPS to which the 
-	 * current user belongs.
+	 * The list created does NOT simply contain all versions in the defined page
+	 * it is dependent upon the GROUPS to which the current user belongs.
 	 *
 	 *	- Anonymous (all):  Released ONLY.
 	 *  - Customers/users:  Released AND preview ONLY.
 	 *  - Emp/Author:		All.
 	 *
-	 * @FIXME:  Cache this?
-	 *
 	 * @static
 	 * @param boolean $reload True to force reload from the wiki page.
 	 * @return array LIST of all versions (not map!).
+	 * 
+	 * TODO: Cache this?
+	 * TODO: Replace $splunkMediaWiki with a PONYDOCS configuration constant.
 	 */
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
 		global $wgUser;
-		global $ponydocsMediaWiki, $wgPonyDocsEmployeeGroup;
+		global $splunkMediaWiki, $wgIP, $wgPonyDocsEmployeeGroup;
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
@@ -397,14 +398,11 @@ class PonyDocsProductVersion {
 				if ( isset($currentGroup) ) {
 					$pVersion->setVersionGroup( $currentGroup, $currentGroupMessage );
 				}
-
+				
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
-						|| ( isset( $_SERVER['HTTP_USER_AGENT'] ) 
-							&& preg_match( PONYDOCS_CRAWLER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT'] ) )
-						|| ( isset( $_SERVER['REMOTE_ADDR'] ) 
-							&& $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] )
+						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions) {
 							self::$sVersionList[$productName][]
 								= self::$sVersionListUnreleased[$productName][]
@@ -422,9 +420,7 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
-						|| ( isset( $_SERVER['HTTP_USER_AGENT'] )
-							&& preg_match(PONYDOCS_CRAWLER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT'] ) )
-						|| ( isset( $_SERVER['REMOTE_ADDR'] ) && $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] )
+						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions ) {
 							self::$sVersionList[$productName][]
 								= self::$sVersionListPreview[$productName][]
@@ -565,15 +561,16 @@ class PonyDocsProductVersion {
 	 * @return array Map of PonyDocsProductVersion instances (name => object).
 	 */
 	static public function GetVersionsForUser( $productName ) {
-		global $wgUser, $wgPonyDocsEmployeeGroup;
-		$groups = $wgUser->getGroups();
+		global $wgIP, $wgPonyDocsEmployeeGroup, $wgUser;
+		$groups = $wgUser->getGroups( );
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
 
 		if ( in_array( $authProductGroup, $groups )
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
-			|| preg_match( PONYDOCS_CRAWLER_AGENT_REGEX,$_SERVER['HTTP_USER_AGENT'] )
-			|| $_SERVER['REMOTE_ADDR'] == $ponydocsMediaWiki['CrawlerAddress'] ) {
+			// TODO: $ponydocsMediaWiki is not globalled here, and doesn't exist, so this condition never matches.
+			//       But maybe we do want to allow the crawler through here?
+			|| ( isset( $wgIP ) && $wgIP == $ponydocsMediaWiki['CrawlerAddress'] )) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
 			$retList = array();
