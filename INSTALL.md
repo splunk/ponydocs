@@ -72,7 +72,7 @@ Failure to do so will result in frustration and keyboard tossing.
 	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-f
 	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-d
 	RewriteCond %{REQUEST_URI}						!=/favicon.ico
-	RewriteRule ^									/index.php [PT,QSA]
+	RewriteRule ^/									/index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
