@@ -1,5 +1,5 @@
 <?php
-if( !defined( 'MEDIAWIKI' )) {
+if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
@@ -13,8 +13,6 @@ class PonyDocsProductVersion {
 	/**
 	 * Constants for status types available.
 	 *
-	 * @FIXME:  Use these instead!
-	 *
 	 * @staticvar
 	 */
 	const STATUS_RELEASED = 0;
@@ -24,8 +22,8 @@ class PonyDocsProductVersion {
 	const STATUS_INVALID = -2;
 
 	/**
-	 * The name of the version, which can be of any form but is typically a decimal point delimited version
-	 * number (3.9.1) or a "code name."
+	 * The name of the version.
+	 * This can be of any form but is typically a decimal point delimited version number (3.9.1) or a "code name."
 	 *
 	 * @var string
 	 */
@@ -33,30 +31,30 @@ class PonyDocsProductVersion {
 
 	/**
 	 * The status of this release;  one of:  released, unreleased, preview.  Should be checked.
-	 *
 	 * @var string
 	 */
 	protected $vStatus = '';
 
 	/**
 	 * Status code (see consts above).
-	 *
 	 * @var integer
 	 */
-	protected $vStatusCode = 0;
+	protected $vStatusCode = self::STATUS_UNKNOWN;
 
+	/**
+	 * Product Name
+	 * @var string
+	 */
 	protected $pName = '';
 
 	/**
 	 * Version group
-	 *
 	 * @var string
 	 */
 	protected $versionGroup;
 
 	/**
 	 * Version group message
-	 *
 	 * @var string
 	 */
 	protected $versionGroupMessage;
@@ -64,7 +62,8 @@ class PonyDocsProductVersion {
 	/**
 	 * STATIC MEMBERS
 	 * 
-	 * Class has dual use;  these hold info on ALL versions defined.  Each contains a list and a map.
+	 * This Class has dual use; these hold info on ALL versions defined.
+	 * Each contains a list and a map.
 	 * The list is just simple PHP list storing objects.
 	 * We need this to be able to select the 'most recent' easily by using size-1.
 	 * The map is an associative array of version NAME to object,
@@ -89,15 +88,13 @@ class PonyDocsProductVersion {
 	/**
 	 * Construct a representation of a single version.
 	 * 
-	 * @tbd Should check the $status to ensure it is one of the valid values or setup some static consts.
-	 * 
 	 * @param string $name Actual name of version, such as 1.0.2 or Foo.
 	 * @param string $status Version status: released, unreleased, preview.
 	 */
 	public function __construct( $productNameShort, $versionName, $versionStatus ) {
-		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName )
+		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
 			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort ) ) {
-			$this->mStatusCode = self::STATUS_INVALID;
+			$this->vStatusCode = self::STATUS_INVALID;
 			return;
 		}
 		$this->pName = $productNameShort;
@@ -115,14 +112,15 @@ class PonyDocsProductVersion {
 	 */
 	static public function StatusToInt( $status ) {
 		$status = strtolower( $status );
-		if( !strcmp( $status, 'released' ))
+		if ( !strcmp( $status, 'released' ) ) {
 			return self::STATUS_RELEASED;
-		else if( !strcmp( $status, 'unreleased' ))
+		} elseif ( !strcmp( $status, 'unreleased' ) ) {
 			return self::STATUS_UNRELEASED;
-		else if( !strcmp( $status, 'preview' ))
+		} elseif ( !strcmp( $status, 'preview' ) ) {
 			return self::STATUS_PREVIEW;
-		else
+		} else {
 			return self::STATUS_UNKNOWN;
+		}
 	}
 
 	/**
@@ -130,7 +128,7 @@ class PonyDocsProductVersion {
 	 *
 	 * @return string Name of version.
 	 */
-	public function getVersionName( ) {
+	public function getVersionName() {
 		return $this->vName;
 	}
 
@@ -139,7 +137,7 @@ class PonyDocsProductVersion {
 	 *
 	 * @return string Status string.
 	 */
-	public function getVersionStatus( ) {
+	public function getVersionStatus() {
 		return $this->vStatus;
 	}
 
@@ -148,7 +146,7 @@ class PonyDocsProductVersion {
 	 *
 	 * @return string Name of product.
 	 */
-	public function getProductName( ) {
+	public function getProductName() {
 		return $this->pName;
 	}
 
@@ -157,7 +155,7 @@ class PonyDocsProductVersion {
 	 *
 	 * @return integer
 	 */
-	public function getStatusCode( ) {
+	public function getStatusCode() {
 		return $this->vStatusCode;
 	}
 
@@ -166,8 +164,8 @@ class PonyDocsProductVersion {
 	 *
 	 * @return boolean
 	 */
-	public function isValid( ) {
-		return (( $this->vStatusCode == self::STATUS_UNKNOWN ) || ( $this->vStatusCode == self::STATUS_INVALID )) ? false : true;
+	public function isValid() {
+		return (( $this->vStatusCode == self::STATUS_UNKNOWN ) || ( $this->vStatusCode == self::STATUS_INVALID )) ? FALSE : TRUE;
 	}
 
 	/**
@@ -184,7 +182,7 @@ class PonyDocsProductVersion {
 	 *
 	 * @param string Version group
 	 */
-	public function setVersionGroup($group, $message = null) {
+	public function setVersionGroup( $group, $message = null ) {
 		$this->versionGroup = $group;
 		$this->versionGroupMessage = $message;
 	}
@@ -206,22 +204,22 @@ class PonyDocsProductVersion {
 	 */
 	static public function GetSelectedVersion( $productName, $setDefault = true ) {
 
-		self::LoadVersionsForProduct($productName);
+		self::LoadVersionsForProduct( $productName );
 		
 		/**
 		 * Do we have the session var and is it non-zero length?  Could also check if valid here.
 		 */
-		if( isset( $_SESSION['wsVersion'][$productName] ) && strlen( $_SESSION['wsVersion'][$productName] ) &&
-			isset( self::$sVersionMap[$productName]) && count(self::$sVersionMap[$productName] ) ) {
+		if ( isset( $_SESSION['wsVersion'][$productName] )
+			&& strlen( $_SESSION['wsVersion'][$productName] )
+			&& isset( self::$sVersionMap[$productName]) && count(self::$sVersionMap[$productName] ) ) {
 			// Make sure version exists.
-			if ( !array_key_exists( $_SESSION['wsVersion'][$productName], self::$sVersionMap[$productName] )) {
+			if ( !array_key_exists( $_SESSION['wsVersion'][$productName], self::$sVersionMap[$productName] ) ) {
 				if ( PONYDOCS_SESSION_DEBUG ) {
 					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unsetting version key $productName/"
 						. $_SESSION['wsVersion'][$productName] );
 				}
 				unset( $_SESSION['wsVersion'][$productName] );
-			}
-			else {
+			} else {
 				if ( PONYDOCS_SESSION_DEBUG ) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] getting selected version $productName/"
 						. $_SESSION['wsVersion'][$productName] );
@@ -245,7 +243,7 @@ class PonyDocsProductVersion {
 			* and set the our active version to it. Check for released
 			* first.
 			*/
-			if( isset( self::$sVersionListReleased[$productName]) && sizeof( self::$sVersionListReleased[$productName] ) ) {
+			if ( isset( self::$sVersionListReleased[$productName] ) && sizeof( self::$sVersionListReleased[$productName] ) ) {
 				$versionIndex = count( self::$sVersionListReleased[$productName] ) - 1;
 				$versionName = self::$sVersionListReleased[$productName][$versionIndex]->getVersionName();
 			} else {
@@ -259,22 +257,24 @@ class PonyDocsProductVersion {
 			}
 			
 		}
-		if( isset( $_SESSION['wsVersion'][$productName] ) ) {
+
+		if ( isset( $_SESSION['wsVersion'][$productName] ) ) {
 			if ( PONYDOCS_SESSION_DEBUG ) {
 				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] getting selected version $productName/"
 					. $_SESSION['wsVersion'][$productName] );
 			}
 			return $_SESSION['wsVersion'][$productName];
 		}
-		if (PONYDOCS_SESSION_DEBUG) {
+		if ( PONYDOCS_SESSION_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] getting selected version NULL" );
 		}
-		return null;
+		return NULL;
 	}
 
 	/**
-	 * This sets the selected version by updating the session variable.  There are times it seems this isn't working, with older
-	 * sessions.. fix this somehow?  Call session_start() if session_id() has no strlen?
+	 * This sets the selected version by updating the session variable.
+	 * There are times it seems this isn't working, with older sessions...fix this somehow?
+	 * Call session_start() if session_id() has no strlen?
 	 *
 	 * @static
 	 * @param string $v Version name to set.
@@ -282,11 +282,11 @@ class PonyDocsProductVersion {
 	 */
 	static public function SetSelectedVersion( $productName, $v ) {
 
-		self::LoadVersionsForProduct($productName);
+		self::LoadVersionsForProduct( $productName );
 
 		if ( $v == "latest" ) {
 			$latest = self::GetLatestReleasedVersion( $productName );
-			if ( $latest != null ) {
+			if ( $latest != NULL ) {
 				$v = $latest->vName;
 			}
 		}
@@ -302,13 +302,14 @@ class PonyDocsProductVersion {
 				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
 					. "] not setting selected version; returning null. $productName/$v");
 			}
-			return null;
+			return NULL;
 		}
 		
 	}
 
 	/**
-	 * Loads our version data from the special page.  These are defined in the form: {{#version:name|status}}
+	 * Loads our version data from the special page.
+	 * These are defined in the form: {{#version:name|status}}
 	 *
 	 * There is a special parser hook to handle outputting this in a clean form when viewing the page.
 	 * This updates our internal static maps and lists of versions (total and by each state) from this page.
@@ -345,7 +346,7 @@ class PonyDocsProductVersion {
 		$title = Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTVERSION_SUFFIX );
 
 		$article = new Article(
-			Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTVERSION_SUFFIX ), 0);
+			Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTVERSION_SUFFIX ), 0 );
 
 		$content = $article->getContent();
 
@@ -366,8 +367,8 @@ class PonyDocsProductVersion {
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
 		$versions = explode( "\n", $content );
-		$currentGroup = null;
-		$currentGroupMessage = null;
+		$currentGroup = NULL;
+		$currentGroupMessage = NULL;
 		foreach( $versions as $v ) {
 			// versiongroup
 			if ( preg_match( '/{{#versiongroup:\s*([^}]*)\s*}}/i', $v ) ) {
@@ -403,13 +404,17 @@ class PonyDocsProductVersion {
 						|| in_array( $authProductGroup, $groups )
 						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions) {
-							self::$sVersionList[$productName][] = self::$sVersionListUnreleased[$productName][]
-								= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapUnreleased[$productName][$pcs[0]]
+							self::$sVersionList[$productName][]
+								= self::$sVersionListUnreleased[$productName][]
+								= self::$sVersionMap[$productName][$pcs[0]]
+								= self::$sVersionMapUnreleased[$productName][$pcs[0]]
 								= $pVersion;
 					}
 				} elseif ( !strcasecmp( $pcs[1], 'RELEASED' ) ) {
-					self::$sVersionList[$productName][] = self::$sVersionListReleased[$productName][]
-						= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapReleased[$productName][$pcs[0]]
+					self::$sVersionList[$productName][]
+						= self::$sVersionListReleased[$productName][]
+						= self::$sVersionMap[$productName][$pcs[0]]
+						= self::$sVersionMapReleased[$productName][$pcs[0]]
 						= $pVersion;
 				} elseif ( !strcasecmp( $pcs[1], 'PREVIEW' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
@@ -417,8 +422,10 @@ class PonyDocsProductVersion {
 						|| in_array( $authPreviewGroup, $groups )
 						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
 						|| $ignorePermissions ) {
-							self::$sVersionList[$productName][] = self::$sVersionListPreview[$productName][]
-								= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapPreview[$productName][$pcs[0]]
+							self::$sVersionList[$productName][]
+								= self::$sVersionListPreview[$productName][]
+								= self::$sVersionMap[$productName][$pcs[0]]
+								= self::$sVersionMapPreview[$productName][$pcs[0]]
 								= $pVersion;
 					}
 				}
@@ -436,7 +443,7 @@ class PonyDocsProductVersion {
 	 * @return boolean
 	 */
 	static public function IsVersion( $productName, $version ) {
-		if ( preg_match( '/^v:(.*)/i', $version, $match )) {
+		if ( preg_match( '/^v:(.*)/i', $version, $match ) ) {
 			$version = $match[1];
 		}
 		return isset( self::$sVersionMap[$productName][$version] );
@@ -461,7 +468,7 @@ class PonyDocsProductVersion {
 
 		// Crappy fix to resolve the issue of Only variable references should be returned by reference
 		// that's been happening for some time now.
-		$result = false;
+		$result = FALSE;
 		return $result;
 	}
 
@@ -471,7 +478,7 @@ class PonyDocsProductVersion {
 	 * @static
 	 * @return array Returns out version LIST.
 	 */
-	static public function GetVersions( $productName, $asMap = false ) {
+	static public function GetVersions( $productName, $asMap = FALSE ) {
 		$v = self::LoadVersionsForProduct( $productName );
 		if ( $asMap ) {
 			return self::$sVersionMap[$productName];
@@ -486,9 +493,9 @@ class PonyDocsProductVersion {
 	 * @static
 	 * @return array
 	 */
-	static public function & GetReleasedVersions( $productName, $asMap = false ) {
+	static public function & GetReleasedVersions( $productName, $asMap = FALSE ) {
 		if ( $asMap ) {
-				return self::$sVersionMapReleased[$productName];
+			return self::$sVersionMapReleased[$productName];
 		}
 		return self::$sVersionListReleased[$productName];
 	}
@@ -517,28 +524,28 @@ class PonyDocsProductVersion {
 		if ( sizeof( self::$sVersionList[$productName] ) ) {
 			return self::$sVersionList[$productName][sizeof( self::$sVersionList[$productName] ) - 1];
 		}
-		return null;
+		return NULL;
 	}
 
 	static public function & GetLatestReleasedVersion( $productName ) {
 		if ( sizeof( self::$sVersionListReleased[$productName] ) ) {
 			return self::$sVersionListReleased[$productName][sizeof( self::$sVersionListReleased[$productName] ) - 1];
 		}
-		return null;
+		return NULL;
 	}
 
 	static public function & GetLatestUnreleasedVersion( $productName ) {
 		if ( sizeof( self::$sVersionListUnreleased[$productName] ) ) {
 			return self::$sVersionListUnreleased[$productName][sizeof( self::$sVersionListUnreleased[$productName] ) - 1];
 		}
-		return null;
+		return NULL;
 	}
 
 	static public function & GetLatestPreviewVersion( $productName ) {
 		if ( sizeof( self::$sVersionListPreview[$productName] ) ) {
 			return self::$sVersionListPreview[$productName][sizeof( self::$sVersionListPreview[$productName] ) - 1];
 		}
-		return null;
+		return NULL;
 	}
 
 	/**
@@ -568,7 +575,7 @@ class PonyDocsProductVersion {
 			|| ( isset( $wgIP ) && $wgIP == $ponydocsMediaWiki['CrawlerAddress'] )) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
-			$retList = array( );
+			$retList = array();
 			foreach ( self::$sVersionMap[$productName] as $pVersion ) {
 				if ( ( $pVersion->getStatusCode( ) == self::STATUS_RELEASED )
 					|| ( $pVersion->getStatusCode( ) == self::STATUS_PREVIEW ) ) {
@@ -604,12 +611,12 @@ class PonyDocsProductVersion {
 			}
 		}
 
-		return isset( self::$sVersionList[$productName][$earliest] ) ? self::$sVersionList[$productName][$earliest] : null;
+		return isset( self::$sVersionList[$productName][$earliest] ) ? self::$sVersionList[$productName][$earliest] : NULL;
 	}
 
 	static public function clearNAVCache( PonyDocsProductVersion $version ) {
-		error_log( "INFO [" . __METHOD__ . "] Deleting cache entry of NAV for product " . $version->getProductName() . " version "
-			. $version->getVersionName());
+		error_log( "INFO [" . __METHOD__ . "] Deleting cache entry of NAV for product " . $version->getProductName()
+			. " version " . $version->getVersionName());
 		$cache = PonyDocsCache::getInstance();
 		$key = "NAVDATA-" . $version->getProductName() . "-" . $version->getVersionName();
 		$cache->remove( $key );
