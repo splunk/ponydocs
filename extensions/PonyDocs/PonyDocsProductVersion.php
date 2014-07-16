@@ -401,7 +401,11 @@ class PonyDocsProductVersion {
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
-						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
+						// Allow crawler to view unreleased versions
+						|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
+							&& $wgIP == $splunkMediaWiki['CrawlerAddress']
+							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
+							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
 						|| $ignorePermissions) {
 							self::$sVersionList[$productName][] = self::$sVersionListUnreleased[$productName][]
 								= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapUnreleased[$productName][$pcs[0]]
@@ -415,7 +419,11 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
-						|| ( isset( $wgIP ) && $wgIP == $splunkMediaWiki['CrawlerAddress'] )
+						// Allow crawler to view preview versions
+						|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
+							&& $wgIP == $splunkMediaWiki['CrawlerAddress']
+							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
+							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
 						|| $ignorePermissions ) {
 							self::$sVersionList[$productName][] = self::$sVersionListPreview[$productName][]
 								= self::$sVersionMap[$productName][$pcs[0]] = self::$sVersionMapPreview[$productName][$pcs[0]]
@@ -559,11 +567,9 @@ class PonyDocsProductVersion {
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
 
+		// TODO: Should we let the crawler through here as well?
 		if ( in_array( $authProductGroup, $groups )
-			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
-			// TODO: $ponydocsMediaWiki is not globalled here, and doesn't exist, so this condition never matches.
-			//       But maybe we do want to allow the crawler through here?
-			|| ( isset( $wgIP ) && $wgIP == $ponydocsMediaWiki['CrawlerAddress'] )) {
+			|| in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
 			$retList = array( );
