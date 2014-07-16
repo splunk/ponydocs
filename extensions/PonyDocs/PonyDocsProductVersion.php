@@ -569,6 +569,7 @@ class PonyDocsProductVersion {
 
 		if ( in_array( $authProductGroup, $groups )
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
+			// Allow crawler to view all versions
 			|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
 				&& $wgIP == $splunkMediaWiki['CrawlerAddress']
 				&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
