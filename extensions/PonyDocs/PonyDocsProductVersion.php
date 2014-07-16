@@ -567,9 +567,12 @@ class PonyDocsProductVersion {
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
 
-		// TODO: Should we let the crawler through here as well?
 		if ( in_array( $authProductGroup, $groups )
-			|| in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
+			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
+			|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
+				&& $wgIP == $splunkMediaWiki['CrawlerAddress']
+				&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
+				&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) ) ) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
 			$retList = array( );
