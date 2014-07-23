@@ -257,66 +257,13 @@ class PonyDocsTopic {
 	}
 
 	/**
-	 * This function determines the version category this applies to.  For instance, we want a slight skinning change or notice
-	 * in the display when viewing a topic (in Documentation namespace only) for each of the following possible conditions:
-	 *
-	 * Applies to latest released version (current)
-	 * Applies to a preview version (preview)
-	 * Applies to a previously released version (older) 
-	 * None of the above (unknown)
-	 * 
-	 * @return integer
-	 */
-	public function getVersionClass() {
-		if ( !preg_match(
-			'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $matches ) ) {
-			// This is not a documentation title.
-			return "unknown";
-		}
-		$productName = $matches[1];
-		/**
-		 * Test if topic applies to latest released version (current).
-		 */
-		$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName );
-		$releasedNames = array(); // Just the names of our released versions
-		foreach ( $releasedVersions as $ver ) {
-			$releasedNames[] = strtolower( $ver->getVersionName() );
-		}
-		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
-		$previewNames = array(); // Just the names of our preview versions
-		foreach ( $previewVersions as $ver ) {
-			$previewNames[] = strtolower( $ver->getVersionName() );
-		}
-		$isPreview = false;
-		$isOlder = false;
-		foreach( $this->versions as $v ) {
-			$ver = strtolower($v->getVersionName());
-			if ( PonyDocsProductVersion::GetLatestReleasedVersion( $productName ) != null
-				&& !strcasecmp( $ver, PonyDocsProductVersion::GetLatestReleasedVersion($productName)->getVersionName() ) ) {
-				// Return right away, as current is our #1 class
-				return "current";
-			}
-			if ( in_array( $ver, $releasedNames ) ) {
-				$isOlder = true;
-			}
-			if ( in_array( $ver, $previewNames ) ) {
-				$isPreview = true;
-			}
-		}
-		if ( $isPreview ) {
-			return "preview";
-		}
-		if ( $isOlder ) {
-			return "older";
-		}
-		// Default return
-		return "unknown";
-	}
-
-	/**
 	 * This function returns information about the versions on this topic.
+	 * - Version permissions: unreleased, preview, or released
+	 * - Version age: older, latest, or newer
+	 * Since a Topic can have multiple versions, it's possible for a single topic to be in unreleased, preview, released, older, 
+	 * latest, AND newer versions AT THE SAME TIME!
 	 * This information can be used by skins to change UI based on the version features.
-	 * 
+	 *  
 	 * @return array
 	 */
 	public function getVersionClasses() {
@@ -338,11 +285,7 @@ class PonyDocsTopic {
 			$previewNames[] = strtolower( $ver->getVersionName() );
 		}
 		
-		$currentVersion = FALSE;
-		if ( PonyDocsProductVersion::GetLatestReleasedVersion( $productName ) != null ) {
-			$currentVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
-		}
-
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 	
 		foreach( $this->versions as $version ) {
 			$versionName = strtolower($version->getVersionName());
@@ -357,12 +300,14 @@ class PonyDocsTopic {
 			}
 
 			// Is this version older or later or equal to the current version?
-			if ( $currentVersion && PonyDocs_ProductVersionCmp( $version, $currentVersion ) < 0 ) {
-				$versionClasses['older'] = TRUE;
-			} elseif ( $currentVersion && PonyDocs_ProductVersionCmp( $version, $currentVersion ) > 0 ) {
-				$versionClasses['later'] = TRUE;
-			} else {
-				$versionClasses['current'] = TRUE;
+			if ( $latestVersion ) {
+				if ( PonyDocs_ProductVersionCmp( $version, $latestVersion ) < 0 ) {
+					$versionClasses['older'] = TRUE;
+				} elseif ( PonyDocs_ProductVersionCmp( $version, $latestVersion ) > 0 ) {
+					$versionClasses['newer'] = TRUE;
+				} else {
+					$versionClasses['latest'] = TRUE;
+				}
 			}
 		}
 
