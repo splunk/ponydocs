@@ -41,7 +41,7 @@ PonyDocsEventHandlers = function() {
 			badTopics = PonyDocsValidators.topicTitle( content );
 			if ( badTopics.length > 0 ) {
 				returnValue = false;
-				alertString += "The following topics have forbidden characters: * / ) ( & ? < > ' \" are not allowed.\n";
+				alertString += "The following topics have forbidden characters: * / & ? < > ' \" are not allowed.\n";
 				for ( var i = 0; i < badTopics.length; i++ ) {
 					alertString += "* " + badTopics[i] + "\n";
 				}
@@ -83,7 +83,7 @@ PonyDocsValidators = function() {
 		topicTitle: function( content ) {
 			var badTitles = [];
 			var matchedTopics = content.match( /{{#topic:(.*)/gi );
-			var forbiddenCharsInTopics = /[*\/)(&?<>'"]/;
+			var forbiddenCharsInTopics = /[*\/&?<>'"]/;
 			for ( var i = 0; i < matchedTopics.length; i++ ) {
 				topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
 				if ( forbiddenCharsInTopics.test( topic ) ) {
