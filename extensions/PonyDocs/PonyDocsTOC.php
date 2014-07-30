@@ -154,7 +154,7 @@ class PonyDocsTOC
 			__METHOD__ );
 
 		if ( !$res->numRows() ) {
-			return FAKSE;
+			return FALSE;
 		}
 
 		$row = $dbr->fetchObject( $res );
