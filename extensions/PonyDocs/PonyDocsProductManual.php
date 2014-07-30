@@ -25,7 +25,11 @@ class PonyDocsProductManual
 	 */
 	protected $mLongName;
 
+	/** @var string Product name */
 	protected $pName;
+
+	/** @var boolean Stores whether manual is defined as static */
+	protected $static;
 
 	/**
 	 * Our list of manuals loaded from the special page, stored statically.  This only contains the manuals
@@ -49,12 +53,13 @@ class PonyDocsProductManual
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '' )
+	public function __construct( $pName, $shortName, $longName = '', $static = FALSE )
 	{
 		//$this->mShortName = strtolower( $shortName );
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
+		$this->static = $static;
 	}
 
 	public function getShortName( )
@@ -70,6 +75,14 @@ class PonyDocsProductManual
 	public function getProductName( )
 	{
 		return $this->pName;
+	}
+
+	/**
+	 * Is this manual static?
+	 * @return boolean
+	 */
+	public function isStatic() {
+		return $this->static;
 	}
 
 	/**
@@ -121,7 +134,14 @@ class PonyDocsProductManual
 
 		foreach( $matches as $m )
 		{
-			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2] );
+			// Set static flag if defined as static
+			$static = FALSE;
+			if ( strpos( $m[1], PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
+				$m[1] = substr( $m[1], strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
+				$static = TRUE;
+			}
+			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $static );
+			
 			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
 
 			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
