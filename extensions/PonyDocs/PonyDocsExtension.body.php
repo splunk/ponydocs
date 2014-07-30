@@ -1815,20 +1815,30 @@ HEREDOC;
 			$manuals = PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
 
 			$cacheEntry = array();
-			foreach ( $manuals as $manual ) {
-				$toc = new PonyDocsTOC( $manual, $ver, $pr );
-				list( $items, $prev, $next, $start ) = $toc->loadContent();
-
-				foreach ( $items as $entry ) {
-					if ( isset( $entry['link'] ) && $entry['link'] != '' ) {
-						// Found first article.
+			foreach($manuals as $manual) {
+				if ( $manual->isStatic() ) {
+					$staticVersions = $manual->getStaticVersions($product);
+					if (in_array($version, $staticVersions)) {
 						$cacheEntry[] = array(
 							'shortName' => $manual->getShortName(),
 							'longName' => $manual->getLongName(),
-							'description' => $toc->getManualDescription(),
-							'firstTitle' => $entry['title'],
-							'firstUrl' => $entry['link'] );
-						break;
+							'firstUrl' => '/' . implode(
+								'/', 
+								array( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $product, $version, $manual->getShortName() ) ) );
+					}
+				} else {
+					$toc = new PonyDocsTOC($manual, $ver, $pr);
+					list($items, $prev, $next, $start) = $toc->loadContent();
+					foreach($items as $entry) {
+						if(isset($entry['link']) && $entry['link'] != '') {
+							// Found first article.
+							$cacheEntry[] = array('shortName' => $manual->getShortName(),
+												  'longName' => $manual->getLongName(),
+												  'description' => $toc->getManualDescription(),
+												  'firstTitle' => $entry['title'],
+												  'firstUrl' => $entry['link']);
+							break;
+						}
 					}
 				}
 			}
