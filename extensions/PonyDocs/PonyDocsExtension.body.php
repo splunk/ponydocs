@@ -1799,7 +1799,8 @@ HEREDOC;
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get($key);
-		if($cacheEntry === null) {
+		if (TRUE) {
+		//if ($cacheEntry === null) {
 			error_log("INFO [PonyDocsExtension::fetchNavDataForVersion] Creating new navigation cache file for product $product version $version");
 			$oldVersion = PonyDocsProductVersion::GetSelectedVersion($product);
 			PonyDocsProductVersion::SetSelectedVersion($product, $version);
@@ -1812,18 +1813,31 @@ HEREDOC;
 
 			$cacheEntry = array();
 			foreach($manuals as $manual) {
-				$toc = new PonyDocsTOC($manual, $ver, $pr);
-				list($items, $prev, $next, $start) = $toc->loadContent();
-
-				foreach($items as $entry) {
-					if(isset($entry['link']) && $entry['link'] != '') {
-						// Found first article.
-						$cacheEntry[] = array('shortName' => $manual->getShortName(),
-											  'longName' => $manual->getLongName(),
-											  'description' => $toc->getManualDescription(),
-											  'firstTitle' => $entry['title'],
-											  'firstUrl' => $entry['link']);
-						break;
+				error_log("manual is " . $manual->getShortName());
+				if ( $manual->isStatic() ) {
+					error_log("Static: " . $manual->getShortName());
+					$staticVersions = $manual->getStaticVersions($product);
+					if (in_array($version, $staticVersions)) {
+						$cacheEntry[] = array(
+							'shortName' => $manual->getShortName(),
+							'longName' => $manual->getLongName(),
+							'firstUrl' => '/' . implode(
+								'/', 
+								array( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $product, $version, $manual->getShortName() ) ) );
+					}
+				} else {
+					$toc = new PonyDocsTOC($manual, $ver, $pr);
+					list($items, $prev, $next, $start) = $toc->loadContent();
+					foreach($items as $entry) {
+						if(isset($entry['link']) && $entry['link'] != '') {
+							// Found first article.
+							$cacheEntry[] = array('shortName' => $manual->getShortName(),
+												  'longName' => $manual->getLongName(),
+												  'description' => $toc->getManualDescription(),
+												  'firstTitle' => $entry['title'],
+												  'firstUrl' => $entry['link']);
+							break;
+						}
 					}
 				}
 			}

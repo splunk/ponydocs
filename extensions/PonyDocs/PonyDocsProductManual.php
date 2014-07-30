@@ -84,6 +84,22 @@ class PonyDocsProductManual
 	public function isStatic() {
 		return $this->static;
 	}
+	
+	public function getStaticVersions() {
+		$versions = array();
+		$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $this->pName;
+		if (is_dir($directory)) {
+			$versions = scandir($directory);
+			foreach ( $versions as $i => $version ) {
+				if ( $version == '.'
+					|| $version == '..'
+					|| !is_dir( $directory . DIRECTORY_SEPARATOR . $version . DIRECTORY_SEPARATOR . $this->mShortName ) ) {
+					unset($versions[$i]);
+				}
+			}
+		}
+		return $versions;
+	}
 
 	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
@@ -100,13 +116,13 @@ class PonyDocsProductManual
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
-		if( isset(self::$sManualList[$productName]) && sizeof( self::$sManualList[$productName] ) && !$reload )
+		if ( isset(self::$sManualList[$productName]) && sizeof( self::$sManualList[$productName] ) && !$reload ) {
 			return self::$sManualList[$productName];
+		}
 
-		self::$sManualList[$productName] = array( );
+		self::$sManualList[$productName] = array();
 
-		// Use 0 as the last parameter to enforce getting latest revision of 
-		// this article.
+		// Use 0 as the last parameter to enforce getting latest revision of this article.
 		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
 		$content = $article->getContent( );
 
@@ -146,7 +162,7 @@ class PonyDocsProductManual
 
 			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
 
-			if( !$res->numRows( )) {
+			if ( ! $static && !$res->numRows() ) {
 				continue;
 			}
 
