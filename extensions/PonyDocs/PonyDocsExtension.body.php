@@ -1816,7 +1816,7 @@ HEREDOC;
 				error_log("manual is " . $manual->getShortName());
 				if ( $manual->isStatic() ) {
 					error_log("Static: " . $manual->getShortName());
-					$staticVersions = $manual->getStaticVersions($product);
+					$staticVersions = $manual->getStaticVersionNames();
 					if (in_array($version, $staticVersions)) {
 						$cacheEntry[] = array(
 							'shortName' => $manual->getShortName(),

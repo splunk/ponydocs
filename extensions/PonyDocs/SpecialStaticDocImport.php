@@ -35,21 +35,24 @@ class SpecialStaticDocImport extends SpecialPage
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
-	public function execute()
+	public function execute( $par )
 	{
-		global $wgOut, $wgArticlePath, $wgScriptPath, $wgUser;
-		global $wgRequest;
+		global $wgOut, $wgArticlePath;
 
 		$this->setHeaders();
 
-		$product = PonyDocsProduct::GetSelectedProduct( );
-		$versions = PonyDocsProductVersion::LoadVersionsForProduct($product);
+		list( $productName, $manualName, $other ) = explode( '/', $par, 3);
+		
+		if ( ! $productName ) {
+			$productName = PonyDocsProduct::GetSelectedProduct();
+		}
+		$versions = PonyDocsProductVersion::LoadVersionsForProduct($productName);
 
-		$p = PonyDocsProduct::GetProductByShortName($product);
+		$product = PonyDocsProduct::GetProductByShortName($productName);
 		$productLongName = $p->getLongName();
 		$wgOut->setPagetitle( 'Static Documentation Import Tool' );
 		$wgOut->addHTML("<h2>Static Documentation Import for $productLongName</h2>");
-		if (!$p->isStatic()) {
+		if (!$product->isStatic()) {
 			$wgOut->addHTML("<h3>$productLongName is not defined as a static product.</h3>");
 			$wgOut->addHTML("<p>In order to define it as a static product, please visit the
 				product management page from the link below and follow instructions.</p>");
@@ -132,7 +135,7 @@ class SpecialStaticDocImport extends SpecialPage
 
 			// display existing versions
 			$wgOut->addHTML('<h3>Existing Content</h3>');
-			$existingVersions = $importer->getExistingVersions($product);
+			$existingVersions = $product->getExistingVersions();
 			if (count($existingVersions) > 0) {
 				$wgOut->addHTML('<script type="text/javascript">function verify_delete() {return confirm("Are you sure?");}</script>');
 				$wgOut->addHTML('<table>');
@@ -164,8 +167,3 @@ class SpecialStaticDocImport extends SpecialPage
 		$wgOut->addHTML( $html );
 	}
 }
-
-/**
- * End of file.
- */
-?>
