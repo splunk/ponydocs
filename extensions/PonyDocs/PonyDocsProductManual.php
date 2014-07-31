@@ -85,20 +85,30 @@ class PonyDocsProductManual
 		return $this->static;
 	}
 	
-	public function getStaticVersions() {
-		$versions = array();
-		$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $this->pName;
-		if (is_dir($directory)) {
-			$versions = scandir($directory);
-			foreach ( $versions as $i => $version ) {
-				if ( $version == '.'
-					|| $version == '..'
-					|| !is_dir( $directory . DIRECTORY_SEPARATOR . $version . DIRECTORY_SEPARATOR . $this->mShortName ) ) {
-					unset($versions[$i]);
+	/**
+	 * Get existing static documentation version names for this manual
+	 * @return array of versionName strings
+	 */
+	public function getStaticVersionNames() {
+		$return = FALSE;
+		if ( $this->static() ) {
+			$versionNames = array();
+			$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $this->pName;
+			if ( is_dir( $directory ) ) {
+				$versionNames = scandir( $directory );
+				foreach ( $versionNames as $i => $versionName ) {
+					if ( $versionName == '.'
+						|| $versionName == '..'
+						|| !is_dir(
+							$directory . DIRECTORY_SEPARATOR . $versionName . DIRECTORY_SEPARATOR . $this->mShortName ) ) {
+						unset( $versionNames[$i] );
+					}
 				}
 			}
+			$return = $versionNames;
 		}
-		return $versions;
+		
+		return $return;
 	}
 
 	/**
