@@ -1,6 +1,7 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
+}
 
 require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php");
 
@@ -17,36 +18,33 @@ $wgSpecialPages['StaticDocImport'] = 'SpecialStaticDocImport';
 /**
  * Special page to control static documentation import
  */
-class SpecialStaticDocImport extends SpecialPage
-{
+class SpecialStaticDocImport extends SpecialPage {
 	/**
 	 * Just call the base class constructor and pass the 'name' of the page as defined in $wgSpecialPages.
 	 */
-	public function __construct()
-	{
+	public function __construct() {
 		SpecialPage::__construct( "StaticDocImport" );
 	}
 
-	public function getDescription()
-	{
+	public function getDescription() {
 		return 'Static Documentation Import Tool';
 	}
 
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
+	 * @param string $par the URL path following the special page name
 	 */
-	public function execute( $par )
-	{
+	public function execute( $par ) {
 		global $wgOut;
 
 		$this->setHeaders();
 
-		$parts = explode( '/', $par);
+		$parts = explode( '/', $par );
 
 		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
 		$manualName = isset( $parts[1] ) ? $parts[1] : NULL;
 		
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$productLongName = $product->getLongName();
 
 		if ( !is_null( $manualName ) ) {
@@ -64,7 +62,7 @@ class SpecialStaticDocImport extends SpecialPage
 		}
 		$wgOut->addHTML("<h2>$h2</h2>");
 
-		if ( $this->validateProductAndManualAreStatic( $product, $manual )) {
+		if ( $this->validateProductAndManualAreStatic( $product, $manual ) ) {
 			if ( isset($_POST['action']) ) {
 				$this->processImportForm( $_POST['action'], $product, $manual );
 			} else {
@@ -76,6 +74,14 @@ class SpecialStaticDocImport extends SpecialPage
 		$this->showHelpfulLinks( $productName );
 	}
 
+	/**
+	 * Validate that the product, and manual if any, are static
+	 * 
+	 * @global OutputPage $wgOut
+	 * @param PonyDocsProduct $product
+	 * @param mixed $manual PonyDocsManual or NULL
+	 * @return boolean 
+	 */
 	private function validateProductAndManualAreStatic( $product, $manual ) {
 		global $wgOut;
 		
@@ -95,7 +101,14 @@ class SpecialStaticDocImport extends SpecialPage
 		
 		return $valid;
 	}
-	
+
+	/**
+	 * Show the form that allows importing a new static product or manual zip file
+	 * 
+	 * @global OutputPage $wgOut
+	 * @param PonyDocsProduct $product
+	 * @param mixed $manual PonyDocsManual or NULL
+	 */
 	private function showImportForm( $product, $manual ) {
 		global $wgOut;
 		$productName = $product->getShortName();
@@ -105,7 +118,7 @@ class SpecialStaticDocImport extends SpecialPage
 			$manualName = $manual->getShortName();
 		}
 
-		$wgOut->addHTML('<h3>Import to Version</h3>');
+		$wgOut->addHTML( '<h3>Import to Version</h3>' );
 
 		// Only display form if at least one version is defined
 		if ( count( $versions ) > 0 ) {
@@ -121,13 +134,13 @@ class SpecialStaticDocImport extends SpecialPage
 				$wgOut->addHTML( '<input type="hidden" name="manual" value="' . $manualName . '"/>' . "\n" );
 			}
 			$wgOut->addHTML( '<select name="version">' );
-			foreach ($versions as $version) {
+			foreach ( $versions as $version ) {
 				$wgOut->addHTML( '<option value="' . $version->getVersionName() . '">' . $version->getVersionName()
 					. "</option>\n" );
 			}
 			$wgOut->addHTML( "</select>\n" );
 			$wgOut->addHTML('<input type="hidden" name="action" value="add"/>' . "\n"
-				. '<input type="submit" name="submit" value="Submit"/>' . "\n" . '</form>' . "\n");
+				. '<input type="submit" name="submit" value="Submit"/>' . "\n" . '</form>' . "\n" );
 			$wgOut->addHTML( "<p>Notes on upload file:</p>\n"
 				. "<ul>\n"
 				. "<li>should be zip format</li>\n"
@@ -144,6 +157,13 @@ class SpecialStaticDocImport extends SpecialPage
 		}
 	}
 	
+	/**
+	 *
+	 * @global OutputPage $wgOut
+	 * @param string $action
+	 * @param PonyDocsProduct $product
+	 * @param mixed $manual PonyDocsManual or NULL
+	 */
 	private function processImportForm( $action, $product, $manual ) {
 		global $wgOut;
 		
@@ -154,8 +174,8 @@ class SpecialStaticDocImport extends SpecialPage
 				if ( isset( $_POST['version'] )
 					&& isset( $_POST['product'] )
 					&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
-					if (PonyDocsProductVersion::IsVersion($_POST['product'], $_POST['version'])) {
-						$wgOut->addHTML('<h3>Results of Import</h3>');
+					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
+						$wgOut->addHTML( '<h3>Results of Import</h3>' );
 						// Okay, let's make sure we have file provided
 						if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
 							$wgOut->addHTML(
@@ -195,10 +215,10 @@ class SpecialStaticDocImport extends SpecialPage
 							} else {
 								$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
 								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
-									. " manual {$_POST['manual']}");
+									. " manual {$_POST['manual']}" );
 							}
 						} catch (Exception $e) {
-							$wgOut->addHTML('Error: ' . $e->getMessage());
+							$wgOut->addHTML('Error: ' . $e->getMessage() );
 						}
 					}
 				}
@@ -206,6 +226,13 @@ class SpecialStaticDocImport extends SpecialPage
 		}
 	}
 
+	/**
+	 * Show existing versions and remove form
+	 * 
+	 * @global OutputPage $wgOut
+	 * @param PonyDocsProduct $product
+	 * @param mixed $manual PonyDocsManual or NULL
+	 */
 	private function showExistingVersions( $product, $manual ) {
 		global $wgOut;
 
@@ -227,7 +254,7 @@ class SpecialStaticDocImport extends SpecialPage
 			$wgOut->addHTML( '<table>' );
 			$wgOut->addHTML( '<tr><th>Version</th><th></th></tr>' );
 			foreach ( $existingVersions as $versionName ) {
-				$wgOut->addHTML("<tr>\n"
+				$wgOut->addHTML( "<tr>\n"
 					. "<td>$versionName</td>\n"
 					. "<td>\n"
 					. '<form method="POST" onsubmit="return verify_delete()">' . "\n"
@@ -244,7 +271,13 @@ class SpecialStaticDocImport extends SpecialPage
 			$wgOut->addHTML( '<p>No existing version defined.</p>' );
 		}
 	}
-	
+
+	/**
+	 * List of links for the bottom of the page
+	 * @global string $wgArticlePath
+	 * @global OutputPage $wgOut
+	 * @param PonyDocsProduct $productName 
+	 */
 	private function showHelpfulLinks( $productName ) {
 		global $wgArticlePath, $wgOut;
 		
