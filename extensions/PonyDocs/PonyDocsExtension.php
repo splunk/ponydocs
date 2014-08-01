@@ -411,7 +411,14 @@ function efProductParserFunction_Magic( &$magicWords, $langCode ) {
  * @return array
  */
 function efProductParserFunction_Render( &$parser, $shortName = '', $longName = '', $description = '', $parent = '' ) {
-	global $wgUser, $wgScriptPath;
+	global $wgArticlePath, $wgUser, $wgScriptPath;
+
+	$static = FALSE;
+	if ( strpos( $shortName, PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
+		$static = TRUE;
+		$shortName = substr( $shortName, strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
+	}
+	
 	
 	$output = "$shortName ($longName)";
 
@@ -426,6 +433,11 @@ function efProductParserFunction_Render( &$parser, $shortName = '', $longName = 
 	
 	if ( $parent != '' ) {
 		$output .= "<br>Parent: $parent";
+	}
+
+	if ( $static ) {
+		$output .= "<p><a href=\"" . str_replace( '$1', "Special:StaticDocImport/$shortName" , $wgArticlePath )
+			. "\">Click to manage static documentation</a></p>\n";
 	}
 	
 	$output .= "\n";
