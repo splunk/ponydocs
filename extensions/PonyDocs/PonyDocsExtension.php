@@ -260,6 +260,7 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 	$manualName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
 	// TODO: It's silly to do this twice (the other is in LoadManualsForProduct().
 	//       We should get the manual object from PonyDocsProductManual
+	$static = FALSE;
 	if ( strpos( $shortName, PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
 		$static = TRUE;
 		$manualName = substr( $manualName, strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
