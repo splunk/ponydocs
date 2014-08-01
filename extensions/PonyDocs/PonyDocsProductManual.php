@@ -91,7 +91,7 @@ class PonyDocsProductManual
 	 */
 	public function getStaticVersionNames() {
 		$return = FALSE;
-		if ( $this->static() ) {
+		if ( $this->static ) {
 			$versionNames = array();
 			$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $this->pName;
 			if ( is_dir( $directory ) ) {
