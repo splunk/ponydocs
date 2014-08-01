@@ -41,7 +41,7 @@ class SpecialStaticDocImport extends SpecialPage
 
 		$this->setHeaders();
 
-		list( $productName, $manualName, $other ) = explode( '/', $par, 3);
+		list( $productName, $manualName ) = explode( '/', $par, 3);
 		if ( !$productName ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 		}
@@ -53,7 +53,7 @@ class SpecialStaticDocImport extends SpecialPage
 		}
 
 		$product = PonyDocsProduct::GetProductByShortName($productName);
-		$productLongName = $p->getLongName();
+		$productLongName = $product->getLongName();
 		$versions = PonyDocsProductVersion::LoadVersionsForProduct($productName);
 
 		if ( $staticType == 'manual' ) {
@@ -146,7 +146,11 @@ class SpecialStaticDocImport extends SpecialPage
 					
 					// Only display form if at least one version is defined
 					if ( count( $versions ) > 0 ) {
-						$wgOut->addHTML('<form action="/Special:StaticDocImport" method="post" enctype="multipart/form-data">'
+						$action = "/Special:StaticDocImport/$productName";
+						if ( $staticType == 'manual' ) {
+							$action .= "/$manualName";
+						}
+						$wgOut->addHTML('<form action="' . $action . '" method="post" enctype="multipart/form-data">'
 							. "\n" . '<label for="archivefile">File to upload:</label>'
 							. '<input id="archivefile" name="archivefile" type="file" />'
 							. '<input type="hidden" name="product" value="' . $productName . '"/>' . "\n" );
