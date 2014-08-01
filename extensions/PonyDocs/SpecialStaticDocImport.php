@@ -37,7 +37,7 @@ class SpecialStaticDocImport extends SpecialPage
 	 */
 	public function execute( $par )
 	{
-		global $wgOut, $wgArticlePath;
+		global $wgOut;
 
 		$this->setHeaders();
 
@@ -46,172 +46,208 @@ class SpecialStaticDocImport extends SpecialPage
 			$productName = PonyDocsProduct::GetSelectedProduct();
 		}
 		
-		if ( isset( $manualName ) ) {
-			$staticType = 'manual';
-		} else {
-			$staticType = 'product';
-		}
-
 		$product = PonyDocsProduct::GetProductByShortName($productName);
 		$productLongName = $product->getLongName();
-		$versions = PonyDocsProductVersion::LoadVersionsForProduct($productName);
 
-		if ( $staticType == 'manual' ) {
+		if ( isset( $manualName ) ) {
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			$manualLongName = $manual->getLongName();
+		} else {
+			$manual = NULL;
 		}
 		
 		$wgOut->setPagetitle( 'Static Documentation Import Tool' );
 
 		$h2 = "Static Documentation Import for $productLongName";
-		if ($staticType == 'manual') {
+		if ( isset( $manualName ) ) {
 			$h2 .= ", $manualLongName";
 		}
 		$wgOut->addHTML("<h2>$h2</h2>");
 
-		if ( $staticType == 'product' && !$product->isStatic() ) {
-			$wgOut->addHTML( "<h3>$productLongName is not defined as a static product.</h3>" );
+		if ( $this->validateProductAndManualAreStatic( $product, $manual )) {
+			if ( isset($_POST['action']) ) {
+				$this->processImportForm( $_POST['action'], $product, $manual );
+			} else {
+				$this->showImportForm( $product, $manual );
+			}
+		}
+
+		$this->showExistingVersions( $product, $manual );
+		$this->showHelpfulLinks( $productName );
+	}
+
+	private function validateProductAndManualAreStatic( $product, $manual ) {
+		global $wgOut;
+		
+		$valid = TRUE;
+		if ( is_null( $manual ) && !$product->isStatic() ) {
+			$wgOut->addHTML( "<h3>{$product->getLongName()} is not defined as a static product.</h3>" );
 			$wgOut->addHTML( "<p>In order to define it as a product, please visit the product management page from the link"
 				. " below and follow the instructions.</p>" );
+			$valid = FALSE;
 		}
-		elseif ( $staticType == 'manual' && !$manual->isStatic() ) {
-			$wgOut->addHTML( "<h3>$manualLongName is not defined as a static manual.</h3>" );
+		elseif ( !is_null( $manual ) && !$manual->isStatic() ) {
+			$wgOut->addHTML( "<h3>{$manual->getLongName()} is not defined as a static manual.</h3>" );
 			$wgOut->addHTML( "<p>In order to define it as a static manual, please visit the manuals management page from the link"
 				. " below and follow the instructions.</p>" );
-		} else {
-			$importer = new PonyDocsStaticDocImporter(PONYDOCS_STATIC_DIR);
-
-			$action = NULL;
-			if (isset($_POST['action'])) {
-				$action = $_POST['action'];
-			}
-
-			switch ($action) {
-				case "add":
-					if ( isset( $_POST['version'] )
-						&& isset( $_POST['product'] )
-						&& ( $staticType == 'product' || isset( $_POST['manual'] ) ) ) {
-						if (PonyDocsProductVersion::IsVersion($_POST['product'], $_POST['version'])) {
-							$wgOut->addHTML('<h3>Results of Import</h3>');
-							// Okay, let's make sure we have file provided
-							if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
-								$wgOut->addHTML(
-									'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
-							} else {
-								try {
-									if ( $staticType == 'product' ) {
-										$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
-											$_POST['version'] );
-										$wgOut->addHTML(
-											"Success: imported archive for {$_POST['product']} version {$_POST['version']}" );
-									} else {
-										$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
-											$_POST['version'], $_POST['manual'] );
-										$wgOut->addHTML(
-											"Success: imported archive for {$_POST['product']} version {$_POST['version']}"
-											. " manual {$_POST['manual']}" );
-									}
-								} catch (Exception $e) {
-									$wgOut->addHTML( 'Error: ' . $e->getMessage() );
-								}
-							}
-						}
-					}
-					break;
-
-				case "remove":
-					if ( isset( $_POST['version'] )
-						&& isset( $_POST['product'] )
-						&& ( $staticType == 'product' || isset( $_POST['manual'] ) ) ) {
-						if ( PonyDocsProductVersion::IsVersion($_POST['product'], $_POST['version'] ) ) {
-							$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
-							try {
-								if ( $staticType == 'product' ) {
-									$importer->removeVersion( $_POST['product'], $_POST['version'] );
-									$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}" );
-								} else {
-									$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
-									$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
-										. " manual {$_POST['manual']}");
-								}
-							} catch (Exception $e) {
-								$wgOut->addHTML('Error: ' . $e->getMessage());
-							}
-						}
-					}
-					break;
-
-				default:
-					$wgOut->addHTML('<h3>Import to Version</h3>');
-					
-					// Only display form if at least one version is defined
-					if ( count( $versions ) > 0 ) {
-						$action = "/Special:StaticDocImport/$productName";
-						if ( $staticType == 'manual' ) {
-							$action .= "/$manualName";
-						}
-						$wgOut->addHTML('<form action="' . $action . '" method="post" enctype="multipart/form-data">'
-							. "\n" . '<label for="archivefile">File to upload:</label>'
-							. '<input id="archivefile" name="archivefile" type="file" />'
-							. '<input type="hidden" name="product" value="' . $productName . '"/>' . "\n" );
-						if ( $staticType == 'manual' ) {
-							$wgOut->addHTML( '<input type="hidden" name="manual" value="' . $manualName . '"/>' . "\n" );
-						}
-						$wgOut->addHTML( '<select name="version">' );
-						foreach ($versions as $version) {
-							$wgOut->addHTML( '<option value="' . $version->getVersionName() . '">' . $version->getVersionName()
-								. "</option>\n" );
-						}
-						$wgOut->addHTML( "</select>\n" );
-						$wgOut->addHTML('<input type="hidden" name="action" value="add"/>' . "\n"
-							. '<input type="submit" name="submit" value="Submit"/>' . "\n" . '</form>' . "\n");
-						$wgOut->addHTML( "<p>Notes on upload file:</p>\n"
-							. "<ul>\n"
-							. "<li>should be zip format</li>\n"
-							. "<li>verify it does not contain unneeded files: e.g. Mac OS resource, or Windows thumbs, etc.</li>\n"
-							. "<li>requires a index.html file in the root directory</li>\n"
-							. "<li>links to documents within content must be relative for them to work</li>\n"
-							. "<li>may or may not contain sub directories</li>\n"
-							. "<li>may not be bigger than " . ini_get('upload_max_filesize') . "</li>\n"
-							. "</ul>\n" );
-					} else {
-						$wgOut->addHTML( "There are currently no versions defined for $productLongName."
-							. "In order to upload static documentation please define at least one version and one manual from the"
-							. "links below.\n" );
-					}
-			}
-
-			// Display existing versions
-			$wgOut->addHTML( '<h3>Existing Content</h3>' );
-			if ( $staticType == 'product' ) {
-				$existingVersions = $product->getStaticVersionNames();
-			} else {
-				$existingVersions = $manual->getStaticVersionNames();
-			}
-			if ( count($existingVersions) > 0 ) {
-				$wgOut->addHTML(
-					'<script type="text/javascript">function verify_delete() {return confirm("Are you sure?");}</script>' );
-				$wgOut->addHTML( '<table>' );
-				$wgOut->addHTML( '<tr><th>Version</th><th></th></tr>' );
-				foreach ( $existingVersions as $versionName ) {
-					$wgOut->addHTML("<tr>\n"
-						. "<td>$versionName</td>\n"
-						. "<td>\n"
-						. '<form method="POST" onsubmit="return verify_delete()">' . "\n"
-						. '<input type="submit" name="action" value="remove"/>' . "\n"
-						. '<input type="hidden" name="product" value="' . $productName. '"/>' . "\n"
-						. '<input type="hidden" name="version" value="' . $versionName . '"/>' . "\n" );
-					if ( $staticType == 'manual' ) {
-						$wgOut->addHTML( '<input type="hidden" name="manual" value="' . $manualName. '"/>' . "\n" );
-					}
-					$wgOut->addHTML( "</form>\n</td>\n</tr>\n" );
-				}
-				$wgOut->addHTML( '</tr></table>' );
-			} else {
-				$wgOut->addHTML( '<p>No existing version defined.</p>' );
-			}
+			$valid = FALSE;
+		}
+		
+		return $valid;
+	}
+	
+	private function showImportForm( $product, $manual ) {
+		global $wgOut;
+		$productName = $product->getShortName();
+		$productLongName = $product->getLongName();
+		$versions = PonyDocsProductVersion::LoadVersionsForProduct($productName);
+		if ( !is_null( $manual ) ) {
+			$manualName = $manual->getShortName();
 		}
 
+		$wgOut->addHTML('<h3>Import to Version</h3>');
+
+		// Only display form if at least one version is defined
+		if ( count( $versions ) > 0 ) {
+			$action = "/Special:StaticDocImport/$productName";
+			if ( !is_null( $manual ) ) {
+				$action .= "/$manualName";
+			}
+			$wgOut->addHTML('<form action="' . $action . '" method="post" enctype="multipart/form-data">'
+				. "\n" . '<label for="archivefile">File to upload:</label>'
+				. '<input id="archivefile" name="archivefile" type="file" />'
+				. '<input type="hidden" name="product" value="' . $productName . '"/>' . "\n" );
+			if ( !is_null( $manual ) ) {
+				$wgOut->addHTML( '<input type="hidden" name="manual" value="' . $manualName . '"/>' . "\n" );
+			}
+			$wgOut->addHTML( '<select name="version">' );
+			foreach ($versions as $version) {
+				$wgOut->addHTML( '<option value="' . $version->getVersionName() . '">' . $version->getVersionName()
+					. "</option>\n" );
+			}
+			$wgOut->addHTML( "</select>\n" );
+			$wgOut->addHTML('<input type="hidden" name="action" value="add"/>' . "\n"
+				. '<input type="submit" name="submit" value="Submit"/>' . "\n" . '</form>' . "\n");
+			$wgOut->addHTML( "<p>Notes on upload file:</p>\n"
+				. "<ul>\n"
+				. "<li>should be zip format</li>\n"
+				. "<li>verify it does not contain unneeded files: e.g. Mac OS resource, or Windows thumbs, etc.</li>\n"
+				. "<li>requires a index.html file in the root directory</li>\n"
+				. "<li>links to documents within content must be relative for them to work</li>\n"
+				. "<li>may or may not contain sub directories</li>\n"
+				. "<li>may not be bigger than " . ini_get('upload_max_filesize') . "</li>\n"
+				. "</ul>\n" );
+		} else {
+			$wgOut->addHTML( "There are currently no versions defined for $productLongName."
+				. "In order to upload static documentation please define at least one version and one manual from the"
+				. "links below.\n" );
+		}
+	}
+	
+	private function processImportForm( $action, $product, $manual ) {
+		global $wgOut;
+		
+		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
+
+		switch ($action) {
+			case "add":
+				if ( isset( $_POST['version'] )
+					&& isset( $_POST['product'] )
+					&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
+					if (PonyDocsProductVersion::IsVersion($_POST['product'], $_POST['version'])) {
+						$wgOut->addHTML('<h3>Results of Import</h3>');
+						// Okay, let's make sure we have file provided
+						if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
+							$wgOut->addHTML(
+								'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
+						} else {
+							try {
+								if ( is_null( $manual ) ) {
+									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
+										$_POST['version'] );
+									$wgOut->addHTML(
+										"Success: imported archive for {$_POST['product']} version {$_POST['version']}" );
+								} else {
+									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
+										$_POST['version'], $_POST['manual'] );
+									$wgOut->addHTML(
+										"Success: imported archive for {$_POST['product']} version {$_POST['version']}"
+										. " manual {$_POST['manual']}" );
+								}
+							} catch (Exception $e) {
+								$wgOut->addHTML( 'Error: ' . $e->getMessage() );
+							}
+						}
+					}
+				}
+				break;
+
+			case "remove":
+				if ( isset( $_POST['version'] )
+					&& isset( $_POST['product'] )
+					&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
+					if ( PonyDocsProductVersion::IsVersion($_POST['product'], $_POST['version'] ) ) {
+						$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
+						try {
+							if ( is_null( $manual ) ) {
+								$importer->removeVersion( $_POST['product'], $_POST['version'] );
+								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}" );
+							} else {
+								$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
+								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
+									. " manual {$_POST['manual']}");
+							}
+						} catch (Exception $e) {
+							$wgOut->addHTML('Error: ' . $e->getMessage());
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	private function showExistingVersions( $product, $manual ) {
+		global $wgOut;
+
+		$productName = $product->getShortName();
+		if ( !is_null( $manual ) ) {
+			$manualName = $manual->getShortName();
+		}
+		
+		// Display existing versions
+		$wgOut->addHTML( '<h3>Existing Content</h3>' );
+		if ( is_null( $manual ) ) {
+			$existingVersions = $product->getStaticVersionNames();
+		} else {
+			$existingVersions = $manual->getStaticVersionNames();
+		}
+		if ( count($existingVersions) > 0 ) {
+			$wgOut->addHTML(
+				'<script type="text/javascript">function verify_delete() {return confirm("Are you sure?");}</script>' );
+			$wgOut->addHTML( '<table>' );
+			$wgOut->addHTML( '<tr><th>Version</th><th></th></tr>' );
+			foreach ( $existingVersions as $versionName ) {
+				$wgOut->addHTML("<tr>\n"
+					. "<td>$versionName</td>\n"
+					. "<td>\n"
+					. '<form method="POST" onsubmit="return verify_delete()">' . "\n"
+					. '<input type="submit" name="action" value="remove"/>' . "\n"
+					. '<input type="hidden" name="product" value="' . $productName. '"/>' . "\n"
+					. '<input type="hidden" name="version" value="' . $versionName . '"/>' . "\n" );
+				if ( !is_null( $manual ) ) {
+					$wgOut->addHTML( '<input type="hidden" name="manual" value="' . $manualName. '"/>' . "\n" );
+				}
+				$wgOut->addHTML( "</form>\n</td>\n</tr>\n" );
+			}
+			$wgOut->addHTML( '</tr></table>' );
+		} else {
+			$wgOut->addHTML( '<p>No existing version defined.</p>' );
+		}
+	}
+	
+	private function showHelpfulLinks( $productName ) {
+		global $wgArticlePath, $wgOut;
+		
 		$wgOut->addHTML( '<h2>Other Useful Management Pages</h2>'
 			. '<a href="' 
 				. str_replace(
