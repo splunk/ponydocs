@@ -1,6 +1,7 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
+}
 
 /**
  * Provides backend functionality for static documentation import
@@ -16,7 +17,7 @@ class PonyDocsStaticDocImporter {
 	 * Constructor instantiates with static doc directory location
 	 * @param string $baseDir local path to base static documentation
 	 */
-	public function __construct($baseDir) {
+	public function __construct( $baseDir ) {
 		$this->baseDir = $baseDir;
 	}
 
@@ -35,22 +36,23 @@ class PonyDocsStaticDocImporter {
 			$directory .= DIRECTORY_SEPARATOR . $manualName;
 		}
 		// create directory
-		if(!mkdir($directory, 0755, TRUE)) {
-			throw new RuntimeException('There was a problem creating the directory.');
+		if ( !mkdir( $directory, 0755, TRUE ) ) {
+			throw new RuntimeException( 'There was a problem creating the directory.' );
 		}
 		// verify path resides inside the expected base directory
-		$realdir = realpath($directory);
-		if ($realdir !== FALSE && !(strpos($realdir, $this->baseDir . DIRECTORY_SEPARATOR) === 0)) {
-			throw new InvalidArgumentException('There was a problem deleting directory. The directory ' . $directory . ' is not valid.');
+		$realdir = realpath( $directory );
+		if ( $realdir !== FALSE && !( strpos( $realdir, $this->baseDir . DIRECTORY_SEPARATOR) === 0 ) ) {
+			throw new InvalidArgumentException( 'There was a problem deleting directory. The directory ' . $directory
+				. ' is not valid.' );
 		}
 		// extract archive to the created directory
-		exec("unzip " . escapeshellarg($filename) . " -d " . escapeshellarg($directory), $output, $returnval);
-		if($returnval != 0) {
+		exec( "unzip " . escapeshellarg( $filename ) . " -d " . escapeshellarg( $directory ), $output, $returnval );
+		if ( $returnval != 0 ) {
 			$errorText = "There was a problem extracting your archive (Code: $returnval)";
-			if($returnval == 2) {
+			if ( $returnval == 2 ) {
 				$errorText .= ' The file you provided was not a valid zip archive.';
 			}
-			throw new RuntimeException($errorText);
+			throw new RuntimeException( $errorText );
 		}
 	}
 
@@ -70,20 +72,21 @@ class PonyDocsStaticDocImporter {
 			$directory .= DIRECTORY_SEPARATOR . $manualName;
 		}
 		// verify path resides inside the expected base directory
-		$realdir = realpath($directory);
-		if ($realdir !== FALSE && !(strpos($realdir, $this->baseDir . DIRECTORY_SEPARATOR) === 0)) {
-			throw new InvalidArgumentException('There was a problem deleting directory. The directory ' . $directory . ' is not valid.');
+		$realdir = realpath( $directory );
+		if ( $realdir !== FALSE && !( strpos( $realdir, $this->baseDir . DIRECTORY_SEPARATOR) === 0 ) ) {
+			throw new InvalidArgumentException( 'There was a problem deleting directory. The directory ' . $directory
+				. ' is not valid.' );
 		}
 		// verify the path is a directory
-		if (!is_dir($directory)) {
-			throw new InvalidArgumentException('There was a problem deleting directory. The directory ' . $directory . ' does not exist.');
+		if ( !is_dir( $directory ) ) {
+			throw new InvalidArgumentException( 'There was a problem deleting directory. The directory ' . $directory
+				. ' does not exist.' );
 		}
 		// execute delete
-		exec("rm -rf " . escapeshellarg($directory), $output, $returnval);
-		if($returnval != 0) {
+		exec( "rm -rf " . escapeshellarg( $directory ), $output, $returnval );
+		if ( $returnval != 0 ) {
 			$errorText = "There was a problem deleting the directory $directory (Code: $returnval)";
-			throw new RuntimeException($errorText);
+			throw new RuntimeException( $errorText );
 		}
 	}
-
 }
