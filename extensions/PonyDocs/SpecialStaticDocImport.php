@@ -41,15 +41,15 @@ class SpecialStaticDocImport extends SpecialPage
 
 		$this->setHeaders();
 
-		list( $productName, $manualName ) = explode( '/', $par, 3);
-		if ( !$productName ) {
-			$productName = PonyDocsProduct::GetSelectedProduct();
-		}
+		$parts = explode( '/', $par);
+
+		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
+		$manualName = isset( $parts[1] ) ? $parts[1] : NULL;
 		
 		$product = PonyDocsProduct::GetProductByShortName($productName);
 		$productLongName = $product->getLongName();
 
-		if ( isset( $manualName ) ) {
+		if ( !is_null( $manualName ) ) {
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
 			$manualLongName = $manual->getLongName();
 		} else {
@@ -59,7 +59,7 @@ class SpecialStaticDocImport extends SpecialPage
 		$wgOut->setPagetitle( 'Static Documentation Import Tool' );
 
 		$h2 = "Static Documentation Import for $productLongName";
-		if ( isset( $manualName ) ) {
+		if ( !is_null( $manualName ) ) {
 			$h2 .= ", $manualLongName";
 		}
 		$wgOut->addHTML("<h2>$h2</h2>");
@@ -186,7 +186,7 @@ class SpecialStaticDocImport extends SpecialPage
 				if ( isset( $_POST['version'] )
 					&& isset( $_POST['product'] )
 					&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
-					if ( PonyDocsProductVersion::IsVersion($_POST['product'], $_POST['version'] ) ) {
+					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
 						$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
 						try {
 							if ( is_null( $manual ) ) {
