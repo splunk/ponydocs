@@ -172,7 +172,7 @@ class PonyDocsProductManual
 
 			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
 
-			if ( ! $static && !$res->numRows() ) {
+			if ( !$static && !$res->numRows() ) {
 				continue;
 			}
 

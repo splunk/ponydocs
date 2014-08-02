@@ -26,7 +26,7 @@ class PonyDocsStaticDocImporter {
 	 * @param string $filename full path to file to extract
 	 * @param string $product PonyDocs product short name
 	 * @param string $version PonyDocs version name
-	 * @param string $manulaName PonyDocs manual name
+	 * @param string $manualName PonyDocs manual name
 	 * @throw RuntimeException if there is a problem with the file or the path
 	 */
 	public function importFile( $filename, $product, $version, $manualName = NULL ) {
@@ -60,7 +60,7 @@ class PonyDocsStaticDocImporter {
 	 * Removes static documentation for given product and version
 	 * @param string $product Ponydocs short product name
 	 * @param string $version Ponydocs version name
-	 * @param string $manulaName PonyDocs manual name
+	 * @param string $manualName PonyDocs manual name
 	 * @throw RuntimeException if deletion fails
 	 * @throw InvalidArgumentException when product and version path does not exist
 	 */
