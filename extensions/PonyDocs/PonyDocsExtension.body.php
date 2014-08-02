@@ -1799,9 +1799,7 @@ HEREDOC;
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get($key);
-		if (TRUE) {
-		//if ($cacheEntry === null) {
-			error_log("INFO [PonyDocsExtension::fetchNavDataForVersion] Creating new navigation cache file for product $product version $version");
+		if ($cacheEntry === null) {
 			$oldVersion = PonyDocsProductVersion::GetSelectedVersion($product);
 			PonyDocsProductVersion::SetSelectedVersion($product, $version);
 			$ver = PonyDocsProductVersion::GetVersionByName($product, PonyDocsProductVersion::GetSelectedVersion($product));
@@ -1813,9 +1811,7 @@ HEREDOC;
 
 			$cacheEntry = array();
 			foreach($manuals as $manual) {
-				error_log("manual is " . $manual->getShortName());
 				if ( $manual->isStatic() ) {
-					error_log("Static: " . $manual->getShortName());
 					$staticVersions = $manual->getStaticVersionNames();
 					if (in_array($version, $staticVersions)) {
 						$cacheEntry[] = array(
