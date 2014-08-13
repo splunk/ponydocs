@@ -1800,7 +1800,10 @@ HEREDOC;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get( $key );
 		if ( $cacheEntry === null ) {
-			error_log("INFO [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version");
+			if ( PONYDOCS_CACHE_DEBUG ) {
+				error_log(
+					"DEBUG [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version" );
+			}
 			$oldVersion = PonyDocsProductVersion::GetSelectedVersion( $product );
 			PonyDocsProductVersion::SetSelectedVersion( $product, $version );
 			$ver = PonyDocsProductVersion::GetVersionByName(
