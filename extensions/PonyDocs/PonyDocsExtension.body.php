@@ -1706,7 +1706,7 @@ HEREDOC;
 					$result = true;
 					$continueProcessing = false;
 				}
-			} elseif ( ( $title->getNamespace( ) == PONYDOCS_DOCUMENTATION_NAMESPACE_ID ) ||
+			} elseif ( ( $title->getNamespace( ) == NS_PONYDOCS ) ||
 				( !strcmp( $title->__toString( ), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) ) ) {
 
 				/**

@@ -9,7 +9,7 @@ class PonyDocsDBPage
 		$rows = array();
 		$res = $dbr->select( 'page', 'page_title',
 			array( 	"LOWER(cast(page_title AS CHAR)) LIKE '" . $dbr->strencode(strtolower( $pageTitle )) . "'",
-					"page_namespace = " . PONYDOCS_DOCUMENTATION_NAMESPACE_ID ), __METHOD__ );
+					"page_namespace = " . NS_PONYDOCS ), __METHOD__ );
 		while ($row = $res->fetchRow()) {
 			$rows[] = $row;
 		}

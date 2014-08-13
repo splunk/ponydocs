@@ -46,7 +46,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 
 		// Get the title and make sure we're in Documentation namespace
 		$title = $article->getTitle();
-		if($title->getNamespace() != PONYDOCS_DOCUMENTATION_NAMESPACE_ID) {
+		if($title->getNamespace() != NS_PONYDOCS) {
 			return true;
 		}
 
