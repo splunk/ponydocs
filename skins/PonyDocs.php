@@ -727,10 +727,17 @@ class PonyDocsTemplate extends QuickTemplate {
 					. '</i></span>' );
 			} elseif ( preg_match( '/(.*)TOC(.*)/', $pieces[2], $matches ) ) {
 				$this->data['titletext'] = $matches[1] . ' Table of Contents Page';
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					. '<i>* Use {{#topic:Display Name}} within a bullet to create topics.</i></span>' );
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					. '<i>* Topic bullets must be preceded by at least one section name in plain text.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'
+					. '* Optionally start this page with {{#manualDescription:Manual Description.}}'
+					. ' followed by two line-breaks to set a manual description for the Manual this TOC belongs to.'
+					. '</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'
+					. '* Topics are grouped into sections by section headers.'
+					. ' Any line without markup is considered a section header.'
+					. ' A section header is required before the the first topic tag.</i></span>');
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'
+					. '* Topic tags must be part of an unordered list.'
+					. ' Use {{#topic:Display Name}} after a * (list item markup) to create topics.</i></span>' );
 			} elseif ( sizeof( $pieces ) >= 2 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ) ) {
 				$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
 				if( $pManual ) {
