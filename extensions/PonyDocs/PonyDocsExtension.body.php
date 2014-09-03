@@ -1517,7 +1517,7 @@ HEREDOC;
 		 */
 
 		//if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:.'_!@\"()#$ -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
+		if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?(.*))\]\]/", $text, $matches, PREG_SET_ORDER ))
 		{
 			//echo '<pre>'; print_r( $matches ); die();
 			/**
