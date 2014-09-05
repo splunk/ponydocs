@@ -205,7 +205,8 @@ class PonyDocsTemplate extends QuickTemplate {
 						}
 						// Version group message, if any
 						if ( $this->data['versionGroupMessage'] !== null ) { ?>
-							<div class="affectedVersions smallRoundedCorners <?php echo $this->data['versionclass']; ?>">
+							<div class="affectedVersions smallRoundedCorners
+								<?php echo implode( " ", $this->data['versionclasses'] ); ?>">
 								<p class="bannerVersion">
 									<?php echo $this->data['versionGroupMessage'];?>
 								</p>
@@ -798,7 +799,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*TOC.*/', $wgTitle->__toString() ) ) {
 			$this->data['topicversions'] = PonyDocsWiki::getVersionsForTopic( $topic );
 			$this->data['inlinetoc'] = $topic->getSubContents();
-			$this->data['versionclass'] = $topic->getVersionClass();
+			$this->data['versionclasses'] = $topic->getVersionClasses();
 			$this->data['versionGroupMessage'] = $this->data['pVersion']->getVersionGroupMessage();
 
 			/**
