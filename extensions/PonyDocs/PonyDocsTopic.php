@@ -103,28 +103,19 @@ class PonyDocsTopic {
 		$res = $dbr->select(
 			'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
 
-		$tempVersions = array();
-
+		$this->versions = array();
+		
 		while ( $row = $dbr->fetchObject( $res ) ) {
 			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
 				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if ( $v ) {
-					$tempVersions[] = $v;
+					$this->versions[] = $v;
 				}
 			}
 		}
-		// Sort by Version, by doing a natural sort. Also remove any duplicates.
-		/// FIXME - what is this really doing? tempVersions index is int per above code!
-		$sortArray = array();
-		foreach ( $tempVersions as $index => $version ) {
-			if ( !in_array($version->getVersionName(), $sortArray) ) {
-				$sortArray[(string)$index] = $version->getVersionName();
-			}
-		}
-		natsort( $sortArray );
-		foreach ( $sortArray as $targetIndex => $verName ) {
-			$this->versions[] = $tempVersions[$targetIndex];
-		}
+
+		// Sort by the order on the versions admin page
+		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
 
 		return $this->versions;
 	}
@@ -275,6 +266,8 @@ class PonyDocsTopic {
 	 * None of the above (unknown)
 	 * 
 	 * @return integer
+	 * @todo remove
+	 * @deprecated
 	 */
 	public function getVersionClass() {
 		if ( !preg_match(
@@ -320,6 +313,64 @@ class PonyDocsTopic {
 		}
 		// Default return
 		return "unknown";
+	}
+	
+	/**
+	 * This function returns information about the versions on this topic.
+	 * - Version permissions: unreleased, preview, or released
+	 * - Version age: older, latest, or newer
+	 * Since a Topic can have multiple versions, it's possible for a single topic to be in unreleased, preview, released, older, 
+	 * latest, AND newer versions AT THE SAME TIME!
+	 * This information can be used by skins to change UI based on the version features.
+	 *  
+	 * @return array
+	 */
+	public function getVersionClasses() {
+		
+		$productName = PonyDocsProduct::getSelectedProduct();
+		$versionClasses = array();
+		
+		$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName );
+		// Just the names of our released versions
+		$releasedNames = array();
+		foreach ( $releasedVersions as $ver ) {
+			$releasedNames[] = strtolower( $ver->getVersionName() );
+		}
+		
+		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
+		// Just the names of our preview versions
+		$previewNames = array();
+		foreach ( $previewVersions as $ver ) {
+			$previewNames[] = strtolower( $ver->getVersionName() );
+		}
+		
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+	
+		foreach( $this->versions as $version ) {
+			$versionName = strtolower($version->getVersionName());
+			
+			// Is this version released, preview, or unreleased?
+			if ( in_array( $versionName, $releasedNames ) ) {
+				$versionClasses['released'] = TRUE;
+			} elseif ( in_array( $versionName, $previewNames ) ) {
+				$versionClasses['preview'] = TRUE;
+			} else {
+				$versionClasses['unreleased'] = TRUE;
+			}
+
+			// Is this version older or later or equal to the current version?
+			if ( $latestVersion ) {
+				if ( PonyDocs_ProductVersionCmp( $version, $latestVersion ) < 0 ) {
+					$versionClasses['older'] = TRUE;
+				} elseif ( PonyDocs_ProductVersionCmp( $version, $latestVersion ) > 0 ) {
+					$versionClasses['newer'] = TRUE;
+				} else {
+					$versionClasses['latest'] = TRUE;
+				}
+			}
+		}
+
+		return array_keys($versionClasses);
 	}
 
 	/**
