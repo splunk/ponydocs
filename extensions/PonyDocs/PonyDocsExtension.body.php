@@ -1799,8 +1799,7 @@ HEREDOC;
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get($key);
-		if($cacheEntry === null) {
-			error_log("INFO [PonyDocsExtension::fetchNavDataForVersion] Creating new navigation cache file for product $product version $version");
+		if ($cacheEntry === null) {
 			$oldVersion = PonyDocsProductVersion::GetSelectedVersion($product);
 			PonyDocsProductVersion::SetSelectedVersion($product, $version);
 			$ver = PonyDocsProductVersion::GetVersionByName($product, PonyDocsProductVersion::GetSelectedVersion($product));
@@ -1812,18 +1811,29 @@ HEREDOC;
 
 			$cacheEntry = array();
 			foreach($manuals as $manual) {
-				$toc = new PonyDocsTOC($manual, $ver, $pr);
-				list($items, $prev, $next, $start) = $toc->loadContent();
-
-				foreach($items as $entry) {
-					if(isset($entry['link']) && $entry['link'] != '') {
-						// Found first article.
-						$cacheEntry[] = array('shortName' => $manual->getShortName(),
-											  'longName' => $manual->getLongName(),
-											  'description' => $toc->getManualDescription(),
-											  'firstTitle' => $entry['title'],
-											  'firstUrl' => $entry['link']);
-						break;
+				if ( $manual->isStatic() ) {
+					$staticVersions = $manual->getStaticVersionNames();
+					if (in_array($version, $staticVersions)) {
+						$cacheEntry[] = array(
+							'shortName' => $manual->getShortName(),
+							'longName' => $manual->getLongName(),
+							'firstUrl' => '/' . implode(
+								'/', 
+								array( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $product, $version, $manual->getShortName() ) ) );
+					}
+				} else {
+					$toc = new PonyDocsTOC($manual, $ver, $pr);
+					list($items, $prev, $next, $start) = $toc->loadContent();
+					foreach($items as $entry) {
+						if(isset($entry['link']) && $entry['link'] != '') {
+							// Found first article.
+							$cacheEntry[] = array('shortName' => $manual->getShortName(),
+												  'longName' => $manual->getLongName(),
+												  'description' => $toc->getManualDescription(),
+												  'firstTitle' => $entry['title'],
+												  'firstUrl' => $entry['link']);
+							break;
+						}
 					}
 				}
 			}
@@ -1842,9 +1852,9 @@ HEREDOC;
 	}
 
 	/**
-	 * Hook function which is used to determine if a url is used to determine 
-	 * the first article in a manual for the user's version.  If so, try and 
-	 * find the first article and redirect.
+	 * Hook function which
+	 * - Sets the version correctly when editing a topic
+	 * - Redirects to the first topic in a manual if the user requested a bare manual URL
 	 */
 	public function onArticleFromTitleQuickLookup(&$title, &$article) {
 		global $wgScriptPath;
@@ -1864,16 +1874,14 @@ HEREDOC;
 			}
 		}
 
-		// The following regex is better understood with a bottle of whiskey.
-		// Or you can look at WEB-3862 if you want to be a party pooper.
-		//if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
-		// That regex sucks! How do you know if "Beta" is a version or a manual? What if both exist with same name?
-		// additionally it catches versions with dots like 1.1 but not without like 1
-		// it should only catch the full manual URL - product/version/manual - we cannot support WEB-3862
-		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/(([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/)(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
+		// Matches a URL like /Documentation/PRODUCT/VERSION/MANUAL
+		// TODO: Should match PONYDOCS_PRODUCTMANUAL_LEGALCHARS instead of \w at the end
+		if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/(\w+)\/?$/i',
+			$_SERVER['PATH_INFO'], $match)) {
 			$targetProduct = $match[1];
-			$targetManual = $match[4];
-			$targetVersion = $match[3];
+			$targetVersion = $match[2];
+			$targetManual = $match[3];
 
 			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
 
@@ -1907,26 +1915,30 @@ HEREDOC;
 			// Okay, the version is valid, let's set the user's version.
 			PonyDocsProductVersion::SetSelectedVersion($targetProduct, $ver->getVersionName());
 			PonyDocsProductManual::LoadManualsForProduct($targetProduct);
-			$man = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
-			if(!$man) {
+			$manual = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
+			if ( !$manual ) {
 				// Rewrite to Main documentation
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
-				header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
+				if (PONYDOCS_REDIRECT_DEBUG) {
+					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/"
+						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
+				}
+				header( 'Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
+				die();
+			} elseif ( !$manual->isStatic() ) {
+				// Get the TOC out of here! heehee
+				$toc = new PonyDocsTOC($manual, $ver, $p);
+				list($toc, $prev, $next, $start) = $toc->loadContent();
+				foreach($toc as $entry) {
+					if(isset($entry['link']) && $entry['link'] != "") {
+						// We found the first article in the manual with a link.  
+						// Redirect to it.
+						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
+						header("Location: " . $entry['link']);
+						die();
+					}
+				}
 				die();
 			}
-			// Get the TOC out of here! heehee
-			$toc = new PonyDocsTOC($man, $ver, $p);
-			list($toc, $prev, $next, $start) = $toc->loadContent();
-			foreach($toc as $entry) {
-				if(isset($entry['link']) && $entry['link'] != "") {
-					// We found the first article in the manual with a link.  
-					// Redirect to it.
-					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
-					header("Location: " . $entry['link']);
-					die();
-				}
-			}
-			die();
 		}
 		return true;
 	}
