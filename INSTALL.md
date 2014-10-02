@@ -182,7 +182,7 @@ Failure to do so will result in frustration and keyboard tossing.
 	* To activate the skin, update the `$wgDefaultSkin` value in LocalSettings.php:
 	  `$wgDefaultSkin = 'ponydocs';`
 
-### 4) Review at PonyDocsConfig.php
+### 4) Review PonyDocsConfig.php
 
 * Take a look at extensions/Ponydocs/PonyDocs.config.php.
 * It will define a bunch of constants, most of which you shouldn't need to touch.
