@@ -25,11 +25,7 @@ class PonyDocsProductManual
 	 */
 	protected $mLongName;
 
-	/** @var string Product name */
 	protected $pName;
-
-	/** @var boolean Stores whether manual is defined as static */
-	protected $static;
 
 	/**
 	 * Our list of manuals loaded from the special page, stored statically.  This only contains the manuals
@@ -53,13 +49,12 @@ class PonyDocsProductManual
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '', $static = FALSE )
+	public function __construct( $pName, $shortName, $longName = '' )
 	{
 		//$this->mShortName = strtolower( $shortName );
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
-		$this->static = $static;
 	}
 
 	public function getShortName( )
@@ -78,40 +73,6 @@ class PonyDocsProductManual
 	}
 
 	/**
-	 * Is this manual static?
-	 * @return boolean
-	 */
-	public function isStatic() {
-		return $this->static;
-	}
-	
-	/**
-	 * Get existing static documentation version names for this manual
-	 * @return array of versionName strings
-	 */
-	public function getStaticVersionNames() {
-		$return = FALSE;
-		if ( $this->static ) {
-			$versionNames = array();
-			$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $this->pName;
-			if ( is_dir( $directory ) ) {
-				$versionNames = scandir( $directory );
-				foreach ( $versionNames as $i => $versionName ) {
-					if ( $versionName == '.'
-						|| $versionName == '..'
-						|| !is_dir(
-							$directory . DIRECTORY_SEPARATOR . $versionName . DIRECTORY_SEPARATOR . $this->mShortName ) ) {
-						unset( $versionNames[$i] );
-					}
-				}
-			}
-			$return = $versionNames;
-		}
-		
-		return $return;
-	}
-
-	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
 	 * currently selected version or not.
 	 *
@@ -126,13 +87,13 @@ class PonyDocsProductManual
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
-		if ( isset(self::$sManualList[$productName]) && sizeof( self::$sManualList[$productName] ) && !$reload ) {
+		if( isset(self::$sManualList[$productName]) && sizeof( self::$sManualList[$productName] ) && !$reload )
 			return self::$sManualList[$productName];
-		}
 
-		self::$sManualList[$productName] = array();
+		self::$sManualList[$productName] = array( );
 
-		// Use 0 as the last parameter to enforce getting latest revision of this article.
+		// Use 0 as the last parameter to enforce getting latest revision of 
+		// this article.
 		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
 		$content = $article->getContent( );
 
@@ -160,19 +121,12 @@ class PonyDocsProductManual
 
 		foreach( $matches as $m )
 		{
-			// Set static flag if defined as static
-			$static = FALSE;
-			if ( strpos( $m[1], PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
-				$m[1] = substr( $m[1], strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
-				$static = TRUE;
-			}
-			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $static );
-			
+			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2] );
 			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
 
 			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
 
-			if ( !$static && !$res->numRows() ) {
+			if( !$res->numRows( )) {
 				continue;
 			}
 

@@ -354,28 +354,4 @@ class PonyDocsProduct
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 		return "$base/$productName";
 	}
-
-	/**
-	 * Get existing static documentation versions for this product
-	 * @return array of version name strings
-	 */
-	public function getStaticVersionNames() {
-		$return = FALSE;
-		if ( $this->static ) {
-			$productName = $this->mShortName;
-			$versionNames = array();
-			$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $productName;
-			if (is_dir($directory)) {
-				$versionNames = scandir($directory);
-				foreach ($versionNames as $i => $versionName) {
-					if ($versionName == '.' || $versionName == '..') {
-						unset($versionNames[$i]);
-					}
-				}
-			}
-			$return = $versionNames;
-		}
-		
-		return $return;
-	}
 }

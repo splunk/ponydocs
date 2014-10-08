@@ -57,9 +57,8 @@ class SpecialBranchInherit extends SpecialPage
 		$manuals = PonyDocsProductManual::GetManuals($product);
 		$result = array();
 		foreach($manuals as $manual) {
-			if ( !$manual->isStatic() ) {
-				$result[] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
-			}
+			$result[] = array("shortname" => $manual->getShortName(),
+							  "longname" => $manual->getLongName());
 		}
 		$result = json_encode($result);
 		return $result;
@@ -409,12 +408,6 @@ class SpecialBranchInherit extends SpecialPage
 			$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
 			return;
 		}
-		
-		// Static product check
-		if ( PonyDocsProduct::GetProductByShortName($forecProduct)->isStatic()) {
-			$wgOut->addHTML("<p>Sorry, but you cannot branch/inherit a static product.</p>");
-			return;
-		}
 
 		ob_start();
 
@@ -601,3 +594,5 @@ class SpecialBranchInherit extends SpecialPage
 		return true;
 	}
 }
+
+?>

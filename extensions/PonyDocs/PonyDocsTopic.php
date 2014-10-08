@@ -230,32 +230,30 @@ class PonyDocsTopic {
 	}
 
 	/**
-	 * Parse out all the headers in the form:
-	 * 	= Header =, == Header ==, etc.
-	 * One set is H1, two is H2, and so forth.
-	 * The results array has:
+	 * parses out all the headers in the form:
+	 * 	= Header =
+	 * It requires valid MediaWiki markup, so it must have the same number of '=' on each side.
+	 * One set is H1, two is H2, and so forth.  The
+	 * results array has:
 	 * - 0 = Complete match with equal signs.
-	 * - 1 = Right-hand side set of equal signs.
-	 * - 2 = The header text inside the equal signs.
-	 * - 3 = Left hand side set of equal signs.
+	 * - 1 = The header text inside the equal signs.
+	 * - 2 = This will contain the left hand side set of equal signs, so strlen() this to get the header level.
 	 *
 	 * @return array
 	 */
-	public function parseSections() {
+	public function parseSections()	{
 		$content = str_replace("<nowiki>", "", $this->pArticle->mContent);
 		$content = str_replace("</nowiki>", "", $content);
 
-		$headers = array();
-		$re = "/\n\s*(=+)([^=]*)(=+)\s*\n/";
+		// We don't need such a long regex.  Simply encapsulating everything in header element.
+		$re = "/(=+)([^=]*)(=+)\n/";
 		if ( preg_match_all( $re, $content, $matches, PREG_SET_ORDER ) ) {
 			foreach ( $matches as &$match ) {
-				if (strlen($match[1]) == strlen($match[3])) {
-					$match[2] = trim( $match[2] );
-					$headers[] = $match;
-				}
+				$match[2] = trim(str_replace( "=", "", $match[2] ) );
 			}
+			return $matches;
 		}
-		return $headers;
+		return array();
 	}
 
 	/**
