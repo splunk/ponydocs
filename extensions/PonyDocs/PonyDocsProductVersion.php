@@ -403,8 +403,8 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						// Allow crawler to view unreleased versions
-						|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
-							&& $wgIP == $splunkMediaWiki['CrawlerAddress']
+						|| ( ProxyTools::wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
+							&& ProxyTools::wfGetIP() == $splunkMediaWiki['CrawlerAddress']
 							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
 							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
 						|| $ignorePermissions) {
@@ -425,8 +425,8 @@ class PonyDocsProductVersion {
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
 						// Allow crawler to view preview versions
-						|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
-							&& $wgIP == $splunkMediaWiki['CrawlerAddress']
+						|| ( ProxyTools::wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
+							&& ProxyTools::wfGetIP() == $splunkMediaWiki['CrawlerAddress']
 							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
 							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
 						|| $ignorePermissions ) {
@@ -579,8 +579,8 @@ class PonyDocsProductVersion {
 		if ( in_array( $authProductGroup, $groups )
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
 			// Allow crawler to view all versions
-			|| ( isset( $wgIP ) && isset( $splunkMediaWiki['CrawlerAddress'] )
-				&& $wgIP == $splunkMediaWiki['CrawlerAddress']
+			|| ( ProxyTools::wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
+				&& ProxyTools::wfGetIP() == $splunkMediaWiki['CrawlerAddress']
 				&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
 				&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) ) ) {
 			return self::$sVersionMap[$productName];
