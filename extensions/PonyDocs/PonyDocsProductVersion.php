@@ -186,7 +186,7 @@ class PonyDocsProductVersion {
 		$this->versionGroup = $group;
 		$this->versionGroupMessage = $message;
 	}
-
+	
 	/**
 	 * This returns the selected version for the current user.
 	 * This is stored in our session data, whether the user is logged in or not.

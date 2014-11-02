@@ -449,6 +449,14 @@ class PonyDocsTOC
 	public function getManualDescription() {
 		return isset( $this->mManualDescription ) ? $this->mManualDescription : NULL;
 	}
+	
+	/**
+	 * Update each Version tag on this TOC with a new Product
+	 * Assumes the new Product exists, and has each Version that this TOC is tagged with.
+	 * 
+	 * @param string $productName 
+	 */
+	public function moveTocToAnotherProduct($productName) {}
 
 	/**
 	 * Normalize a section name by converting its text to an anchor.

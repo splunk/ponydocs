@@ -109,6 +109,38 @@ class PonyDocsProduct
 	}
 
 	/**
+	 * Copy the Version management page to another Product
+	 * @param string $productName
+	 */
+	public function copyVersionsToAnotherProduct($productName) {
+		// Only do this if Versions doesn't already exist for Product
+	}
+	
+	/**
+	 * Copy the Manuals management page to another Product
+	 * @param string $productName
+	 */
+	public function copyManualsToAnotherProduct($productName) {
+		// Only do this if Manuals doesn't already exist for Product
+	}
+
+	/**
+	 * Delete the Versions management page for this Product
+	 */
+	public function deleteAllVersions() {}
+	
+	/**
+	 * Delete the Manuals management page for this Product
+	 */
+	public function deleteAllManuals() {}
+	
+	/**
+	 * Delete this Product by removing its parser tag from the Product management page
+	 * @param string $shortName 
+	 */
+	public function deleteProduct() {}
+
+	/**
 	 * This loads the list of products BASED ON whether each product defined has a TOC defined for the currently selected version
 	 * or not.
 	 *
@@ -116,7 +148,6 @@ class PonyDocsProduct
 	 * 
 	 * @return array
 	 */
-
 	static public function LoadProducts( $reload = FALSE ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -354,4 +385,14 @@ class PonyDocsProduct
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 		return "$base/$productName";
 	}
+	
+	/**
+	 * Create a new Product by adding a parser tag to the Product management page
+	 * 
+	 * @param string $shortName
+	 * @param string $longName
+	 * @param string $description
+	 * @param string $parent
+	 */
+	static public function createProduct($shortName, $longName, $description, $parent) {}
 }

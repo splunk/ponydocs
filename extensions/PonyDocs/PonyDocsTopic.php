@@ -121,6 +121,14 @@ class PonyDocsTopic {
 	}
 
 	/**
+	 * Update each Version tag on this Topic with a new Product
+	 * Assumes the new Product exists, and has each Version that this Topic is tagged with.
+	 * 
+	 * @param string $productName 
+	 */
+	public function moveTopicToAnotherProduct($productName) {}
+
+	/**
 	 * Given a 'base' topic name (Documentation:User:HowToFoo), find the proper topic name based on selected version.
 	 * If 2.1 is selected and we have a HowToFoo2.0 tagged for 2.1, return HowToFoo2.0.
 	 *

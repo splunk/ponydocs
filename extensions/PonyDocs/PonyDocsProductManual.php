@@ -71,7 +71,7 @@ class PonyDocsProductManual
 	{
 		return $this->pName;
 	}
-
+	
 	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
 	 * currently selected version or not.
@@ -233,5 +233,5 @@ class PonyDocsProductManual
 		
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 		return "$base/$productName/$versionName/$manualName";
-	}
+	}	
 };
