@@ -23,8 +23,7 @@ $wgAjaxExportList[] = 'RenameProduct::ajaxCompleteProductRename';
 /**
  * The Special page which handles the UI for renaming versions
  */
-class SpecialRenameProduct extends SpecialPage
-{
+class SpecialRenameProduct extends SpecialPage {
 	/**
 	 * Just call the base class constructor and pass the 'name' of the page as defined in $wgSpecialPages.
 	 *
@@ -74,47 +73,23 @@ class SpecialRenameProduct extends SpecialPage
 	}
 
 	/**
-	 * Start the rename process by creating the new Product and copying Manual and Version management pages
-	 * @param string $jobId
-	 * @param string $sourceProductName
-	 * @param string $targetProductName 
-	 * @return string Full job log of the process by printing to stdout.
-	 */
-	public static function ajaxStartProductRename( $jobId, $sourceProductName, $targetProductName ) {
-		// TODO: Validate
-		// That user has access
-		// That source product exists and is not static
-		
-		$sourceProduct = PonyDocsProduct::getProductByShortName( $sourceProductName );
-		// Target Product will exist if this is a second run, trying to recover from an incomplete Rename
-		$targetProduct = PonyDocsProduct::getProductByShortName( $targetProduct );
-		if ( !$targetProduct ) {
-			$targetProduct = PonyDocsProduct::createProduct(
-				$targetProductName, $sourceProduct->getLongName(), $sourceProduct->getDescription(), $sourceProduct->getParent());
-		}
-		$sourceProduct->copyVersionsToAnotherProduct( $targetProductName );
-		$sourceProduct->copyManualsToAnotherProduct( $targetProductName );
-		
-		// TODO: Log
-		// TODO: Return
-	}
-	
-	/**
 	 * Complete the rename process by deleteing the old Product and its Manual and Version management pages
 	 * @param string $jobId
 	 * @param string $sourceProductName
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxCompleteProductRename( $jobId, $sourceProductName ) {
+	public static function ajaxCompleteProductRename( $jobId, $sourceProductName, $targetProductName ) {
 		// TODO: Validate
 		// That user has access
 		// That source product exists and is not static
+		// That source product has no TOCs or Topics
+		// That target product does not exist
 		// What can we do to make this more safe? Maybe we can check that the job Id is valid?
 
 		$sourceProduct = PonyDocsProduct::getProductByShortName($sourceProductName);
-		$sourceProduct->deleteAllVersions();
-		$sourceProduct->deleteAllManuals();
-		$sourceProduct->deleteProduct();
+		$sourceProduct->moveVersionsToAnotherProduct();
+		$sourceProduct->moveManualsToAnotherProduct();
+		$sourceProduct->rename();
 
 		// TODO: Log
 		// TODO: Return
@@ -141,13 +116,14 @@ class SpecialRenameProduct extends SpecialPage
 			. " targetProduct=$targetProductName";
 		error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
 
-		// TODO: Validate
-		// That user has access
+		// Validate
+		// TODO: that the user has access
 		// What can we do to make this more safe? Maybe we can check that the job Id is valid?
 		$sourceProduct = PonyDocsProduct::GetProductByShortName( $sourceProductName );
 		$targetProduct = PonyDocsProduct::GetProductByShortName( $targetProductName );
 		$manual = PonyDocsProductManual::getManualByShortName( $souceProductName, $manualName );
-		if ( !( $sourceProduct && $targetProduct && $manual ) ) {
+		// Source Product and Manual should exist, Target Product should not
+		if ( !$sourceProduct || !$manual || $targetProduct ) {
 			$result = array( 'success', FALSE );
 			$result = json_encode( $result );
 			// TODO: Don't return in the middle
@@ -167,41 +143,23 @@ class SpecialRenameProduct extends SpecialPage
 		fputs( $fp, "Getting Topics for $manualName" );
 		fclose( $fp );
 
+		$allTocTitles = $manual->getAllTocs();
+		$allTocs = array();
 		$manualTopics = array();
+		
 
-		// TODO: We need all the TOCs, not just one version.
-		//       This should be extracted to a method in PonyDocsProductTOC|Manual
-		//       Then we need to iterate over all the TOCs to get a list of distinct topics
-		$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
-		list( $toc, $prev, $next, $start ) = $TOC->loadContent();
-		// Time to iterate through all the items.
-		// TODO: This should be extracted to a method in PonyDocsTOC
-		$section = '';
-		foreach ( $toc as $tocItem ) {
-			if ( $tocItem['level'] == 0 ) {
-				$section = $tocItem['text'];
-				$manualTopics[$manualName]['sections'][$section] = array();
-				$manualTopics[$manualName]['sections'][$section]['meta'] = array();
-				$manualTopics[$manualName]['sections'][$section]['topics'] = array();
-			}
-			// actual topic
-			if ( $tocItem['level'] == 1 ) {
-				$tempEntry = array(
-					'title' => $tocItem['title'],
-					'text' => $tocItem['text'],
-					'toctitle' => $tocItem['toctitle'],
-					'conflicts' => PonyDocsBranchInheritEngine::getConflicts(
-						$product, $tocItem['title'], $targetVersion )
-				);
-				$manualTopics[$manualName]['sections'][$section]['topics'][] = $tempEntry;
-			}
-		}
-		foreach ( $manualTopics as $manualName => $manual ) {
-			foreach ( $manual['sections'] as $sectionIndex => $section ) {
-				if ( count($section['topics']) == 0 ) {
-					unset( $manualTopics[$manualName]['sections'][$sectionIndex] );
+		foreach ( $allTocs as $tocName ) {
+			$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
+			list( $toc, $prev, $next, $start ) = $TOC->loadContent();
+			// Time to iterate through all the items.
+			$section = '';
+			foreach ( $toc as $tocItem ) {
+				// actual topic
+				if ( $tocItem['level'] == 1 ) {
+					$manualTopics[$tocItem['title']] = 1;
 				}
 			}
+			$allTocs = $TOC;
 		}
 
 		$logFields = "action=topics status=success product=$productName manual=$manualName "
@@ -213,74 +171,57 @@ class SpecialRenameProduct extends SpecialPage
 		PonyDocsExtension::setSpeedProcessing( TRUE );
 
 		// Determine how many topics there are to process so that we can keep track of progress
-		$numOfTopics = 0;
+		$numOfTopics = size( $manualTopics );
 		$numOfTopicsCompleted = 0;
 
-		foreach ( $manualTopics as $manualName => $manualData ) {
-			foreach ( $manualData['sections'] as $sectionName => $section ) {
-				// The following is a goofy fix for some browsers.
-				// Sometimes the JSON comes along with null values for the first element. 
-				// It's just an additional element, so we can drop it.
-				// TODO: Since we're no longer getting this from JSON, this is probably removeable
-				if ( empty( $section['topics'][0]['text'] ) ) {
-					array_shift( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
-				}
-				$numOfTopics += count( $manualTopics[$manualName]['sections'][$sectionName]['topics'] );
-			}
-		}
-
-		foreach ( $manualTopics as $manualName => $manualData ) {
-			// TODO: We already got the manual above, why make another? We could add the manual to $manualTopics somewhere..
-			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
-
+		foreach ( array_keys( $manualTopics ) as $topicTitle ) {
 			// First update all the topics
 			print '<div class="normal">Processing topics</div>';
-			foreach ( $manualData['sections'] as $sectionName => $section ) {
-				print "<div class=\"normal\">Processing section $sectionName</div>" ;
-				foreach ( $section['topics'] as $topic ) {
-					// Update log file
-					$fp = fopen( $path, "w+" );
-					fputs( $fp, "Renaming topics in manual $manualName<br />"
-						. "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
-						. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
-					fclose( $fp );
-					try {
-						print '<div class="normal">Attempting to update topic ' . $topic['title'] . '...';
-						PonyDocsRenameProductEngine::changeVersionOnTopic(
-							$topic['title'], $sourceVersion, $targetVersion );
-							$logFields = "action=topic status=success product=$productName manual=$manualName "
-								. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-						error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
-						print 'Complete</div>';
-					} catch( Exception $e ) {
-						$logFields = "action=topic status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-						error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
-						print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
-					}
-					$numOfTopicsCompleted++;
-				}
-			}
+			
+			// Update log file
+			$fp = fopen( $path, "w+" );
+			fputs( $fp, "Renaming topics in manual $manualName<br />"
+				. "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
+				. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
+			fclose( $fp );
+			
+			try {
+				print '<div class="normal">Attempting to update topic ' . $topicTitle . '...';
+				// TODO: Instantiate the topic somehow - how do we get an article? Who makes a new Topic?
+				// $topic = new PonyDocsProductTopic();
+				// $topic->moveTopicToAnotherProduct($targetProductName);
 
-			// Now we can update the TOC
-			// Determine if TOC already exists for target version.
-			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion ) ) {
-				print '<div class="normal">TOC Does not exist for Manual ' . $manual->getShortName()
-					. ' with version ' . $targetVersion->getVersionName() . '</div>';
-			} else {
-				try {
-					print '<div class="normal">Attempting to update TOC...';
-					PonyDocsRenameProductEngine::changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion);
-					$logFields = "action=TOC status=success product=$productName manual=$manualName "
-						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-					error_log( 'INFO [' . __METHOD__ ."] [RenameProduct] $logFields" );
-					print 'Complete</div>' ;
-				} catch ( Exception $e ) {
-					$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-					error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
-					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
-				}
+				$logFields = "action=topic status=success product=$productName manual=$manualName "
+					. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+				error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
+
+				print 'Complete</div>';
+			} catch( Exception $e ) {
+				$logFields = "action=topic status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+					. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+				error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
+				print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
+			}
+			$numOfTopicsCompleted++;
+		}
+
+		// Now we can update the TOCs
+		foreach ( $allTocs as $toc ) {
+			try {
+				print '<div class="normal">Attempting to update TOC...';
+				$toc->moveTocToAnotherProduct( $targetProductName );
+
+				$logFields = "action=TOC status=success product=$productName manual=$manualName "
+					. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+				error_log( 'INFO [' . __METHOD__ ."] [RenameProduct] $logFields" );
+
+				print 'Complete</div>' ;
+			} catch ( Exception $e ) {
+				$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+					. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+				error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
+
+				print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 			}
 		}
 
@@ -306,7 +247,7 @@ class SpecialRenameProduct extends SpecialPage
 		$wgOut->setPagetitle( 'PonyDocs Rename Product' );
 
 		// Security Check
-		// TODO: Just check they are an employee
+		// TODO: Just check if they are an employee
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct );
 		$groups = $wgUser->getGroups();
 		if ( !in_array( $authProductGroup, $groups ) ) {
@@ -314,7 +255,7 @@ class SpecialRenameProduct extends SpecialPage
 			return;
 		}
 
-		ob_start();
+		ob_start(); ?>
 
 		<div id="RenameProduct">
 		<a name="top"></a>

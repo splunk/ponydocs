@@ -73,6 +73,13 @@ class PonyDocsProductManual
 	}
 	
 	/**
+	 * Return a list of TOCs for this Manual
+	 * @return array of TOC page titles
+	 */
+	public function getAllTocs() {
+		// TODO: Steal from SpecialTOCList
+	}
+	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
 	 * currently selected version or not.
 	 *
