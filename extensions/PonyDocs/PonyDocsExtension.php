@@ -37,6 +37,7 @@ require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
 require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
+require_once( "$IP/extensions/PonyDocs/SpecialRenameProduct.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRenameVersion.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocImport.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocServer.php");

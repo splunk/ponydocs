@@ -39,7 +39,7 @@ class SpecialRenameProduct extends SpecialPage {
 	 * @returns string
 	 */
 	public function getDescription() {
-		return 'Rename PonyDocs Product';
+		return 'PonyDocs Rename Product';
 	}
 
 	/**
@@ -238,113 +238,75 @@ class SpecialRenameProduct extends SpecialPage {
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
 	public function execute() {
-		global $wgOut, $wgArticlePath, $wgScriptPath;
-		global $wgUser;
+		global $wgArticlePath, $wgPonyDocsEmployeeGroup, $wgScriptPath, $wgOut, $wgUser;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
 		$this->setHeaders();
 		$wgOut->setPagetitle( 'PonyDocs Rename Product' );
+		$ponydocs = PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
+		$products = $ponydocs->getProductsForTemplate();
 
-		// Security Check
-		// TODO: Just check if they are an employee
-		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct );
+		// Validate
+		// Check they are an employee user (we'll check specific docteam groups later)
 		$groups = $wgUser->getGroups();
-		if ( !in_array( $authProductGroup, $groups ) ) {
+		if ( !in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
 			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
 			return;
 		}
 
 		ob_start(); ?>
 
-		<div id="RenameProduct">
-		<a name="top"></a>
-		<div class="versionselect">
-			<h1>Rename Version Console</h1>
-			Select product, source version, and target version.
-			You will be able to approve the list of manuals to rename before you launch the process.
-			<h2>Choose a Product</h2>
+		<div id="renameProduct">
+			<a name="top"></a>
+			<div class="selectProduct">
+				<h1>PonyDocs Rename Product</h1>
+				Select product, provide new name.
 
-			<?php
-			if ( !count($products) ) {
-				print "<p>No products defined.</p>";
-			} else { ?>
-				<div class="product">
-					<select id="docsProductSelect1" name="selectedProduct" onChange="AjaxChangeProduct1();">
-						<?php
-						foreach ( $products as $idx => $data ) {
-							echo '<option value="' . $data['name'] . '" ';
-							if( !strcmp( $data['name'], $forceProduct ) ) {
-								echo 'selected';
-							}
-							echo '>' . $data['label'] . '</option>';
-						} ?>
-					</select>
+				<h2>Choose Product to Rename</h2>
+
+				<?php
+				if ( !count($products) ) {
+					print "<p>No products defined.</p>";
+				} else { ?>
+					<div>
+						<select id="sourceProduct" name="sourceProduct">
+							<?php
+								$productNames = array_keys( $products );
+								sort( $productNames );
+								foreach ( $productNames as $productName ) {
+								echo '<option value="' . $productName . '" ';
+								echo '>' . $productName . '</option>';
+							} ?>
+						</select>
+					</div>
+				
+					<div>
+						<label for="targetProduct">Rename to:</label>	
+						<input type="text" id="targetProduct" name="targetProduct">
+					</div>
+					
+					<?php
+				} ?>
+
+				<div>
+					<input type="button" id="submitProduct" value="Rename Product" />
 				</div>
-
-				<script language="javascript">
-					function AjaxChangeProduct1_callback( o ) {
-						document.getElementById( 'docsProductSelect1' ).disabled = true;
-						var s = new String( o.responseText );
-						document.getElementById( 'docsProductSelect1' ).disabled = false;
-						window.location.href = s;
-					}
-
-					function AjaxChangeProduct1() {
-						var productIndex = document.getElementById( 'docsProductSelect1' ).selectedIndex;
-						var product = document.getElementById( 'docsProductSelect1' )[productIndex].value;
-						var title = '<?= $_SERVER['REQUEST_URI'] ?>'; // TODO fix this title
-						var force = true;
-						sajax_do_call( 'efPonyDocsAjaxChangeProduct', [product, title, force], AjaxChangeProduct1_callback, true);
-					}
-				</script>
-
-				<?php
-			} ?>
-
-			<h2>Choose a Source Version</h2>
-			<select name="version" id="versionselect_sourceversion">
-				<?php
-				foreach ( $versions as $version ) { ?>
-					<option value="<?php echo $version->getVersionName();?>">
-						<?php echo $version->getVersionName() . " - " . $version->getVersionStatus();?></option>
-					<?php
-				} ?>
-			</select>
-
-			<h2>Choose a Target Version</h2>
-			<select name="version" id="versionselect_targetversion">
-				<?php
-				foreach( $versions as $version ) { ?>
-					<option value="<?php echo $version->getVersionName();?>">
-						<?php echo $version->getVersionName() . " - " . $version->getVersionStatus();?></option>
-					<?php
-				} ?>
-			</select>
-			<div>
-				<input type="button" id="versionselect_submit" value="Fetch Manuals" />
 			</div>
-		</div>
 
-		<div class="submitrequest" style="display: none;">
-			<div id="manuallist"></div>
-			<input type="button" id="RenameProduct_submit" value="Rename Version" />
-			<div id="progressconsole"></div>
-		</div>
-		
-		<div class="completed" style="display: none;">
-			<p class="summary">
-				<strong>Source Version:</strong> <span class="sourceversion"></span>
-				<strong>Target Version:</strong> <span class="targetversion"></span>
-			</p>
+			<div class="completed" style="display: none;">
+				<p class="summary">
+					<strong>Source Product:</strong> <span class="sourceproduct"></span>
+					<strong>Target Product:</strong> <span class="targetproduct"></span>
+				</p>
 
-			<h2>Process Complete</h2>
-			The following is the log of the processed job.
-			Look it over for any potential issues that may have occurred during the Rename Version job.
-			<div>
-				<div class="logconsole" style="font-family: monospace; font-size: 10px;"></div>
+				<h2>Process Complete</h2>
+				The following is the log of the processed job.
+				Look it over for any potential issues that may have occurred during the Rename Product job.
+				<div>
+					<div class="logconsole" style="font-family: monospace; font-size: 10px;"></div>
+				</div>
 			</div>
-		</div>
 		</div>
 		<?php
 		$buffer = ob_get_clean();
