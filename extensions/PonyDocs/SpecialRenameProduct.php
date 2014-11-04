@@ -14,11 +14,8 @@ require_once( "$IP/includes/SpecialPage.php" );
 $wgSpecialPages['RenameProduct'] = 'SpecialRenameProduct';
 
 // Ajax Handlers
-$wgAjaxExportList[] = 'RenameProduct::ajaxFetchJobID';
-$wgAjaxExportList[] = 'RenameProduct::ajaxFetchJobProgress';
-$wgAjaxExportList[] = 'RenameProduct::ajaxStartProductRename';
 $wgAjaxExportList[] = 'RenameProduct::ajaxProcessManual';
-$wgAjaxExportList[] = 'RenameProduct::ajaxCompleteProductRename';
+$wgAjaxExportList[] = 'RenameProduct::ajaxFinishProductRename';
 
 /**
  * The Special page which handles the UI for renaming versions
@@ -43,68 +40,15 @@ class SpecialRenameProduct extends SpecialPage {
 	}
 
 	/**
-	 * AJAX method to fetch/initialize uniqid to identify this session. Used to build progress report.
-	 *
-	 * @returns string The unique id for this job.
-	 */
-	public static function ajaxFetchJobID() {
-		$uniqid = uniqid( 'ponydocsRenameProduct', true );
-		// Create the file.
-		$path = PonyDocsExtension::getTempDir() . $uniqid;
-		$fp = fopen( $path, 'w+' );
-		fputs( $fp, 'Determining Progress...' );
-		fclose( $fp );
-		return $uniqid;
-	}
-
-	/**
-	 * AJAX method to fetch job progress. Used to update progress report.
-	 * 
-	 * @param type $jobID
-	 * @return string 
-	 */
-	public static function ajaxFetchJobProgress( $jobID ) {
-		$path = PonyDocsExtension::getTempDir() . $jobID;
-		$progress = file_get_contents( $path );
-		if ( $progress === false ) {
-			$progress = 'Unable to fetch Job Progress.';
-		}
-		return $progress;
-	}
-
-	/**
-	 * Complete the rename process by deleteing the old Product and its Manual and Version management pages
-	 * @param string $jobId
-	 * @param string $sourceProductName
-	 * @return string Full job log of the process by printing to stdout.
-	 */
-	public static function ajaxCompleteProductRename( $jobId, $sourceProductName, $targetProductName ) {
-		// TODO: Validate
-		// That user has access
-		// That source product exists and is not static
-		// That source product has no TOCs or Topics
-		// That target product does not exist
-		// What can we do to make this more safe? Maybe we can check that the job Id is valid?
-
-		$sourceProduct = PonyDocsProduct::getProductByShortName($sourceProductName);
-		$sourceProduct->moveVersionsToAnotherProduct();
-		$sourceProduct->moveManualsToAnotherProduct();
-		$sourceProduct->rename();
-
-		// TODO: Log
-		// TODO: Return
-	}
-	
-	/**
 	 * Processes a rename product request for a single manual
 	 *
-	 * @param string $jobID The unique id for this job (see ajaxFetchJobID)
+	 * @param string $jobId The unique id for this job (see ajaxFetchJobId)
 	 * @param string $manualName string manual short name
 	 * @param string $sourceProductName string String representation of the source version
 	 * @param string $targetProductName string String representaiton of the target version
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessManual( $jobID, $manualName, $sourceProductName, $targetProductName ) {
+	public static function ajaxProcessManual( $jobId, $manualName, $sourceProductName, $targetProductName ) {
 		global $wgScriptPath;
 		// TODO: Don't use ob_start and print statements, write to a variable
 		ob_start();
@@ -138,7 +82,7 @@ class SpecialRenameProduct extends SpecialPage {
 	
 		// Update log file
 		// TODO: Move this to a job handling class
-		$path = PonyDocsExtension::getTempDir() . $jobID;
+		$path = PonyDocsExtension::getTempDir() . $jobId;
 		$fp = fopen( $path, "w+" );
 		fputs( $fp, "Getting Topics for $manualName" );
 		fclose( $fp );
@@ -235,6 +179,29 @@ class SpecialRenameProduct extends SpecialPage {
 	}
 
 	/**
+	 * Complete the rename process by deleteing the old Product and its Manual and Version management pages
+	 * @param string $jobId
+	 * @param string $sourceProductName
+	 * @return string Full job log of the process by printing to stdout.
+	 */
+	public static function ajaxFinishProductRename( $jobId, $sourceProductName, $targetProductName ) {
+		// TODO: Validate
+		// That user has access
+		// That source product exists and is not static
+		// That source product has no TOCs or Topics
+		// That target product does not exist
+		// What can we do to make this more safe? Maybe we can check that the job Id is valid?
+
+		$sourceProduct = PonyDocsProduct::getProductByShortName($sourceProductName);
+		$sourceProduct->moveVersionsToAnotherProduct();
+		$sourceProduct->moveManualsToAnotherProduct();
+		$sourceProduct->rename();
+
+		// TODO: Log
+		// TODO: Return
+	}
+	
+	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
 	public function execute() {
@@ -290,10 +257,12 @@ class SpecialRenameProduct extends SpecialPage {
 				} ?>
 
 				<div>
-					<input type="button" id="submitProduct" value="Rename Product" />
+					<input type="button" id="submitRenameProduct" value="Rename Product" />
 				</div>
 			</div>
 
+			<div id="progressconsole"></div>
+			
 			<div class="completed" style="display: none;">
 				<p class="summary">
 					<strong>Source Product:</strong> <span class="sourceproduct"></span>

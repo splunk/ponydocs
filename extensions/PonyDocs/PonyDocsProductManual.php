@@ -79,6 +79,7 @@ class PonyDocsProductManual
 	public function getAllTocs() {
 		// TODO: Steal from SpecialTOCList
 	}
+
 	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
 	 * currently selected version or not.
@@ -86,7 +87,6 @@ class PonyDocsProductManual
 	 * @param boolean $reload
 	 * @return array
 	 */
-
 	static public function LoadManualsForProduct( $productName, $reload = false )
 	{
 		$dbr = wfGetDB( DB_SLAVE );
