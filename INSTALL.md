@@ -3,12 +3,7 @@ PonyDocs 1.0 Beta 2 - June 14th, 2012
 
 Open Source documentation based on MediaWiki
 
-For any assistance:
-
-	Ashley Jones
-	ashley@splunk.com
-
-Splunk > Open Source FTW!
+For any assistance, please email ponydocs@splunk.com
 
 Prerequisites & Assumptions
 ---------------------------
@@ -198,7 +193,7 @@ Failure to do so will result in frustration and keyboard tossing.
 	* To activate the skin, update the `$wgDefaultSkin` value in LocalSettings.php:
 	  `$wgDefaultSkin = 'ponydocs';`
 
-### 4) Have a looksee at PonyDocsConfig.php
+### 4) Review PonyDocsConfig.php
 
 * Take a look at extensions/Ponydocs/PonyDocs.config.php.
 * It will define a bunch of constants, most of which you shouldn't need to touch.
