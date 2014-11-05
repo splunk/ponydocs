@@ -161,6 +161,17 @@ Failure to do so will result in frustration and keyboard tossing.
 	define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
 	define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
 
+	// Enable cache
+	define( 'PONYDOCS_CACHE_ENABLED', TRUE );
+
+	// Debug logging
+	define( 'PONYDOCS_AUTOCREATE_DEBUG', FALSE );
+	define( 'PONYDOCS_CACHE_DEBUG', FALSE );
+	define( 'PONYDOCS_CASE_INSENSITIVE_DEBUG', FALSE );
+	define( 'PONYDOCS_DOCLINKS_DEBUG', FALSE );
+	define( 'PONYDOCS_REDIRECT_DEBUG', FALSE );
+	define( 'PONYDOCS_SESSION_DEBUG', FALSE );
+
 	// NOTE: this *must* match what is in Documentation:Products.
 	// This will be fixed in later versions
 	$ponyDocsProductsList = array('Foo');
