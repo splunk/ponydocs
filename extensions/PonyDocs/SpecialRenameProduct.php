@@ -185,20 +185,107 @@ class SpecialRenameProduct extends SpecialPage {
 	 * @return string Full job log of the process by printing to stdout.
 	 */
 	public static function ajaxFinishProductRename( $jobId, $sourceProductName, $targetProductName ) {
-		// TODO: Validate
-		// That user has access
+		global $wgUser;
+
+		$buffer = "";
+		$errors = array();
+		$path = PonyDocsExtension::getTempDir() . $jobID;
+		
+		// Opening logs
+		
+		$logFields = "action=start status=success sourceProduct=$sourceProductName targetProduct=$targetProductName";
+		error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
+
+		$buffer .= "Finishing Product Rename job<br />";
+		$buffer .= "Source Product is $sourceProductName<br />";
+		$buffer .= "Target Product is $targetProductName<br />";
+		
+		$fp = fopen( $path, "w+" );
+		fputs( $fp, "Finishing Product Rename" );
+		fclose( $fp );
+
+		// Validate
+		// That user is in the docteam group for both products
+		$groups = $wgUser->getGroups();
+		$sourceProductGroup =
+			PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $sourceProductName );
+		if ( !in_array( $sourceProductGroup, $groups ) ) {
+			$errors[] = "You do not have permission to rename $sourceProductName.";
+		}
+		$targetProductGroup =
+			PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $targetProductName );
+		if ( !in_array( $sourceProductGroup, $groups ) ) {
+			$errors[] = "You do not have permission to rename a Product to $targetProductName.";
+		}
+
 		// That source product exists and is not static
-		// That source product has no TOCs or Topics
+		$sourceProduct = PonyDocsProduct::GetProductByShortName($sourceProductName);
+		if ( !$sourceProduct || $sourceProduct->isStatic() ) {
+			$errors[] = "$sourceProductName does not exist or is static.";
+		}
+		// That source product has no TOCs
+		$manuals = PonyDocsManuals::getDefinedManuals( $sourceProductName );
+		foreach ( $manuals as $manual ) {
+			// TODO i don't think we have a real manual here, we have to invoke it probably
+			if ( $manual->getAllTocs() ) {
+				$errors[] = "$sourceProduct still has TOCs. Please try the rename again.";
+			}
+		}
 		// That target product does not exist
-		// What can we do to make this more safe? Maybe we can check that the job Id is valid?
+		if ( PonyDocsProduct::GetProductByShortName($targetProductName ) ) {
+			$errors[] = "$targetProductName already exists.";
+		}
+		// TODO: That the jobId is valid
+		//       We need to make this work across multiple webheads before we can validate it
+		
+		if ( !$errors ) {
+			try {
+				$fp = fopen( $path, "w+" );
+				fputs( $fp, "Moving Versions..." );
+				fclose( $fp );
+				$buffer .= '<div class="normal">Moving Versions...';
+				$sourceProduct->moveVersionsToAnotherProduct();
+				$buffer .= 'Complete</div>';
+				$logFields = 
+					"action=moveVersions status=success sourceProduct=$sourceProductName targetProduct=$targetProductName";
+				error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
 
-		$sourceProduct = PonyDocsProduct::getProductByShortName($sourceProductName);
-		$sourceProduct->moveVersionsToAnotherProduct();
-		$sourceProduct->moveManualsToAnotherProduct();
-		$sourceProduct->rename();
+				$fp = fopen( $path, "w+" );
+				fputs( $fp, "Moving Manuals..." );
+				fclose( $fp );
+				$buffer .= '<div class="normal">Moving Manuals...';
+				$sourceProduct->moveManualsToAnotherProduct();
+				$buffer .= 'Complete</div>';
+				$logFields =
+					"action=moveManuals status=success sourceProduct=$sourceProductName targetProduct=$targetProductName";
+				error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
 
-		// TODO: Log
-		// TODO: Return
+				$fp = fopen( $path, "w+" );
+				fputs( $fp, "Renaming Product..." );
+				fclose( $fp );
+				$buffer .= '<div class="normal">Renaming Product...';
+				$sourceProduct->rename();
+				$buffer .= 'Complete</div>';
+				$logFields =
+					"action=renameProduct status=success sourceProduct=$sourceProductName targetProduct=$targetProductName";
+				error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
+			} catch ( Exception $e ) {
+				$logFields = "action=error status=error sourceProduct=$sourceProductName targetProduct=$targetProductName"
+					. " error={$e->getMessage()}";
+				error_log( 'WARNING [' . __METHOD__ . "] [RenameProduct] $logFields" );
+				$buffer .= '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
+			}
+		} else {
+			$fp = fopen( $path, "w+" );
+			fputs( $fp, "Validation Errors Found." );
+			fclose( $fp );
+			$buffer .= '<div class="error">Validation Error: ' . implode('<br>', $errors) . '</div>';
+			$logFields = "action=validation status=error sourceProduct=$sourceProductName targetProduct=$targetProductName"
+				. 'errors="' . implode( ",", $errors ) . '"';
+			error_log( 'WARNING [' . __METHOD__ . "] [RenameProduct] $logFields" );
+		}
+		
+		return $buffer;
 	}
 	
 	/**
@@ -211,6 +298,7 @@ class SpecialRenameProduct extends SpecialPage {
 
 		$this->setHeaders();
 		$wgOut->setPagetitle( 'PonyDocs Rename Product' );
+		$wgOut->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/RenameProduct	.js");
 		$ponydocs = PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
 		$products = $ponydocs->getProductsForTemplate();
 
