@@ -3,6 +3,10 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
+#if (file_exists($IP . '/includes/ProxyTools.php.php')) {
+#    require_once($IP . '/includes/ProxyTools.php.php');
+#}
+#echo $IP . '/includes/ProxyTools.php';die;
 /**
  * Class to manage product versions in PonyDocs MediaWiki. 
  * Each instance represents a defined product version based on the
@@ -369,6 +373,7 @@ class PonyDocsProductVersion {
 		$versions = explode( "\n", $content );
 		$currentGroup = NULL;
 		$currentGroupMessage = NULL;
+	
 		foreach( $versions as $v ) {
 			// versiongroup
 			if ( preg_match( '/{{#versiongroup:\s*([^}]*)\s*}}/i', $v ) ) {
@@ -403,8 +408,8 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						// Allow crawler to view unreleased versions
-						|| ( ProxyTools::wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
-							&& ProxyTools::wfGetIP() == $splunkMediaWiki['CrawlerAddress']
+						|| ( wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
+							&& wfGetIP() == $splunkMediaWiki['CrawlerAddress']
 							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
 							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
 						|| $ignorePermissions) {
@@ -425,8 +430,8 @@ class PonyDocsProductVersion {
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
 						// Allow crawler to view preview versions
-						|| ( ProxyTools::wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
-							&& ProxyTools::wfGetIP() == $splunkMediaWiki['CrawlerAddress']
+						|| ( wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
+							&& wfGetIP() == $splunkMediaWiki['CrawlerAddress']
 							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
 							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
 						|| $ignorePermissions ) {
@@ -579,8 +584,8 @@ class PonyDocsProductVersion {
 		if ( in_array( $authProductGroup, $groups )
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
 			// Allow crawler to view all versions
-			|| ( ProxyTools::wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
-				&& ProxyTools::wfGetIP() == $splunkMediaWiki['CrawlerAddress']
+			|| ( wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
+				&& wfGetIP() == $splunkMediaWiki['CrawlerAddress']
 				&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
 				&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) ) ) {
 			return self::$sVersionMap[$productName];
