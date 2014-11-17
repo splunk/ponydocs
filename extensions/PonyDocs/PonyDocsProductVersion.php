@@ -3,10 +3,6 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-#if (file_exists($IP . '/includes/ProxyTools.php.php')) {
-#    require_once($IP . '/includes/ProxyTools.php.php');
-#}
-#echo $IP . '/includes/ProxyTools.php';die;
 /**
  * Class to manage product versions in PonyDocs MediaWiki. 
  * Each instance represents a defined product version based on the
