@@ -1839,7 +1839,7 @@ HEREDOC;
 		}
 		else {
 			if (PONYDOCS_CACHE_DEBUG) {
-				error_log("DEBUG " . __METHOD__ . "] Fetched navigation cache from PonyDocsCache for product $product");
+				error_log("DEBUG [" . __METHOD__ . "] Fetched navigation cache from PonyDocsCache for product $product");
 			}
 		}
 		return $cacheEntry;
