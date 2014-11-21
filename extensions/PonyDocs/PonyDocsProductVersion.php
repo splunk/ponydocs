@@ -2,9 +2,6 @@
 if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
-
-require_once(DIR_LIB_LOG . 'Logger.php');
-
 /**
  * Class to manage product versions in PonyDocs MediaWiki. 
  * Each instance represents a defined product version based on the
@@ -401,8 +398,6 @@ class PonyDocsProductVersion {
 				if ( isset($currentGroup) ) {
 					$pVersion->setVersionGroup( $currentGroup, $currentGroupMessage );
 				}
-				$logger = Logger::getInstance();	
-				$logger->debug('PonyDocs::wfGetIP', 'IP: '.wfGetIP().' CrawlerAddress: '.$splunkMediaWiki['CrawlerAddress']);
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
