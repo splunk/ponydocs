@@ -153,8 +153,8 @@ class SpecialDocumentLinks extends SpecialPage {
 					// If this is a PonyDocs style links, with slashes,
 					// save product, version, display URL accordingly.
 					$pieces = explode('/', $result->from_link);
-					$fromProduct = ucfirst($pieces[1]);
-					$fromVersion = ucfirst($pieces[2]);
+					$fromProduct = $pieces[1];
+					$fromVersion = $pieces[2];
 					$displayUrl = $result->from_link;
 				} else {
 					// If this is a generic mediawiki style link, with colons (or not),
@@ -162,11 +162,11 @@ class SpecialDocumentLinks extends SpecialPage {
 					// from the display URL. Leave version blank.
 					if (strpos($result->from_link, ':') !== false) {
 						$pieces = explode(':', $result->from_link);
-						$fromProduct = ucfirst($pieces[0]); // The "product" will be the namespace
+						$fromProduct = $pieces[0]; // The "product" will be the namespace
 						$displayUrl = $pieces[1]; // So the namespace doesn't show in every URL
 					} else { // it's possible to have a link with no colons
 						$fromProduct = 'Other'; // No namespace, so the "product" will be the string "Other"
-						$displayUrl = ucfirst($result->from_link);
+						$displayUrl = $result->from_link;
 					}
 					$fromVersion = 'None'; // No concept of versions outside of PonyDocs
 				}
