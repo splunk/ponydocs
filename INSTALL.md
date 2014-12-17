@@ -3,12 +3,7 @@ PonyDocs 1.0 Beta 2 - June 14th, 2012
 
 Open Source documentation based on MediaWiki
 
-For any assistance:
-
-	Ashley Jones
-	ashley@splunk.com
-
-Splunk > Open Source FTW!
+For any assistance, please email ponydocs@splunk.com
 
 Prerequisites & Assumptions
 ---------------------------
@@ -73,11 +68,11 @@ Failure to do so will result in frustration and keyboard tossing.
 	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
 	RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
-	# get home page requests to Documentation
+	# Get home page requests to Documentation
 	RewriteRule ^/$ /Documentation [R]
 
-	# all other requests go to specific page
-	RewriteRule ^/(\/*)(.*)$ /index.php?title=$3 [PT,QSA]
+	# All other requests go through MW router
+	RewriteRule ^/.*$ /index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
@@ -166,12 +161,23 @@ Failure to do so will result in frustration and keyboard tossing.
 	define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
 	define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
 
-	// Namespace setup
+        // Namespace setup
 	define( 'PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation' );
 	define( 'NS_PONYDOCS', 100 );
 	$wgExtraNamespaces[NS_PONYDOCS] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
 	// Include the PonyDocs namespace in article counts
 	$wgContentNamespaces[] = NS_PONYDOCS;
+
+	// Enable cache
+	define( 'PONYDOCS_CACHE_ENABLED', TRUE );
+
+	// Debug logging
+	define( 'PONYDOCS_AUTOCREATE_DEBUG', FALSE );
+	define( 'PONYDOCS_CACHE_DEBUG', FALSE );
+	define( 'PONYDOCS_CASE_INSENSITIVE_DEBUG', FALSE );
+	define( 'PONYDOCS_DOCLINKS_DEBUG', FALSE );
+	define( 'PONYDOCS_REDIRECT_DEBUG', FALSE );
+	define( 'PONYDOCS_SESSION_DEBUG', FALSE );
 
 	// NOTE: this *must* match what is in Documentation:Products.
 	// This will be fixed in later versions
@@ -194,7 +200,7 @@ Failure to do so will result in frustration and keyboard tossing.
 	* To activate the skin, update the `$wgDefaultSkin` value in LocalSettings.php:
 	  `$wgDefaultSkin = 'ponydocs';`
 
-### 4) Have a looksee at PonyDocsConfig.php
+### 4) Review PonyDocsConfig.php
 
 * Take a look at extensions/Ponydocs/PonyDocs.config.php.
 * It will define a bunch of constants, most of which you shouldn't need to touch.

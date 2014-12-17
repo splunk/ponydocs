@@ -1795,47 +1795,51 @@ HEREDOC;
 	 * @param string $version version name
 	 * @return array of manual navigation items
 	 */
-	static public function fetchNavDataForVersion($product, $version) {
+	static public function fetchNavDataForVersion( $product, $version ) {
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
-		$cacheEntry = $cache->get($key);
-		if($cacheEntry === null) {
-			error_log("INFO [PonyDocsExtension::fetchNavDataForVersion] Creating new navigation cache file for product $product version $version");
-			$oldVersion = PonyDocsProductVersion::GetSelectedVersion($product);
-			PonyDocsProductVersion::SetSelectedVersion($product, $version);
-			$ver = PonyDocsProductVersion::GetVersionByName($product, PonyDocsProductVersion::GetSelectedVersion($product));
-			if (!is_object($ver)) {
+		$cacheEntry = $cache->get( $key );
+		if ( $cacheEntry === null ) {
+			if ( PONYDOCS_CACHE_DEBUG ) {
+				error_log(
+					"DEBUG [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version" );
+			}
+			$oldVersion = PonyDocsProductVersion::GetSelectedVersion( $product );
+			PonyDocsProductVersion::SetSelectedVersion( $product, $version );
+			$ver = PonyDocsProductVersion::GetVersionByName(
+				$product, PonyDocsProductVersion::GetSelectedVersion( $product ) );
+			if ( !is_object( $ver ) ) {
 				return array();
 			}
-			$pr = PonyDocsProduct::GetProductByShortName($product);
-			$manuals = PonyDocsProductManual::LoadManualsForProduct($product, true);
+			$pr = PonyDocsProduct::GetProductByShortName( $product );
+			$manuals = PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
 
 			$cacheEntry = array();
-			foreach($manuals as $manual) {
-				$toc = new PonyDocsTOC($manual, $ver, $pr);
-				list($items, $prev, $next, $start) = $toc->loadContent();
+			foreach ( $manuals as $manual ) {
+				$toc = new PonyDocsTOC( $manual, $ver, $pr );
+				list( $items, $prev, $next, $start ) = $toc->loadContent();
 
-				foreach($items as $entry) {
-					if(isset($entry['link']) && $entry['link'] != '') {
+				foreach ( $items as $entry ) {
+					if ( isset( $entry['link'] ) && $entry['link'] != '' ) {
 						// Found first article.
-						$cacheEntry[] = array('shortName' => $manual->getShortName(),
-											  'longName' => $manual->getLongName(),
-											  'description' => $toc->getManualDescription(),
-											  'firstTitle' => $entry['title'],
-											  'firstUrl' => $entry['link']);
+						$cacheEntry[] = array(
+							'shortName' => $manual->getShortName(),
+							'longName' => $manual->getLongName(),
+							'description' => $toc->getManualDescription(),
+							'firstTitle' => $entry['title'],
+							'firstUrl' => $entry['link'] );
 						break;
 					}
 				}
 			}
-			$cache->put($key, $cacheEntry, time() + 3600);
+			$cache->put( $key, $cacheEntry, time() + 3600 );
 			// Restore old version
-			PonyDocsProductVersion::SetSelectedVersion($product, $oldVersion);
-			PonyDocsProductManual::LoadManualsForProduct($product, true);
+			PonyDocsProductVersion::SetSelectedVersion( $product, $oldVersion );
+			PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
 		}
 		else {
 			if (PONYDOCS_CACHE_DEBUG) {
-				error_log("DEBUG [PonyDocsExtension::fetchNavDataForVersion]" .
-				" Fetched navigation cache from PonyDocsCache for product $product");
+				error_log("DEBUG [" . __METHOD__ . "] Fetched navigation cache from PonyDocsCache for product $product");
 			}
 		}
 		return $cacheEntry;

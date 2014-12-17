@@ -103,28 +103,19 @@ class PonyDocsTopic {
 		$res = $dbr->select(
 			'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
 
-		$tempVersions = array();
-
+		$this->versions = array();
+		
 		while ( $row = $dbr->fetchObject( $res ) ) {
 			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
 				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if ( $v ) {
-					$tempVersions[] = $v;
+					$this->versions[] = $v;
 				}
 			}
 		}
-		// Sort by Version, by doing a natural sort. Also remove any duplicates.
-		/// FIXME - what is this really doing? tempVersions index is int per above code!
-		$sortArray = array();
-		foreach ( $tempVersions as $index => $version ) {
-			if ( !in_array($version->getVersionName(), $sortArray) ) {
-				$sortArray[(string)$index] = $version->getVersionName();
-			}
-		}
-		natsort( $sortArray );
-		foreach ( $sortArray as $targetIndex => $verName ) {
-			$this->versions[] = $tempVersions[$targetIndex];
-		}
+
+		// Sort by the order on the versions admin page
+		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
 
 		return $this->versions;
 	}
@@ -239,30 +230,37 @@ class PonyDocsTopic {
 	}
 
 	/**
-	 * parses out all the headers in the form:
-	 * 	= Header =
-	 * It requires valid MediaWiki markup, so it must have the same number of '=' on each side.
-	 * One set is H1, two is H2, and so forth.  The
-	 * results array has:
+	 * Parse out all the headings in the form:
+	 * 	= Headings =, == Heading ==, etc.
+	 * One set is H1, two is H2, and so forth.
+	 * The results array has:
 	 * - 0 = Complete match with equal signs.
-	 * - 1 = The header text inside the equal signs.
-	 * - 2 = This will contain the left hand side set of equal signs, so strlen() this to get the header level.
+	 * - 1 = Right-hand side set of equal signs.
+	 * - 2 = The heading text inside the equal signs.
+	 * - 3 = Left hand side set of equal signs.
 	 *
 	 * @return array
 	 */
-	public function parseSections()	{
+	public function parseSections() {
 		$content = str_replace("<nowiki>", "", $this->pArticle->mContent);
 		$content = str_replace("</nowiki>", "", $content);
-
-		// We don't need such a long regex.  Simply encapsulating everything in header element.
-		$re = "/(=+)([^=]*)(=+)\n/";
-		if ( preg_match_all( $re, $content, $matches, PREG_SET_ORDER ) ) {
+		
+		$headings = array();
+		# A heading is a line that only contains an opening set of '=', some text, and a closing set of '='
+		# There can be an arbitrary amount of whitespace before and after each component of the heading
+		# To ensure there is nothing else on the line, we start and stop the regex with \n
+		# However, \s also matches \n, so we need to use [^\S\n] to match any possible whitespace
+		# If we just use \s, headings that immediately follow a heading are suppressed.
+		$pattern = "/\n[^\S\n]*(=+)([^=]*)(=+)[^\S\n]*\n/";
+		if ( preg_match_all( $pattern, $content, $matches, PREG_SET_ORDER ) ) {
 			foreach ( $matches as &$match ) {
-				$match[2] = trim(str_replace( "=", "", $match[2] ) );
+				if (strlen($match[1]) == strlen($match[3])) {
+					$match[2] = trim( $match[2] );
+					$headings[] = $match;
+				}
 			}
-			return $matches;
 		}
-		return array();
+		return $headings;
 	}
 
 	/**
@@ -275,6 +273,8 @@ class PonyDocsTopic {
 	 * None of the above (unknown)
 	 * 
 	 * @return integer
+	 * @todo remove
+	 * @deprecated
 	 */
 	public function getVersionClass() {
 		if ( !preg_match(
@@ -320,6 +320,64 @@ class PonyDocsTopic {
 		}
 		// Default return
 		return "unknown";
+	}
+	
+	/**
+	 * This function returns information about the versions on this topic.
+	 * - Version permissions: unreleased, preview, or released
+	 * - Version age: older, latest, or newer
+	 * Since a Topic can have multiple versions, it's possible for a single topic to be in unreleased, preview, released, older, 
+	 * latest, AND newer versions AT THE SAME TIME!
+	 * This information can be used by skins to change UI based on the version features.
+	 *  
+	 * @return array
+	 */
+	public function getVersionClasses() {
+		
+		$productName = PonyDocsProduct::getSelectedProduct();
+		$versionClasses = array();
+		
+		$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName );
+		// Just the names of our released versions
+		$releasedNames = array();
+		foreach ( $releasedVersions as $ver ) {
+			$releasedNames[] = strtolower( $ver->getVersionName() );
+		}
+		
+		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
+		// Just the names of our preview versions
+		$previewNames = array();
+		foreach ( $previewVersions as $ver ) {
+			$previewNames[] = strtolower( $ver->getVersionName() );
+		}
+		
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+	
+		foreach( $this->versions as $version ) {
+			$versionName = strtolower($version->getVersionName());
+			
+			// Is this version released, preview, or unreleased?
+			if ( in_array( $versionName, $releasedNames ) ) {
+				$versionClasses['released'] = TRUE;
+			} elseif ( in_array( $versionName, $previewNames ) ) {
+				$versionClasses['preview'] = TRUE;
+			} else {
+				$versionClasses['unreleased'] = TRUE;
+			}
+
+			// Is this version older or later or equal to the current version?
+			if ( $latestVersion ) {
+				if ( PonyDocs_ProductVersionCmp( $version, $latestVersion ) < 0 ) {
+					$versionClasses['older'] = TRUE;
+				} elseif ( PonyDocs_ProductVersionCmp( $version, $latestVersion ) > 0 ) {
+					$versionClasses['newer'] = TRUE;
+				} else {
+					$versionClasses['latest'] = TRUE;
+				}
+			}
+		}
+
+		return array_keys($versionClasses);
 	}
 
 	/**
