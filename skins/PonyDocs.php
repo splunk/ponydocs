@@ -205,7 +205,7 @@ class PonyDocsTemplate extends QuickTemplate {
 						}
 						// Version group message, if any
 						if ( $this->data['versionGroupMessage'] !== null ) { ?>
-							<div class="affectedVersions smallRoundedCorners
+							<div class="affectedVersions
 								<?php echo implode( " ", $this->data['versionclasses'] ); ?>">
 								<p class="bannerVersion">
 									<?php echo $this->data['versionGroupMessage'];?>
