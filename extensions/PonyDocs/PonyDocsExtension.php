@@ -115,11 +115,6 @@ foreach ( $ponyDocsProductsList as $product ) {
 	$wgGroupPermissions[$convertedNamePreview]['read'] = true;
 }
 
-// make sure we have the name space
-if ( !isset ( $wgExtraNamespaces[PONYDOCS_DOCUMENTATION_NAMESPACE_ID] ) ) {
-	$wgExtraNamespaces[PONYDOCS_DOCUMENTATION_NAMESPACE_ID] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
-}
-
 /**
  * Setup credits for this extension to appear in the credits page of wiki.
  */

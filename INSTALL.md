@@ -161,6 +161,13 @@ Failure to do so will result in frustration and keyboard tossing.
 	define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
 	define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
 
+        // Namespace setup
+	define( 'PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation' );
+	define( 'NS_PONYDOCS', 100 );
+	$wgExtraNamespaces[NS_PONYDOCS] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
+	// Include the PonyDocs namespace in article counts
+	$wgContentNamespaces[] = NS_PONYDOCS;
+
 	// Enable cache
 	define( 'PONYDOCS_CACHE_ENABLED', TRUE );
 

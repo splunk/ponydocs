@@ -173,7 +173,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 		if( $c > 0 ) {
 			$r = "<div id=\"mw-pages\">\n";
 			$r .= '<h2>' . wfMsg( 'category_header', $ti ) . "</h2>\n";
-			$r .= wfMsgExt( 'categoryarticlecount', array( 'parse' ), $c );
+			$r .= wfMsgExt( 'Category-article-count', array( 'parse' ), $c, '{{NUMBEROFARTICLES}}' );
 			$r .= $this->formatList( $this->articles, $this->articles_start_char );
 			$r .= "\n</div>";
 		}
