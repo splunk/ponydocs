@@ -49,8 +49,8 @@ class SpecialRenameProduct extends SpecialPage {
 	 * @return string Full job log of the process by printing to stdout.
 	 */
 	public static function ajaxProcessManual( $jobId, $manualName, $sourceProductName, $targetProductName ) {
-		global $wgScriptPath;
-		// TODO: Don't use ob_start and print statements, write to a variable
+		global $wgScriptPath, $wgTitle;
+		$error = FALSE;
 		ob_start();
 
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
@@ -61,121 +61,135 @@ class SpecialRenameProduct extends SpecialPage {
 		error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
 
 		// Validate
-		// TODO: that the user has access
+		// That user is in the docteam group for both products
+		$groups = $wgUser->getGroups();
+		$sourceProductGroup =
+			PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $sourceProductName );
+		if ( !in_array( $sourceProductGroup, $groups ) ) {
+			$errors[] = "You do not have permission to rename $sourceProductName.";
+		}
+		$targetProductGroup =
+			PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $targetProductName );
+		if ( !in_array( $sourceProductGroup, $groups ) ) {
+			$errors[] = "You do not have permission to rename a Product to $targetProductName.";
+		}
 		// What can we do to make this more safe? Maybe we can check that the job Id is valid?
 		$sourceProduct = PonyDocsProduct::GetProductByShortName( $sourceProductName );
 		$targetProduct = PonyDocsProduct::GetProductByShortName( $targetProductName );
 		$manual = PonyDocsProductManual::getManualByShortName( $souceProductName, $manualName );
 		// Source Product and Manual should exist, Target Product should not
 		if ( !$sourceProduct || !$manual || $targetProduct ) {
+			$error = TRUE;
 			$result = array( 'success', FALSE );
 			$result = json_encode( $result );
-			// TODO: Don't return in the middle
-			return $result;
 		}
-
-		print "Beginning process job for manual: $manualName<br />";
-		print "Source product is $sourceProductName<br />";
-		print "Target product is $targetProductName<br />";
 		
-		// Get topics
-	
-		// Update log file
-		// TODO: Move this to a job handling class
-		$path = PonyDocsExtension::getTempDir() . $jobId;
-		$fp = fopen( $path, "w+" );
-		fputs( $fp, "Getting Topics for $manualName" );
-		fclose( $fp );
+		if (!$error) {
 
-		$allTocTitles = $manual->getAllTocs();
-		$allTocs = array();
-		$manualTopics = array();
-		
+			print "Beginning process job for manual: $manualName<br />";
+			print "Source product is $sourceProductName<br />";
+			print "Target product is $targetProductName<br />";
 
-		foreach ( $allTocs as $tocName ) {
-			$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
-			list( $toc, $prev, $next, $start ) = $TOC->loadContent();
-			// Time to iterate through all the items.
-			$section = '';
-			foreach ( $toc as $tocItem ) {
-				// actual topic
-				if ( $tocItem['level'] == 1 ) {
-					$manualTopics[$tocItem['title']] = 1;
+			// Get topics
+
+			// Update log file
+			$path = PonyDocsExtension::getTempDir() . $jobId;
+			$fp = fopen( $path, "w+" );
+			fputs( $fp, "Getting Topics for $manualName" );
+			fclose( $fp );
+
+			$allTocTitles = $manual->getAllTocs();
+			$allTocs = array();
+			$manualTopics = array();
+
+			foreach ( $allTocs as $tocName ) {
+				$TOC = new PonyDocsTOC( $manual, $sourceVersion, $product );
+				list( $toc, $prev, $next, $start ) = $TOC->loadContent();
+				// Time to iterate through all the items.
+				$section = '';
+				foreach ( $toc as $tocItem ) {
+					// actual topic
+					if ( $tocItem['level'] == 1 ) {
+						$manualTopics[$tocItem['title']] = 1;
+					}
+				}
+				$allTocs = $TOC;
+			}
+
+			$logFields = "action=topics status=success product=$productName manual=$manualName "
+				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+			error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
+
+			// Enable speed processing to avoid any unnecessary processing on topics modified by this tool.
+			// TODO: I'm not 100% sure this is necessary or proper here -RU
+			PonyDocsExtension::setSpeedProcessing( TRUE );
+
+			// Determine how many topics there are to process so that we can keep track of progress
+			$numOfTopics = size( $manualTopics );
+			$numOfTopicsCompleted = 0;
+
+			foreach ( array_keys( $manualTopics ) as $topicTitle ) {
+				// First update all the topics
+				print '<div class="normal">Processing topics</div>';
+
+				// Update log file
+				$fp = fopen( $path, "w+" );
+				fputs( $fp, "Renaming topics in manual $manualName<br />"
+					. "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
+					. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
+				fclose( $fp );
+
+				try {
+					print '<div class="normal">Attempting to update topic ' . $topicTitle . '...';
+					$title = Title::newFromText( $title );
+					$wgTitle = $title;
+					$article = new Article( $title );
+					$topic = new PonyDocsTopic( $article );
+					$topic->moveTopicToAnotherProduct($targetProductName);
+
+					$logFields = "action=topic status=success product=$productName manual=$manualName "
+						. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
+
+					print 'Complete</div>';
+				} catch( Exception $e ) {
+					$logFields = "action=topic status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+						. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
+					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
+				}
+				$numOfTopicsCompleted++;
+			}
+
+			// Now we can update the TOCs
+			foreach ( $allTocs as $toc ) {
+				try {
+					print '<div class="normal">Attempting to update TOC...';
+					$toc->moveTocToAnotherProduct( $targetProductName );
+
+					$logFields = "action=TOC status=success product=$productName manual=$manualName "
+						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( 'INFO [' . __METHOD__ ."] [RenameProduct] $logFields" );
+
+					print 'Complete</div>' ;
+				} catch ( Exception $e ) {
+					$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
+						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
+
+					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
-			$allTocs = $TOC;
+
+			list ( $msec, $sec ) = explode( ' ', microtime() ); 
+			$endTime = (float)$msec + (float)$sec; 
+			print "Done with $manualName! Execution Time: " . round($endTime - $startTime, 3) . ' seconds<br />';
+
+			unlink($path);
+			$result = ob_get_clean();
 		}
 
-		$logFields = "action=topics status=success product=$productName manual=$manualName "
-			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-		error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
-
-		// Enable speed processing to avoid any unnecessary processing on topics modified by this tool.
-		// TODO: I'm not 100% sure this is necessary or proper here -RU
-		PonyDocsExtension::setSpeedProcessing( TRUE );
-
-		// Determine how many topics there are to process so that we can keep track of progress
-		$numOfTopics = size( $manualTopics );
-		$numOfTopicsCompleted = 0;
-
-		foreach ( array_keys( $manualTopics ) as $topicTitle ) {
-			// First update all the topics
-			print '<div class="normal">Processing topics</div>';
-			
-			// Update log file
-			$fp = fopen( $path, "w+" );
-			fputs( $fp, "Renaming topics in manual $manualName<br />"
-				. "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
-				. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
-			fclose( $fp );
-			
-			try {
-				print '<div class="normal">Attempting to update topic ' . $topicTitle . '...';
-				// TODO: Instantiate the topic somehow - how do we get an article? Who makes a new Topic?
-				// $topic = new PonyDocsProductTopic();
-				// $topic->moveTopicToAnotherProduct($targetProductName);
-
-				$logFields = "action=topic status=success product=$productName manual=$manualName "
-					. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-				error_log( 'INFO [' . __METHOD__ . "] [RenameProduct] $logFields" );
-
-				print 'Complete</div>';
-			} catch( Exception $e ) {
-				$logFields = "action=topic status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-					. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-				error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
-				print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
-			}
-			$numOfTopicsCompleted++;
-		}
-
-		// Now we can update the TOCs
-		foreach ( $allTocs as $toc ) {
-			try {
-				print '<div class="normal">Attempting to update TOC...';
-				$toc->moveTocToAnotherProduct( $targetProductName );
-
-				$logFields = "action=TOC status=success product=$productName manual=$manualName "
-					. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-				error_log( 'INFO [' . __METHOD__ ."] [RenameProduct] $logFields" );
-
-				print 'Complete</div>' ;
-			} catch ( Exception $e ) {
-				$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-					. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-				error_log( 'WARNING [' . __METHOD__ ."] [RenameProduct] $logFields" );
-
-				print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
-			}
-		}
-
-		list ( $msec, $sec ) = explode( ' ', microtime() ); 
-		$endTime = (float)$msec + (float)$sec; 
-		print "Done with $manualName! Execution Time: " . round($endTime - $startTime, 3) . ' seconds<br />';
-
-		unlink($path);
-		$buffer = ob_get_clean();
-		return $buffer;
+		return $result;
 	}
 
 	/**
@@ -224,9 +238,8 @@ class SpecialRenameProduct extends SpecialPage {
 			$errors[] = "$sourceProductName does not exist or is static.";
 		}
 		// That source product has no TOCs
-		$manuals = PonyDocsManuals::getDefinedManuals( $sourceProductName );
+		$manuals = PonyDocsProductManual::getDefinedManuals( $sourceProductName );
 		foreach ( $manuals as $manual ) {
-			// TODO i don't think we have a real manual here, we have to invoke it probably
 			if ( $manual->getAllTocs() ) {
 				$errors[] = "$sourceProduct still has TOCs. Please try the rename again.";
 			}
