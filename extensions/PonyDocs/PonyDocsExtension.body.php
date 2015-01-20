@@ -1832,7 +1832,7 @@ HEREDOC;
 					}
 				}
 			}
-			$cache->put( $key, $cacheEntry, time() + 3600 );
+			$cache->put( $key, $cacheEntry, NAVDATA_CACHE_TTL, NAVDATA_CACHE_TTL / 4 );
 			// Restore old version
 			PonyDocsProductVersion::SetSelectedVersion( $product, $oldVersion );
 			PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
