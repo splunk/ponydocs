@@ -108,7 +108,7 @@ class PonyDocsCache
 	 */
 	private function fudgeTtl($ttl, $fudgeFactor) {
 		if ( $fudgeFactor ) {
-			$ttl += rand(-$fudgefactor, $fudgeFactor);
+			$ttl += rand(-$fudgeFactor, $fudgeFactor);
 		}
 		
 		return $ttl;
