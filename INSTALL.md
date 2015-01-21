@@ -179,6 +179,11 @@ Failure to do so will result in frustration and keyboard tossing.
 	define( 'PONYDOCS_REDIRECT_DEBUG', FALSE );
 	define( 'PONYDOCS_SESSION_DEBUG', FALSE );
 
+	// Category cache expiration in seconds
+	define( 'CATEGORY_CACHE_TTL', 300 );
+	define( 'NAVDATA_CACHE_TTL', 3600 );
+	define( 'TOC_CACHE_TTL', 3600 );
+
 	// NOTE: this *must* match what is in Documentation:Products.
 	// This will be fixed in later versions
 	$ponyDocsProductsList = array('Foo');

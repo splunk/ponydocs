@@ -348,7 +348,7 @@ class PonyDocsTOC
 				unset( $toc[$section] );
 			}
 			// Okay, let's store in our cache.
-			$cache->put( $key, $toc, time() + 3600 );
+			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
 		}
 
 		$currentIndex = -1;
