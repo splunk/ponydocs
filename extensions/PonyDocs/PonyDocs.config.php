@@ -18,11 +18,6 @@ define( 'PONYDOCS_PRODUCTMANUAL_REGEX', '/([' . PONYDOCS_PRODUCTMANUAL_LEGALCHAR
 define( 'PONYDOCS_PRODUCTMANUAL_TITLE_REGEX',
 	'/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)' . PONYDOCS_PRODUCTMANUAL_SUFFIX . '/' );
 
-// Category cache expiration in seconds
-define( 'CATEGORY_CACHE_TTL', 300 );
-define( 'NAVDATA_CACHE_TTL', 3600 );
-define( 'TOC_CACHE_TTL', 3600 );
-
 // Directories
 define( 'PONYDOCS_TEMP_DIR', '/tmp/' );
 define( 'PONYDOCS_STATIC_DIR', '/var/www/useruploads/docs/staticDocs' );
