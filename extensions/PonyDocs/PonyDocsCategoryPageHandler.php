@@ -34,7 +34,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 			$categoryViewer = new PonyDocsCategoryPageHandler($categoryArticle->getTitle(), $from, $until);
 			$res = $categoryViewer->getHTML();
 			// Store in our cache
-			$cache->put($cacheKey, $res, time() + CATEGORY_CACHE_TTL);
+			$cache->put($cacheKey, $res, CATEGORY_CACHE_TTL);
 		}
 		$wgOut->addHTML($res);
 		return false; // We don't want to continue processing the "normal" mediawiki path, so return false here.
