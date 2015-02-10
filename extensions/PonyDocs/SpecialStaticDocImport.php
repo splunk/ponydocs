@@ -69,14 +69,19 @@ class SpecialStaticDocImport extends SpecialPage
 							$wgOut->addHTML('<h3>Results of Import</h3>');
 							// Okay, let's make sure we have file provided
 							if (!isset($_FILES['archivefile']) || $_FILES['archivefile']['error'] != 0)  {
-								$wgOut->addHTML('There was a problem using your uploaded file.  Make sure you uploaded a file and try again.');
+								$wgOut->addHTML(
+									'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
 							}
 							else {
 								try {
-									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'], $_POST['version']);
-									$wgOut->addHTML('Success: imported archive for ' . $_POST['product'] . ' version ' . $_POST['version']);
+									$importer->importFile(
+										$_FILES['archivefile']['tmp_name'], $_POST['product'], $_POST['version']);
+									$wgOut->addHTML(
+										'Success: imported archive for ' . $_POST['product'] . ' version ' . $_POST['version']);
 								} catch (Exception $e) {
 									$wgOut->addHTML('Error: ' . $e->getMessage());
+									error_log('WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="add" status="error"'
+										. ' message="' . addcslashes($e->getMessage(), '"'));
 								}
 							}
 						}
@@ -92,6 +97,8 @@ class SpecialStaticDocImport extends SpecialPage
 								$wgOut->addHTML('Successfully deleted ' . $_POST['product'] . ' version ' . $_POST['version']);
 							} catch (Exception $e) {
 								$wgOut->addHTML('Error: ' . $e->getMessage());
+								error_log('WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
+									. ' message="' . addcslashes($e->getMessage(), '"'));
 							}
 						}
 					}
