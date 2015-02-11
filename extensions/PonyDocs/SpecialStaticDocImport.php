@@ -81,7 +81,7 @@ class SpecialStaticDocImport extends SpecialPage
 								} catch (Exception $e) {
 									$wgOut->addHTML('Error: ' . $e->getMessage());
 									error_log('WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="add" status="error"'
-										. ' message="' . addcslashes($e->getMessage(), '"'));
+										. ' message="' . addcslashes($e->getMessage() . '"'));
 								}
 							}
 						}
@@ -98,7 +98,7 @@ class SpecialStaticDocImport extends SpecialPage
 							} catch (Exception $e) {
 								$wgOut->addHTML('Error: ' . $e->getMessage());
 								error_log('WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
-									. ' message="' . addcslashes($e->getMessage(), '"'));
+									. ' message="' . addcslashes($e->getMessage() . '"'));
 							}
 						}
 					}
