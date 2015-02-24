@@ -411,7 +411,7 @@ class SpecialBranchInherit extends SpecialPage
 		}
 		
 		// Static product check
-		if ( PonyDocsProduct::GetProductByShortName($forecProduct)->isStatic()) {
+		if ( PonyDocsProduct::GetProductByShortName($forceProduct)->isStatic()) {
 			$wgOut->addHTML("<p>Sorry, but you cannot branch/inherit a static product.</p>");
 			return;
 		}
