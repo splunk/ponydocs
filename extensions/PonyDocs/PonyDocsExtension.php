@@ -245,50 +245,68 @@ function efManualParserFunction_Magic( &$magicWords, $langCode ) {
  * management page for that manual.
  *
  * @param Parser $parser
- * @param string $param1 Short name of the manual used in links.
- * @param string $param2 Long/display name of manual.
+ * @param string $shortName Short name of the manual used in links.
+ * @param string $longName Long/display name of manual.
  * @return array
  */
-function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' ) {
-	global $wgArticlePath, $wgUser, $wgScriptPath;
+function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '' ) {
+	global $wgArticlePath;
 
 	$valid = TRUE;
-	if ( !preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $param1 ) || !strlen( $param1 ) || !strlen( $param2 ) ) {
+	if ( !preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $shortName ) || !strlen( $shortName ) || !strlen( $longName ) ) {
 		return $parser->insertStripItem( '', $parser->mStripState );
 	}
 
-	$manualName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $param1 );
+	$manualName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
+	// TODO: It's silly to do this twice (the other is in LoadManualsForProduct().
+	//       We should get the manual object from PonyDocsProductManual
+	$static = FALSE;
+	if ( strpos( $shortName, PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
+		$static = TRUE;
+		$manualName = substr( $manualName, strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
+	}
 	$productName = PonyDocsProduct::GetSelectedProduct();
 	$version = PonyDocsProductVersion::GetSelectedVersion( $productName );
 
-	// don't cache Documentation:[product]:Manuals pages because when we switch selected version the content will come from cache
+	// Don't cache Documentation:[product]:Manuals pages because when we switch selected version the content will come from cache
 	$parser->disableCache();
 
-	$dbr = wfGetDB( DB_SLAVE );
-	$res = $dbr->select(
-		'categorylinks',
-		array( 'cl_sortkey', 'cl_to' ),
-		array(
-			"LOWER( cast( cl_sortkey AS CHAR ) ) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName ) ) . ':'
-				. $dbr->strencode( strtolower( $manualName ) ) . "toc%'",
-			"cl_to = 'V:" . $productName . ':' . $version . "'" ),
-		__METHOD__ );
-	if ( !$res->numRows() )	{
-		/**
-		 * Link to create new TOC page -- should link to current version TOC and then add message to explain.
-		 */
-		$output = '<p><a href="'
-			. str_replace(
-				'$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . 'TOC' . $version,
-				$wgArticlePath )
-			. '" style="font-size: 1.3em;">' . $param2 . "</a></p>\n"
-			. "<span style=\"padding-left: 20px;\">Click manual to create TOC for current version (" . $version . ").</span>\n";
+	// If static
+	if ( $static ) {
+		$output = "<p><a href=\"" . str_replace( '$1', "Special:StaticDocImport/$productName/$manualName" , $wgArticlePath )
+			. "\" style=\"font-size: 1.3em;\">$longName</a></p>\n"
+			. "<span style=\"padding-left: 20px;\">Click manual to manage static documentation.</span>\n";
 	} else {
-		$row = $dbr->fetchObject( $res );
-		$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">'
-			. $param2 . "</a></p>\n";
-	}
 
+		// TODO: We should call PonyDocsTOC.php or maybe PonyDocsProductManual to see if there's a TOC in this manual
+		//       or maybe actually get the manual object and query it
+		$dbr = wfGetDB( DB_SLAVE );
+		$res = $dbr->select(
+			'categorylinks',
+			array( 'cl_sortkey', 'cl_to' ),
+			array(
+				"LOWER( cast( cl_sortkey AS CHAR ) ) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName ) ) . ':'
+					. $dbr->strencode( strtolower( $manualName ) ) . "toc%'",
+				"cl_to = 'V:" . $productName . ':' . $version . "'" ),
+			__METHOD__ );
+
+		if (!$res->numRows() )	{
+			/**
+			 * Link to create new TOC page -- should link to current version TOC and then add message to explain.
+			 */
+			$output = '<p><a href="'
+				. str_replace(
+					'$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . 'TOC' . $version,
+					$wgArticlePath )
+				. '" style="font-size: 1.3em;">' . $longName . "</a></p>\n"
+				. "<span style=\"padding-left: 20px;\">Click manual to create TOC for current version (" . $version . ").</span>\n";
+		} else {
+			$row = $dbr->fetchObject( $res );
+			$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">'
+				. $longName . "</a></p>\n";
+		}
+	}
+	
 	return $parser->insertStripItem( $output, $parser->mStripState );
 }
 
@@ -393,7 +411,14 @@ function efProductParserFunction_Magic( &$magicWords, $langCode ) {
  * @return array
  */
 function efProductParserFunction_Render( &$parser, $shortName = '', $longName = '', $description = '', $parent = '' ) {
-	global $wgUser, $wgScriptPath;
+	global $wgArticlePath, $wgUser, $wgScriptPath;
+
+	$static = FALSE;
+	if ( strpos( $shortName, PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
+		$static = TRUE;
+		$shortName = substr( $shortName, strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
+	}
+	
 	
 	$output = "$shortName ($longName)";
 
@@ -408,6 +433,11 @@ function efProductParserFunction_Render( &$parser, $shortName = '', $longName = 
 	
 	if ( $parent != '' ) {
 		$output .= "<br>Parent: $parent";
+	}
+
+	if ( $static ) {
+		$output .= "<p><a href=\"" . str_replace( '$1', "Special:StaticDocImport/$shortName" , $wgArticlePath )
+			. "\">Click to manage static documentation</a></p>\n";
 	}
 	
 	$output .= "\n";
