@@ -52,7 +52,15 @@ class SpecialLatestDoc extends SpecialPage {
 		 * $matches[3] = manual
 		 * $matches[4] = topic
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS. ']*)\/(.*)\/(.*)\/(.*)$/i', $title, $matches )) {
+		if (!isset($title) || $title == '' || $title = NULL) {
+                        $logFields = "action=SpecialDoc status=failure error=\"Failed to obtain value for parameter t\"";
+                        error_log('WARNING [' . __METHOD__ ."] [SpecialLastestDoc] $logFields");
+                        ?>
+                        <p>
+                        Sorry, please pass in a valid parameter <b>t</b> to get the desired documentation.
+                        </p>
+                        <?php
+		} else if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS. ']*)\/(.*)\/(.*)\/(.*)$/i', $title, $matches )) {
 			?>
 			<p>
 			Sorry, but <?php echo $sanitizedTitle;?> is not a valid Documentation url.
