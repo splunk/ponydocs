@@ -108,7 +108,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 	 * @return string
 	 * @private
 	 */
-	function columnList( $articles, $articles_start_char ) {
+	static function columnList( $articles, $articles_start_char ) {
 		$result = ksort($articles, SORT_STRING);
 		$r = '';
 
@@ -130,7 +130,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 	 * @see columnList
 	 *
 	 */
-	function shortList($articles, $articles_start_char) {
+	static function shortList($articles, $articles_start_char) {
 		return $this->columnList($articles, $articles_start_char);
 	}
 
