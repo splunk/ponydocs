@@ -349,7 +349,7 @@ class PonyDocsProductVersion {
 
 		$content = $article->getContent();
 
-		if ( -1 == $article->mCounter ) {
+		if ( !$article->mContent ) {
 			/**
 			 * There is no versions file found -- just return.
 			 */
