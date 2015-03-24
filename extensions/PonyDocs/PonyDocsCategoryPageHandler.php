@@ -3,7 +3,7 @@ if( !defined( 'MEDIAWIKI' )) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once($IP . "/includes/CategoryPage.php");
+require_once( "$IP/includes/page/CategoryPage.php" );
 
 class PonyDocsCategoryPageHandler extends CategoryViewer {
 	protected $articleCount = 0;

@@ -1,5 +1,5 @@
 <?php
-require_once( "$IP/includes/Article.php" );
+require_once( "$IP/includes/page/Article.php" );
 
 /**
  * Ok, so when using a URL alias we have to hook into ArticleFromTitle so that it can take the input TITLE and translate it to the REAL

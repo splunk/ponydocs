@@ -2,7 +2,7 @@
 if( !defined( 'MEDIAWIKI' ))
 	die( "PonyDocs MediaWiki Extension" );
 
-require_once( "$IP/includes/Article.php" );
+require_once( "$IP/includes/page/Article.php" );
 
 /**
  * Provides abstract class for PonyDocs Articles
