@@ -224,7 +224,24 @@ class SpecialStaticDocImport extends SpecialPage {
 				}
 				break;
 		}
+		
+		if ( isset( $_POST['version'] )	&& isset( $_POST['product'] ) ) {			
+            		$this->clearProductCache($_POST['product'], $_POST['version']);            
+		}
 	}
+	
+	/**
+	 * Clear NAVDATA cache by product and version
+	 * @param string $product 
+	 * @param string $version
+	 */
+	 private function clearProductCache( $product, $version ) {
+		 //verify product has the version
+		 if ( PonyDocsProductVersion::IsVersion( $product, $version ) ) {
+			 $versionObj = PonyDocsProductVersion::GetVersionByName( $product, $version );
+			 PonyDocsProductVersion::clearNAVCache( $versionObj );
+		 }
+	 }
 
 	/**
 	 * Show existing versions and remove form
