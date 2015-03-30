@@ -125,7 +125,7 @@ class PonyDocsExtension
 	 */
 	static public function RewriteTitle( Title & $reTitle )
 	{ 
-		global $wgArticlePath, $wgTitle, $wgArticle;
+		global $wgArticlePath, $wgTitle;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -401,7 +401,7 @@ class PonyDocsExtension
 	static public function onArticleFromTitle_New( &$title, &$article )
 	{
 		global $wgScriptPath;
-		global $wgArticlePath, $wgTitle, $wgArticle, $wgOut, $wgHooks;
+		global $wgArticlePath, $wgTitle, $wgOut, $wgHooks;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -1282,7 +1282,7 @@ HEREDOC;
 	 */
 	static public function onEdit( $editpage )
 	{
-		global $wgOut, $wgArticle, $wgTitle;
+		global $wgOut, $wgTitle;
 
 		/**
 		 * Only offer cloning to NEW articles?
@@ -1466,7 +1466,7 @@ HEREDOC;
 	 */
 	static public function onParserBeforeStrip( &$parser, &$text )
 	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgArticle, $wgPonyDocs, $action;
+		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgPonyDocs, $action;
 
 		$dbr = wfGetDB( DB_SLAVE );
 		if(empty($wgTitle)) {

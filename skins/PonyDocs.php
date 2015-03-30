@@ -660,7 +660,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	}
 
 	public function prepareDocumentation() {
-		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser;
+		global $wgOut, $wgParser, $wgScriptPath, $wgTitle, $wgUser;
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
 		 */
@@ -793,7 +793,9 @@ class PonyDocsTemplate extends QuickTemplate {
 		 * basetopiclink:  Link to special TopicList page to view all same topics.
 		 */
 
-		$topic = new PonyDocsTopic( $wgArticle );
+        $context = $this->skin->getContext();
+ 	 	$article = Article::newFromTitle($context->getTitle(), $context);
+ 	 	$topic = new PonyDocsTopic($article);
 
 		if ( preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $wgTitle->__toString() )
 			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*TOC.*/', $wgTitle->__toString() ) ) {
@@ -850,7 +852,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	}
 
 	private function contentActions() {
-		global $wgUser, $wgTitle, $wgArticle, $wgArticlePath, $wgScriptPath, $wgUser, $ponyDocsEmployeeGroup;
+		global $ponyDocsEmployeeGroup, $wgArticlePath, $wgScriptPath, $wgTitle, $wgUser;
 
 		$groups = $wgUser->getGroups();
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
@@ -888,7 +890,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	 * Update the nav URLs (toolbox) to include certain special pages for authors and bureaucrats.
 	 */
 	private function navURLS() {
-		global $wgUser, $wgArticlePath, $wgArticle, $wgTitle;
+		global $wgArticlePath, $wgTitle, $wgUser;
 
 		$groups = $wgUser->getGroups();
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
