@@ -141,7 +141,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			function AjaxChangeProduct() {
 				var productIndex = document.getElementById( 'docsProductSelect' ).selectedIndex;
 				var product = document.getElementById( 'docsProductSelect' )[productIndex].value;
-				var title = '<?php $this->jstext( 'thispage' ); ?>';
+				var title = '<?php Xml::escapeJsString($this->data['thispage']); ?>';
 				sajax_do_call( 'efPonyDocsAjaxChangeProduct', [product,title], AjaxChangeProduct_callback );
 			}
 
@@ -157,7 +157,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				var product = document.getElementById( 'docsProductSelect' )[productIndex].value;
 				var versionIndex = document.getElementById( 'docsVersionSelect' ).selectedIndex;
 				var version = document.getElementById( 'docsVersionSelect' )[versionIndex].value;
-				var title = '<?php $this->jstext( 'thispage' ); ?>';
+				var title = '<?php Xml::escapeJsString($this->data['thispage']); ?>';
 				sajax_do_call( 'efPonyDocsAjaxChangeVersion', [product,version,title], AjaxChangeVersion_callback );
 			}
 
