@@ -250,7 +250,7 @@ class PonyDocsTemplate extends QuickTemplate {
 								&& in_array( $key, array( 'edit', 'watch', 'unwatch' ))) {
 									echo $skin->tooltip( "ca-$key" );
 								} else {
-									echo $skin->tooltipAndAccesskey( "ca-$key" );
+									echo Xml::expandAttributes( $skin->tooltipAndAccesskeyAttribs( "ca-$key" ) );
 								}
 								echo '>'.htmlspecialchars($tab['text']).'</a></li>';
 							} ?>
@@ -271,7 +271,7 @@ class PonyDocsTemplate extends QuickTemplate {
 								<?php
 							} ?>>
 								<a href="<?php echo htmlspecialchars( $item['href'] ) ?>"
-									<?php echo $skin->tooltipAndAccesskey( 'pt-'.$key );
+									<?php echo Xml::expandAttributes( $skin->tooltipAndAccesskeyAttribs( 'pt-'.$key ) );
 									if ( !empty($item['class'] ) ) { ?>
 										class="<?php echo htmlspecialchars( $item['class'] ) ?>"
 										<?php
@@ -287,7 +287,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				<div class="portlet" id="p-logo">
 					<a style="background-image: url(<?php $this->text( 'logopath' ) ?>);" 
 					   href="<?php echo htmlspecialchars( $this->data['nav_urls']['mainpage']['href'] )?>"
-						<?php echo $skin->tooltipAndAccesskey( 'p-logo' ) ?>></a><br />
+						<?php echo Xml::expandAttributes( $skin->tooltipAndAccesskeyAttribs( 'p-logo' ) ) ?>></a><br />
 				</div>
 				<script type="<?php $this->text( 'jsmimetype' ) ?>">
 					if ( window.isMSIE55 ) {
@@ -494,12 +494,13 @@ class PonyDocsTemplate extends QuickTemplate {
 					) ); ?>
 					<input type='submit' name="go" class="searchButton" id="searchGoButton"
 						   value="<?php $this->msg( 'searcharticle' ) ?>"
-							<?php echo $this->skin->tooltipAndAccesskey( 'search-go' ); ?> />
+							<?php echo Xml::expandAttributes( $this->skin->tooltipAndAccesskeyAttribs( 'search-go' ) ); ?> />
 					<?php
 					if ( $wgUseTwoButtonsSearchForm ) { ?>&nbsp;
 						<input type='submit' name="fulltext" class="searchButton" id="mw-searchButton"
-							   value="<?php $this->msg( 'searchbutton' ) ?>"
-								<?php echo $this->skin->tooltipAndAccesskey( 'search-fulltext' ); ?> />
+							value="<?php $this->msg( 'searchbutton' ) ?>"
+							<?php echo Xml::expandAttributes(
+								$this->skin->tooltipAndAccesskeyAttribs( 'search-fulltext' ) ); ?> />
 						<?php
 					} else { ?>
 						<div>
@@ -525,7 +526,8 @@ class PonyDocsTemplate extends QuickTemplate {
 						if ( $this->data['nav_urls']['recentchangeslinked'] ) { ?>
 							<li id="t-recentchangeslinked">
 								<a href="<?php echo htmlspecialchars( $this->data['nav_urls']['recentchangeslinked']['href'] ) ?>"
-									<?php echo $this->skin->tooltipAndAccesskey( 't-recentchangeslinked' ) ?>>
+									<?php echo Xml::expandAttributes(
+										$this->skin->tooltipAndAccesskeyAttribs( 't-recentchangeslinked' ) ); ?>>
 									<?php $this->msg( 'recentchangeslinked-toolbox' ) ?>
 								</a>
 							</li>
@@ -535,7 +537,8 @@ class PonyDocsTemplate extends QuickTemplate {
 					if ( isset( $this->data['nav_urls']['trackbacklink'] ) && $this->data['nav_urls']['trackbacklink'] ) { ?>
 						<li id="t-trackbacklink">
 							<a href="<?php echo htmlspecialchars( $this->data['nav_urls']['trackbacklink']['href'] ) ?>"
-							   <?php echo $this->skin->tooltipAndAccesskey( 't-trackbacklink' ) ?>>
+								<?php echo Xml::expandAttributes(
+									$this->skin->tooltipAndAccesskeyAttribs( 't-trackbacklink' ) ); ?>>
 								<?php $this->msg('trackbacklink') ?>
 							</a>
 						</li>
@@ -546,9 +549,10 @@ class PonyDocsTemplate extends QuickTemplate {
 							<?php
 							foreach ( $this->data['feeds'] as $key => $feed ) { ?>
 								<a id="<?php echo Sanitizer::escapeId( "feed-$key" ) ?>" 
-								   href="<?php echo htmlspecialchars( $feed['href'] ) ?>" rel="alternate"
-								   type="application/<?php echo $key ?>+xml" class="feedlink"
-								   <?php echo $this->skin->tooltipAndAccesskey( 'feed-'.$key ) ?>>
+									href="<?php echo htmlspecialchars( $feed['href'] ) ?>" rel="alternate"
+									type="application/<?php echo $key ?>+xml" class="feedlink"
+									<?php echo Xml::expandAttributes(
+										$this->skin->tooltipAndAccesskeyAttribs( 'feed-'.$key ) ); ?>>
 									<?php echo htmlspecialchars($feed['text'])?>
 								</a>&nbsp;
 								<?php
@@ -560,7 +564,9 @@ class PonyDocsTemplate extends QuickTemplate {
 						if ( $this->data['nav_urls'][$special] ) { ?>
 							<li id="t-<?php echo $special ?>">
 								<a href="<?php echo htmlspecialchars( $this->data['nav_urls'][$special]['href'] ) ?>"
-									<?php echo $this->skin->tooltipAndAccesskey( 't-'.$special ) ?>><?php $this->msg( $special ) ?>
+									<?php echo Xml::expandAttributes(
+										$this->skin->tooltipAndAccesskeyAttribs( 't-'.$special ) ); ?>>
+									<?php $this->msg( $special ) ?>
 								</a>
 							</li>
 							<?php
@@ -569,7 +575,7 @@ class PonyDocsTemplate extends QuickTemplate {
 					if ( !empty( $this->data['nav_urls']['print']['href'] ) ) { ?>
 						<li id="t-print">
 							<a href="<?php echo htmlspecialchars( $this->data['nav_urls']['print']['href'] ) ?>" rel="alternate"
-								<?php echo $this->skin->tooltipAndAccesskey( 't-print' ) ?>>
+								<?php echo Xml::expandAttributes( $this->skin->tooltipAndAccesskeyAttribs( 't-print' ) ); ?>>
 								<?php $this->msg( 'printableversion' ) ?>
 							</a>
 						</li>
@@ -578,7 +584,7 @@ class PonyDocsTemplate extends QuickTemplate {
 					if( !empty( $this->data['nav_urls']['permalink']['href'] ) ) { ?>
 						<li id="t-permalink">
 							<a href="<?php echo htmlspecialchars( $this->data['nav_urls']['permalink']['href'] ) ?>"
-								<?php echo $this->skin->tooltipAndAccesskey( 't-permalink' ) ?>>
+								<?php echo Xml::expandAttributes( $this->skin->tooltipAndAccesskeyAttribs( 't-permalink' ) ); ?>>
 								<?php $this->msg('permalink') ?>
 							</a>
 						</li>
@@ -642,8 +648,8 @@ class PonyDocsTemplate extends QuickTemplate {
 									class="active" <?php
 								} ?>>
 								<a href="<?php echo htmlspecialchars( $val['href'] ) ?>"
-									<?php echo $this->skin->tooltipAndAccesskey( $val['id'] ) ?>>
-										<?php echo htmlspecialchars( $val['text'] ) ?>
+									<?php echo Xml::expandAttributes( $this->skin->tooltipAndAccesskeyAttribs( $val['id'] ) ); ?>>
+									<?php echo htmlspecialchars( $val['text'] ) ?>
 								</a>
 							</li>
 							<?php
