@@ -169,6 +169,10 @@ class SpecialStaticDocImport extends SpecialPage {
 		
 		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
 
+		if ( isset( $_POST['version'] ) && isset( $_POST['product'] ) ) {
+                         $this->clearProductCache($_POST['product'], $_POST['version']);
+                }
+
 		switch ($action) {
 			case "add":
 				if ( isset( $_POST['version'] )
@@ -225,9 +229,6 @@ class SpecialStaticDocImport extends SpecialPage {
 				break;
 		}
 		
-		if ( isset( $_POST['version'] )	&& isset( $_POST['product'] ) ) {			
-            		$this->clearProductCache($_POST['product'], $_POST['version']);            
-		}
 	}
 	
 	/**
@@ -235,11 +236,11 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param string $product 
 	 * @param string $version
 	 */
-	 private function clearProductCache( $product, $version ) {
+	 private function clearProductCache( $productName, $versionName ) {
 		 //verify product has the version
-		 if ( PonyDocsProductVersion::IsVersion( $product, $version ) ) {
-			 $versionObj = PonyDocsProductVersion::GetVersionByName( $product, $version );
-			 PonyDocsProductVersion::clearNAVCache( $versionObj );
+  		 $versionObj = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
+		 if ( $versionObj != FALSE ) {
+			PonyDocsProductVersion::clearNAVCache( $versionObj );
 		 }
 	 }
 
