@@ -143,12 +143,14 @@ class PonyDocsTOC
 		 * From this we then scan the same table for all 'cl_to' matches for the complete name and add those versions to our list.
 		 */
 		$dbr = wfGetDB( DB_SLAVE );
+		
+		// TODO: We can't rely on cl_sortkey_prefix - we need to join with page and translate namespace to get the full title here
 		$res = $dbr->select(
 			'categorylinks',
-			'cl_sortkey',
+			'cl_sortkey_prefix',
 			array(
-				"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName() )
-					. ":" . $dbr->strencode( strtolower( $this->pManual->getShortName() ) ) . "toc%'",
+				"cl_sortkey LIKE 'DOCUMENTATION:" . strtoupper( $dbr->strencode( $this->pProduct->getShortName() ) )
+					. ":" . $dbr->strencode( strtoupper( $this->pManual->getShortName() ) ) . "TOC%'",
 				"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName() ) . ":"
 					. $dbr->strencode( $this->pInitialVersion->getVersionName() ) . "'" ),
 			__METHOD__ );
@@ -158,7 +160,7 @@ class PonyDocsTOC
 		}
 
 		$row = $dbr->fetchObject( $res );
-		$mTOCPageTitle = $row->cl_sortkey;
+		$mTOCPageTitle = $row->cl_sortkey_prefix;
 		$this->mTOCPageTitle = $mTOCPageTitle;
 		
 		$res = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $mTOCPageTitle ) . "'", __METHOD__ );
