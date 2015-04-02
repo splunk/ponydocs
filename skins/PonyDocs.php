@@ -74,9 +74,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	function execute() {
-		global $wgRequest;
-		global $wgUser, $wgExtraNamespaces, $wgTitle, $wgArticlePath, $IP;
-		global $wgRevision, $action, $wgRequest;
+		global $action, $IP, $wgArticlePath, $wgContLang, $wgExtraNamespaces, $wgRequest, $wgRevision, $wgTitle, $wgUser;
 
 		PonyDocsProduct::LoadProducts();
 		$this->data['selectedProduct'] = PonyDocsProduct::GetSelectedProduct();
@@ -113,13 +111,14 @@ class PonyDocsTemplate extends QuickTemplate {
 		 * which we are in determines the sub-template, which is named 'ns<Namespace>'. It defaults to our
 		 * nsDefault.php template. 
 		 */
-		$idx = $this->data['nscanonical'] ? 'NS:' . $this->data['nscanonical'] : 'T:' . $wgTitle->__toString();
+		$this->data['namespace'] = $wgContLang->getNsText($wgTitle->getNamespace());
+		$idx = $this->data['namespace'] ? "NS:{$this->data['namespace']}" : 'T:' . $wgTitle->__toString();
 		if ( !isset( $this->_methodMappings[$idx] ) ) {
 			$idx = 0;
 		}
 
 		$inDocumentation = FALSE;
-		if ( $this->data['nscanonical'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		if ( $this->data['namespace'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 			|| $wgTitle->__toString() == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $wgTitle->__toString() ) ) {
 			$inDocumentation = TRUE;
