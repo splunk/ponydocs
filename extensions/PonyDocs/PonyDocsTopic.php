@@ -223,7 +223,8 @@ class PonyDocsTopic {
 	 */
 	private function parseWikiLinks() {
 		$re = "/\\[\\[([" . Title::legalChars() . "]+)(?:\\|?(.*?))\]\]/sD";
-		if ( preg_match_all( $re, $this->pArticle->mContent, $matches, PREG_SET_ORDER ) ) {
+		$content = $this->pArticle->getContent();
+		if ( preg_match_all( $re, $content, $matches, PREG_SET_ORDER ) ) {
 			return $matches;
 		}
 		return array();
@@ -242,7 +243,8 @@ class PonyDocsTopic {
 	 * @return array
 	 */
 	public function parseSections() {
-		$content = str_replace("<nowiki>", "", $this->pArticle->mContent);
+		$content = $this->pArticle->getContent();
+		$content = str_replace("<nowiki>", "", $content);
 		$content = str_replace("</nowiki>", "", $content);
 		
 		$headings = array();

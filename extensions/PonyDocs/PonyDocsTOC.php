@@ -260,7 +260,8 @@ class PonyDocsTOC
 			$toc = array();
 			$idx = 0; 				// The current index of the element in $toc we will work on
 			$section = -1;
-			$lines = explode( "\n", $this->pTOCArticle->mContent );
+			$content = $this->pTOCArticle->getContent();
+			$lines = explode( "\n", $content );
 			foreach ( $lines as $line ) {
 				/**
 				 * Indicates an arbitrary section header if it does not begin with a bullet point.
@@ -439,7 +440,7 @@ class PonyDocsTOC
 		 */
 		
 		// Last but not least, get the manual description if there is one.
-		if ( preg_match( '/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->mContent, $matches ) ) {
+		if ( preg_match( '/{{#manualDescription:([^}]*)}}/', $content, $matches ) ) {
 			$this->mManualDescription = $matches[1];
 		}
 
