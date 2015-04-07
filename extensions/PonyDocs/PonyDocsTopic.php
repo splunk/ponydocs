@@ -131,9 +131,14 @@ class PonyDocsTopic {
 	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
-		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array(
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%'",
-			"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_sortkey_prefix',
+			array(
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $baseTopic )) . ":%'",
+				"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ),
+			__METHOD__ 
+		);
 
 		if ( !$res->numRows() ) {
 			return false;
@@ -141,7 +146,7 @@ class PonyDocsTopic {
 
 		$row = $dbr->fetchObject( $res );
 
-		return $row->cl_sortkey;
+		return $row->cl_sortkey_prefix;
 	}
 
 	/**
