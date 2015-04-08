@@ -217,14 +217,15 @@ class PonyDocsBranchInheritEngine {
 	 */
 	static public function TOCExists( $product, $manual, $version ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $version->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:"
-			. $dbr->strencode(strtolower($product->getShortName()) . ':' . strtolower($manual->getShortName())) . "toc%'";
+		$query = "SELECT cl_sortkey_prefix FROM categorylinks"
+			. " WHERE cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $version->getVersionName() ) . "'"
+			. " AND cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $product->getShortName() ) ) . ':'
+			. strtoupper( $manual->getShortName( ) ) . "TOC%'";
 		$res = $dbr->query( $query, __METHOD__ );
 
 		if ( $res->numRows() ) {
 			$row = $dbr->fetchObject( $res );
-			return $row->cl_sortkey;
+			return $row->cl_sortkey_prefix;
 		}
 		return false;
 	}
@@ -473,9 +474,11 @@ class PonyDocsBranchInheritEngine {
 		$productName = $match[1];
 		$manual = $match[2];
 		$title = $match[3];
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $targetVersion->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE '"
-			. $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manual . ":" . $title ) )
+		$query = "SELECT cl_sortkey_prefix"
+			. " FROM categorylinks"
+			. " WHERE cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $targetVersion->getVersionName() ) . "'"
+			. " AND cl_sortkey LIKE '"
+			. $dbr->strencode( strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manual . ":" . $title ) )
 			. ":%'";
 		$res = $dbr->query( $query, __METHOD__ );
 
@@ -487,7 +490,7 @@ class PonyDocsBranchInheritEngine {
 
 			// Then let's return the topics that conflict.
 			while ( $row = $dbr->fetchObject( $res ) ) {
-				$conflicts[] = $row->cl_sortkey;
+				$conflicts[] = $row->cl_sortkey_prefix;
 			}
 			return $conflicts;
 		}

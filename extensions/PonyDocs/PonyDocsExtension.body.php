@@ -169,9 +169,13 @@ class PonyDocsExtension
 			 * DB can't do descending order here, it depends on the order defined in versions page!  So we have to
 			 * do some magic sorting below.
 			 */
-			$res = $dbr->select( 'categorylinks', 'cl_to', 
-								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
-								 __METHOD__ );
+			$res = $dbr->select(
+				'categorylinks', 
+				'cl_to', 
+				"cl_sortkey LIKE 'DOCUMENTATION:"
+					. $dbr->strencode( strtoupper( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
+				__METHOD__
+			);
 
 			if( !$res->numRows( ))
 			{
@@ -208,27 +212,29 @@ class PonyDocsExtension
 			 * our resulting $existingVersions and see if each is in_array( $versionNameList );  if its NOT, continue looping.
 			 * Once we hit one, redirect.  if we exhaust our list, go to the main page or something.
 			 */
-			foreach( $existingVersions as $pV )
-			{
-				if( in_array( $pV->getVersionName( ), $versionNameList ))
-				{
+			foreach( $existingVersions as $pV ) {
+				if ( in_array( $pV->getVersionName( ), $versionNameList ) ) {
 					/**
 					 * Look up topic name and redirect to URL.
 					 */
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_sortkey_prefix', 
+						array(
+							"cl_sortkey LIKE 'DOCUMENTATION:"
+								. $dbr->strencode( strtoupper( $matches[1] . ':' . $matches[2] . ':' . $matches[3] ) ) . ":%'",
+							"cl_to = 'V:" . $matches[1] . ':' . $pV->getVersionName() . "'" ),
+						__METHOD__
+					);
 
-					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
-												"cl_to = 'V:" . $matches[1] . ':' . $pV->getVersionName( ) . "'" ), __METHOD__ );
-
-					if( !$res->numRows( ))
-					{
+					if ( !$res->numRows() ) {
 						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 						header( "Location: " . $defaultRedirect );
 						exit( 0 );
 					}
 
 					$row = $dbr->fetchObject( $res );
-					return $row->cl_sortkey;
+					return $row->cl_sortkey_prefix;
 				}
 			}
 
@@ -238,16 +244,13 @@ class PonyDocsExtension
 			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
-		}
-		else
-		{
+		} else {
 			/**
 			 * Ensure version specified in aliased URL is a valid version -- if it is not we just need to do our default
 			 * redirect here.
 			 */
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
-			if( !$version )
-			{
+			if ( !$version ) {
 				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
@@ -257,12 +260,17 @@ class PonyDocsExtension
 			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied.  This
 			 * is the URL to redirect to.  
 			 */
-			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . strtolower( $matches[1] ) . ':' . strtolower( $matches[2] ) . ':' . strtolower( $matches[3] ) . ":%'",
-							"cl_to = 'V:" . $productName . ':' . $version->getVersionName( ) . "'" ), __METHOD__ );
+			$res = $dbr->select(
+				'categorylinks',
+				'cl_sortkey_prefix', 
+				array(
+					"cl_sortkey LIKE 'DOCUMENTATION:" . strtoupper( $matches[1] ) . ':' . strtoupper( $matches[2] ) . ':'
+						. strtoupper( $matches[3] ) . ":%'",
+					"cl_to = 'V:" . $productName . ':' . $version->getVersionName( ) . "'" ),
+				__METHOD__
+			);
 
-			if( !$res->numRows( ))
-			{
+			if ( !$res->numRows() ) {
 				/**
 				 * Handle invalid redirects?
 				 */
@@ -272,9 +280,9 @@ class PonyDocsExtension
 			}
 
 			$row = $dbr->fetchObject( $res );
-			return $row->cl_sortkey;
+			return $row->cl_sortkey_prefix;
 		}
-		return false;
+		return FALSE;
 	}
 
 	/**
@@ -303,8 +311,7 @@ class PonyDocsExtension
 		return true;
 	}
 
-	static public function onArticleFromTitle_NoVersion( &$title, &$article )
-	{
+	static public function onArticleFromTitle_NoVersion( &$title, &$article ) {
 		global $wgArticlePath;
 
 		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
@@ -318,8 +325,12 @@ class PonyDocsExtension
 
 		$dbr = wfGetDB( DB_SLAVE );
 
-		$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ), 
-				"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $title->__toString( ))) . ":%'", __METHOD__ );
+		$res = $dbr->select(
+			'categorylinks',
+			array( 'cl_sortkey_prefix', 'cl_to' ), 
+			"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title->__toString() ) ) . ":%'",
+			__METHOD__
+		);
 
 		if( !$res->numRows( ))
 		{
@@ -359,32 +370,35 @@ class PonyDocsExtension
 		 * Now filter out versions the user does not have access to from the top;  once we find the version for this topic
 		 * to which the user has access, create our Article object and replace our title (to not redirect) and return true.
 		 */
-		foreach( $existingVersions as $pV )
-		{
-			if( in_array( $pV->getName( ), $versionNameList ))
-			{
+		foreach( $existingVersions as $pV ) {
+			if ( in_array( $pV->getName(), $versionNameList ) ) {
 				/**
 				 * Look up topic name and redirect to URL.
 				 */
-				$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-									array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $title->__toString( ))) . ":%'",
-											"cl_to = 'V:" . $pV->getName( ) . "'" ), __METHOD__ );
+				$res = $dbr->select(
+					'categorylinks',
+					'cl_sortkey_prefix', 
+					array(
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title->__toString() ) ) . ":%'",
+						"cl_to = 'V:" . $pV->getName( ) . "'" ),
+					__METHOD__
+				);
 
-				if( !$res->numRows( ))
-				{
+				if ( !$res->numRows() ) {
 					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 					header( "Location: " . $defaultRedirect );
 					exit( 0 );
 				}
 
 				$row = $dbr->fetchObject( $res );
-				$title = Title::newFromText( $row->cl_sortkey );
+				$title = Title::newFromText( $row->cl_sortkey_prefix );
 				
 				$article = new PonyDocsAliasArticle( $title );
 				$article->loadContent( );
 
-				if( !$article->exists( ))
+				if ( !$article->exists() ) {
 					$article = null;
+				}
 
 				return true;
 			}
@@ -477,9 +491,13 @@ class PonyDocsExtension
 			 * do some magic sorting below.	
 			 */
 
-			$res = $dbr->select( 'categorylinks', 'cl_to',
-								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
-								 __METHOD__ );
+			$res = $dbr->select(
+				'categorylinks',
+				'cl_to',
+				"cl_sortkey LIKE '" . $dbr->strencode(
+					strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
+				__METHOD__
+			);
 
 			if( !$res->numRows( ))
 			{
@@ -543,9 +561,15 @@ class PonyDocsExtension
 					 * Look up topic name and redirect to URL.
 					 */
 
-					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
-												"cl_to = 'V:" . $dbr->strencode($pV->getProductName( ) . ':' . $pV->getVersionName( )) . "'" ), __METHOD__ );
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_sortkey_prefix',
+						array(
+							"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode(
+								strtoupper( $productName . ':' . $manualName . ':' . $topicName ) ) . ":%'",
+							"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $pV->getVersionName() ) . "'" ),
+						__METHOD__
+					);
 
 					if( !$res->numRows( ))
 					{
@@ -555,7 +579,7 @@ class PonyDocsExtension
 					}
 
 					$row = $dbr->fetchObject( $res );
-					$title = Title::newFromText( $row->cl_sortkey );
+					$title = Title::newFromText( $row->cl_sortkey_prefix );
 
 					$article = new PonyDocsAliasArticle( $title );
 					$article->loadContent( );
@@ -597,9 +621,15 @@ class PonyDocsExtension
 			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied.  This
 			 * is the URL to redirect to.  
 			 */
-			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productName ) . ':' . strtolower( $manualName ) . ':' . strtolower( $topicName )) . ":%'",
-							"cl_to = 'V:" . $dbr->strencode($productName . ':' . $versionSelectedName) . "'" ), __METHOD__ );
+			$res = $dbr->select(
+				'categorylinks',
+				'cl_sortkey_prefix', 
+				array(
+					"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode(
+						strtoupper( $productName ) . ':' . strtoupper( $manualName ) . ':' . strtoupper( $topicName ) ) . ":%'",
+					"cl_to = 'V:" . $dbr->strencode( $productName . ':' . $versionSelectedName ) . "'" ),
+				__METHOD__
+			);
 
 			if( !$res->numRows( ))
 			{
@@ -611,7 +641,7 @@ class PonyDocsExtension
 			}
 
 			$row = $dbr->fetchObject( $res );
-			$title = Title::newFromText( $row->cl_sortkey );
+			$title = Title::newFromText( $row->cl_sortkey_prefix );
 			/// FIXME this shouldn't be necessary because selected version already comes from here
 			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionSelectedName );
 
@@ -699,12 +729,13 @@ class PonyDocsExtension
 
 				$res = $dbr->select(
 					'categorylinks',
-					'cl_sortkey',
+					'cl_sortkey_prefix',
 					array(
-						"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX
-							. $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
+						"cl_sortkey LIKE '" . $dbr->strencode(
+							strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
 						"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
-					__METHOD__ );
+					__METHOD__
+				);
 
 				$topicName = '';
 				if ( !$res->numRows() ) {
@@ -872,21 +903,19 @@ class PonyDocsExtension
 
 			if ( preg_match(
 				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
-				$q = "SELECT cl_to, cl_sortkey FROM categorylinks " .
-					"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
-						. $titleMatch[3] )) . ":%' " .
-					"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
-						. $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
-					"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
+				$q = "SELECT cl_to, cl_sortkey_prefix FROM categorylinks"
+					. " WHERE cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode(
+						strtoupper( $titleMatch[2] . ':' . $titleMatch[3] )) . ":%'"
+					. " AND cl_sortkey <> 'DOCUMENTATION:" . $dbr->strencode(
+						strtoupper( $titleMatch[2] . ':' . $titleMatch[3] . ':' . $titleMatch[4] )) . "'"
+					. " AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
 			} elseif ( preg_match(
 				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/', $title->__toString(), $titleMatch ) ) {
-				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
-						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' ))
-							. "%' " .
-						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC'
-							. $titleMatch[3] )) . "' " .
-						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories )
-							. "')";
+				$q = "SELECT cl_to, cl_sortkey_prefix FROM categorylinks"
+					. " WHERE cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $titleMatch[2] . 'TOC' ) ) . "%'"
+					. " AND cl_sortkey <> 'DOCUMENTATION:" . $dbr->strencode( 
+						strtoupper( $titleMatch[2] . 'TOC' . $titleMatch[3] )) . "'"
+					. " AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
 			} else {
 				return TRUE;
 			}
@@ -900,7 +929,7 @@ class PonyDocsExtension
 
 			while( $row = $dbr->fetchObject( $res ) ) {
 				if ( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*)/i', $row->cl_to, $vmatch ) ) {
-					$topic = $row->cl_sortkey;
+					$topic = $row->cl_sortkey_prefix;
 					$duplicateVersions[] = $vmatch[1];
 				}
 			}
@@ -1096,9 +1125,14 @@ HEREDOC;
 							 * If nothing is found, we create a new article.
 							 */
 							$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $manual . ':' . $topic;
-							$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
-													"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
-													"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
+							$res = $dbr->select(
+								'categorylinks',
+								'cl_sortkey_prefix',
+								array(
+									"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $sqlMatch )) . ":%'",
+									"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ),
+								__METHOD__
+							);
 
 							if( !$res->numRows( )) 
 							{
@@ -1204,9 +1238,14 @@ HEREDOC;
 					 * If nothing is found, we create a new article.
 					 */
 					$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $pManual->getShortName( ) . ':' . $match[1];
-					$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
-											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
-											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_sortkey_prefix',
+						array(
+							"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $sqlMatch ) ) . ":%'",
+							"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ),
+						__METHOD__
+					);
 
 					if( !$res->numRows( ))
 					{
@@ -1309,11 +1348,11 @@ HEREDOC;
 		/**
 		 * Select all of our topics which match this one (of any version) that is not our own.
 		 */
-		$qry =	"SELECT DISTINCT(cl_sortkey) " .
-				"FROM categorylinks " .
-				"WHERE LOWER(cl_sortkey) LIKE '" . strtolower( $baseTopic ) . ":%' " .
-				"AND LOWER(cl_sortkey) NOT LIKE '" . $wgTitle->__toString( ) . "' " .
-				"ORDER BY cl_sortkey ASC";
+		$qry = "SELECT DISTINCT(cl_sortkey)"
+			. " FROM categorylinks"
+			. " WHERE cl_sortkey LIKE '" . strtoupper( $baseTopic ) . ":%'"
+			. " AND cl_sortkey NOT LIKE '" . $wgTitle->__toString() . "'"
+			. " ORDER BY cl_sortkey ASC";
 
 		$res = $dbr->query( $qry, __METHOD__ );
 		if( !$res->numRows( ))
@@ -1412,9 +1451,9 @@ HEREDOC;
 			/**
 			 * Now update the categorylinks (is this needed?).
 			 */
-			$q =	"DELETE FROM categorylinks " .
-					"WHERE LOWER(cl_sortkey) = '" . $dbr->strencode( strtolower( $wgRequest->getVal( 'title' ))) . "' " .
-					"AND cl_to IN ('V:$product:" . implode( "','V:$product:", $versions ) . "')";
+			$q = "DELETE FROM categorylinks"
+				. " WHERE cl_sortkey = '" . $dbr->strencode( strtoupper( $wgRequest->getVal( 'title' ) ) ) . "'"
+				. " AND cl_to IN ('V:$product:" . implode( "','V:$product:", $versions ) . "')";
 
 			$res = $dbr->query( $q, __METHOD__ );
 
@@ -1543,9 +1582,14 @@ HEREDOC;
 					 */
 					if( 3 == sizeof( $pieces ))
 					{
-						$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-							array( 	"LOWER(cl_sortkey) LIKE '" . $dbr->strencode( strtolower( $match[1] )) . ":%'",
-									"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ), __METHOD__ );
+						$res = $dbr->select(
+							'categorylinks',
+							'cl_sortkey_prefix', 
+							array(
+								"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $match[1] ) ) . ":%'",
+								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ),
+							__METHOD__
+						);
 
 						if( $res->numRows( ))
 						{
@@ -1591,7 +1635,7 @@ HEREDOC;
 						}
 						
 						// Set up for database call
-						$fullTitle = $dbr->strencode(strtolower(implode(":", $pieces)));
+						$fullTitle = $dbr->strencode( strtoupper( implode( ":", $pieces ) ) );
 						// If the version is "latest", translate that to a real version number. Use product that was in the link.
 						if ($version == 'latest') {
 							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
@@ -1602,9 +1646,14 @@ HEREDOC;
 						}
 						
 						// Database call to see if this topic exists in the product/version specified in the link
-						$res = $dbr->select( 'categorylinks', 'cl_sortkey',
-											 array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $fullTitle . ":%'",
-														"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'"), __METHOD__ );
+						$res = $dbr->select(
+							'categorylinks',
+							'cl_sortkey_prefix',
+							array(
+								"cl_sortkey LIKE '" . $fullTitle . ":%'",
+								"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'" ),
+							__METHOD__
+						);
 
 						if(!$res->numRows())
 						{
@@ -1633,11 +1682,17 @@ HEREDOC;
 					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
 					if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $wgTitle->__toString( )) || !isset($pManual))
 						continue;
-					$page = 'documentation:' . strtolower( $selectedProduct . ':' . $pManual->getShortName( )) . ':' . strtolower( $match[1] );
+					$page = 'documentation:'
+						. strtoupper( $selectedProduct . ':' . $pManual->getShortName() ) . ':' . strtoupper( $match[1] );
 
-					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-						array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" .  $dbr->strencode( $page )  . ":%'",
-								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ), __METHOD__ );
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_sortkey_prefix', 
+						array(
+							"cl_sortkey LIKE '" .  $dbr->strencode( $page )  . ":%'",
+							"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ),
+						__METHOD__
+					);
 
 					/**
 					 * We might need to make it a "non-link" at this point instead of skipping it.

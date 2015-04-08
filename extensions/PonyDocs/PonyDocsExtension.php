@@ -283,12 +283,13 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select(
 			'categorylinks',
-			array( 'cl_sortkey', 'cl_to' ),
+			array('cl_sortkey_prefix', 'cl_to' ),
 			array(
-				"LOWER( cast( cl_sortkey AS CHAR ) ) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName ) ) . ':'
-					. $dbr->strencode( strtolower( $manualName ) ) . "toc%'",
+				"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $productName ) ) . ':'
+					. $dbr->strencode( strtoupper( $manualName ) ) . "toc%'",
 				"cl_to = 'V:" . $productName . ':' . $version . "'" ),
-			__METHOD__ );
+			__METHOD__
+		);
 
 		if (!$res->numRows() )	{
 			/**
@@ -302,7 +303,7 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 				. "<span style=\"padding-left: 20px;\">Click manual to create TOC for current version (" . $version . ").</span>\n";
 		} else {
 			$row = $dbr->fetchObject( $res );
-			$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">'
+			$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey_prefix, $wgArticlePath ) . '" style="font-size: 1.3em;">'
 				. $longName . "</a></p>\n";
 		}
 	}
@@ -540,12 +541,13 @@ function efGetTitleFromMarkup( $markup = '' ) {
 
 	$res = $dbr->select(
 		'categorylinks',
-		'cl_sortkey',
+		'cl_sortkey_prefix',
 		array(
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:"
-				. $dbr->strencode( strtolower( $manualShortName . ':' . $wikiTopic ) ) . ":%'",
-			"cl_to IN ('V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')" ),
-			__METHOD__ );
+			"cl_sortkey LIKE 'DOCUMENTATION:"
+				. $dbr->strencode( strtoupper( $manualShortName . ':' . $wikiTopic ) ) . ":%'",
+			"cl_to IN ( 'V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')" ),
+		__METHOD__
+	);
 
 	$topicName = '';
 	if ( !$res->numRows() ) {
@@ -556,7 +558,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
-		$topicName = $row->cl_sortkey;
+		$topicName = $row->cl_sortkey_prefix;
 	}
 
 	return $topicName;
@@ -651,12 +653,13 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 
 	$res = $dbr->select(
 		'categorylinks',
-		'cl_sortkey',		
+		'cl_sortkey_prefix',		
 		array(
-			"LOWER(cl_sortkey) LIKE 'documentation:"
-				. $dbr->strencode( strtolower( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) ) . ":%'",
+			"cl_sortkey LIKE 'DOCUMENTATION:"
+				. $dbr->strencode( strtoupper( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) ) . ":%'",
 			"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
-		__METHOD__ );
+		__METHOD__
+	);
 
 	$topicName = '';
 	if ( !$res->numRows() ) {
@@ -667,7 +670,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
-		$topicName = $row->cl_sortkey;
+		$topicName = $row->cl_sortkey_prefix;
 	}
 
 	$output = '<a href="' . wfUrlencode( str_replace( '$1', $topicName, $wgArticlePath ) ) . '">' . $param1 . '</a>'; 

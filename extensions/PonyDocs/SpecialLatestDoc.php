@@ -114,11 +114,15 @@ class SpecialLatestDoc extends SpecialPage {
 					 * Now build a list of suggestions in priority.
 					 * 1) Same product, different manual, current version.
 					 */
-					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
-										__METHOD__ );
+					$res = $dbr->select(
+						'categorylinks',
+						array( 'cl_sortkey_prefix', 'cl_to' ),
+						"cl_sortkey REGEXP '" . $dbr->strencode(
+							'^' . strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) )
+							. "'"
+							. " AND CAST(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
+						__METHOD__
+					);
 
 					if( $res->numRows( ) )
 					{
@@ -130,11 +134,16 @@ class SpecialLatestDoc extends SpecialPage {
 					/*
 					 * 2) Same product, same manual, earlier version
 					 */
-					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-										__METHOD__ );
+					$res = $dbr->select(
+						'categorylinks',
+						array( 'cl_sortkey_prefix', 'cl_to' ),
+						"cl_sortkey REGEXP '" . $dbr->strencode(
+							'^' . strtoupper(
+								PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) )
+							. "'"
+							. " AND CAST(cl_to AS CHAR) IN" . $versionSql, 
+						__METHOD__
+					);
 
 					if( $res->numRows( ) )
 					{
@@ -150,11 +159,16 @@ class SpecialLatestDoc extends SpecialPage {
 					 * Note: The regular expression will match ALL manuals, including the passed manual. There is no good regex way to 
 					 * properly evaluate not matching a string but match others. So we will filter it out of the results.
 					 */
-					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-										__METHOD__ );
+					$res = $dbr->select(
+						'categorylinks',
+						array( 'cl_sortkey_prefix', 'cl_to' ),
+						"cl_sortkey REGEXP '" . $dbr->strencode(
+							'^' . strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) )
+							. "'"
+							. " AND CAST(cl_to AS CHAR) IN" . $versionSql, 
+						__METHOD__
+					);
+					
 					if( $res->numRows( ) )
 					{
 						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
@@ -246,7 +260,7 @@ class SpecialLatestDoc extends SpecialPage {
 			$productName = $tags[1];
 			$versionName = $tags[2];
 
-			$article = PonyDocsArticleFactory::getArticleByTitle( $row->cl_sortkey );
+			$article = PonyDocsArticleFactory::getArticleByTitle( $row->cl_sortkey_prefix );
 			if( !$article )
 			{
 				continue;
@@ -257,11 +271,11 @@ class SpecialLatestDoc extends SpecialPage {
 			{
 				continue;
 			}
-			$meta = PonyDocsArticleFactory::getArticleMetadataFromTitle( $row->cl_sortkey );
+			$meta = PonyDocsArticleFactory::getArticleMetadataFromTitle( $row->cl_sortkey_prefix );
 			$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $meta['product'] . '/' . $versionName . '/' . $meta['manual'] . '/' . $meta['topic'];
 			$suggestions[$url] = array(
 				'url' => $url,
-				'title' => $topic->FindH1ForTitle( $row->cl_sortkey ),
+				'title' => $topic->FindH1ForTitle( $row->cl_sortkey_prefix ),
 				'manual' => $meta['manual'],
 				'product' => $meta['product'],
 				'version' => $versionName

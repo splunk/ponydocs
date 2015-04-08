@@ -61,25 +61,30 @@ class SpecialTOCList extends SpecialPage
 		
 		foreach (PonyDocsProductVersion::GetVersions($product) as $v) $allowed_versions[] = $v->getVersionName();
 		
-		foreach( $manuals as $pMan )
-		{
-			$qry = "SELECT DISTINCT(cl_sortkey) 
-					FROM categorylinks 
-					WHERE LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $product ) ) . ':' . $dbr->strencode( strtolower( $pMan->getShortName( ))) . "toc%'";
+		foreach( $manuals as $pMan ) {
+			$qry = "SELECT DISTINCT( cl_sortkey, cl_sortkey_prefix )"
+				. " FROM categorylinks"
+				. " WHERE cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $product ) ) . ':'
+				. $dbr->strencode( strtolower( $pMan->getShortName( ))) . "TOC%'";
 
 			$res = $dbr->query( $qry );
 
-			while( $row = $dbr->fetchObject( $res ))
-			{
-				$subres = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'", __METHOD__ );
-				$versions = array( );
+			while( $row = $dbr->fetchObject( $res ) ) {
+				$subres = $dbr->select(
+					'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'", __METHOD__ );
+				$versions = array();
 
-				while( $subrow = $dbr->fetchObject( $subres ))
-				{
-					if (preg_match( '/^V:' . $product . ':(.*)/i', $subrow->cl_to, $vmatch) && in_array($vmatch[1], $allowed_versions)) $versions[] = $vmatch[1];
+				while( $subrow = $dbr->fetchObject( $subres ) ) {
+					if ( preg_match( '/^V:' . $product . ':(.*)/i', $subrow->cl_to, $vmatch )
+						&& in_array( $vmatch[1], $allowed_versions ) ) {
+						$versions[] = $vmatch[1];
+					}
 				}
 
-				if (sizeof($versions)) $wgOut->addHTML( '<a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '">' . $row->cl_sortkey . '</a> - Versions: ' . implode( ' | ', $versions ) . '<br />' );
+				if ( sizeof( $versions ) ) {
+					$wgOut->addHTML( '<a href="' . str_replace( '$1', $row->cl_sortkey_prefix, $wgArticlePath ) . '">'
+						. $row->cl_sortkey_prefix . '</a> - Versions: ' . implode( ' | ', $versions ) . '<br />' );
+				}
 			}
 		}
 
@@ -90,8 +95,3 @@ class SpecialTOCList extends SpecialPage
 		$wgOut->addHTML( $html );
 	}
 }
-
-/**
- * End of file.
- */
-?>

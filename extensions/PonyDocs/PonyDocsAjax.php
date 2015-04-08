@@ -59,21 +59,8 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
 	$defaultTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
 	if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $title, $match ))
 	{
-		/*
-		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $match[2] . ':' . $match[3] )) . ":%'",
-			"cl_to LIKE 'V:" . $product . "%'" ), __METHOD__ );
-
-		if( $res->numRows( ))
-		{
-			$row = $dbr->fetchObject( $res );
-			$response->addText( str_replace( '$1', $row->cl_sortkey, $wgArticlePath ));
-		}
-		else
-		{*/
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 1");}
-			$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product, $wgArticlePath ));
-		//}
+		if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 1");}
+		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product, $wgArticlePath ));
 	}
 	else if( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)/i', $title, $match ))
 	{
@@ -131,17 +118,21 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 
 	$defaultTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
 
-	//if( preg_match( '/^base\/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $title, $match ))
-	if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $title, $match ))
-	{
-		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $match[2] . ':' . $match[3] )) . ":%'",
-			"cl_to = 'V:" . $dbr->strencode($product . ":" . $version) . "'" ), __METHOD__ );
+	if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $title, $match ) ) {
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_sortkey_prefix',
+			array( 
+				"cl_sortkey LIKE '" 
+					. $dbr->strencode( strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $match[2] . ':' . $match[3] ) )
+					. ":%'",
+				"cl_to = 'V:" . $dbr->strencode($product . ":" . $version) . "'" ),
+			__METHOD__
+		);
 
 		if( $res->numRows( ))
 		{
 			$row = $dbr->fetchObject( $res );
-			//$response->addText( str_replace( '$1', $row->cl_sortkey, $wgArticlePath ));
 			$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version . '/' . $match[2] . '/' . $match[3], $wgArticlePath ));
 			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 1");}
 		}
@@ -215,9 +206,9 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
 	 * Now update the categorylinks table as well -- might not be needed, doEdit() might take care
 	 * of this when saving the article.
 	 */
-	$q =	"DELETE FROM categorylinks " .
-			"WHERE LOWER(cast(cl_sortkey AS CHAR)) = '" . $dbr->strencode( strtolower( $title )) . "' " .
-			"AND cl_to IN ('V:" . implode( "','V:", $versions ) . "')";
+	$q = "DELETE FROM categorylinks"
+		. " WHERE cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title )) . "%'"
+		. " AND cl_to IN ('V:" . implode( "','V:", $versions ) . "')";
 
 	$res = $dbr->query( $q, __METHOD__ );
 
