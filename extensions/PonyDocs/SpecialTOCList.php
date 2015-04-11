@@ -65,7 +65,7 @@ class SpecialTOCList extends SpecialPage
 			$qry = "SELECT DISTINCT( cl_sortkey, cl_sortkey_prefix )"
 				. " FROM categorylinks"
 				. " WHERE cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $product ) ) . ':'
-				. $dbr->strencode( strtolower( $pMan->getShortName( ))) . "TOC%'";
+				. $dbr->strencode( strtoupper( $pMan->getShortName( ))) . "TOC%'";
 
 			$res = $dbr->query( $qry );
 

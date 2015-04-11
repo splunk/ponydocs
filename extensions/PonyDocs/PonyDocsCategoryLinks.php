@@ -10,7 +10,7 @@ class PonyDocsCategoryLinks
 			'cl_to', 
 			array(
 				"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $productShort ) . ':'
-					. strtolower( $manualShort ) ) . "TOC%'",
+					. strtoupper( $manualShort ) ) . "TOC%'",
 				"cl_to = 'V:" . $dbr->strencode( $productShort . ":" . $version) . "'" ),
 			__METHOD__
 		);
