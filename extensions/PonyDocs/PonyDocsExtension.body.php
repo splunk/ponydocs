@@ -412,7 +412,7 @@ class PonyDocsExtension
 		exit( 0 );
 	}
 
-	static public function onArticleFromTitle_New( &$title, &$article )
+	static public function onArticleFromTitle_New( &$title, &$article, $context )
 	{
 		global $wgScriptPath;
 		global $wgArticlePath, $wgTitle, $wgOut, $wgHooks;
