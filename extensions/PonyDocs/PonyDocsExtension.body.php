@@ -588,8 +588,13 @@ class PonyDocsExtension
 
 					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName( ), $pV->getVersionName( ));
 
-					if( !$article->exists( ))
+					if ( !$article->exists() ) {
 						$article = null;
+					} else {
+						// DEBUG: apparently we need to set these manually now
+						$wgTitle = $title;
+						$context->setTitle($title);
+					}
 
 					return true;
 				}
