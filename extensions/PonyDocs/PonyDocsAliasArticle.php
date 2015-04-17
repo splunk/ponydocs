@@ -11,30 +11,21 @@ require_once( "$IP/includes/page/Article.php" );
  * instead and voila.
  *
  */
-class PonyDocsAliasArticle extends Article
-{
+class PonyDocsAliasArticle extends Article {
+	
 	/**
 	 * Simply return the already loaded content.
 	 *
 	 * @param integer $oldid
 	 * @return string
+	 * 
 	 */
-	function getContent( $oldid = 0 )
-	{
-		if( !strlen( $this->mContent ))
-			$this->loadContent( );
+	/** Doesn't look like we need this anymore...
+	function getContent( $oldid = 0 ) 	{
+		if ( !strlen( $this->mContent )) {
+			$this->loadContent();
+		}
 		return $this->mContent;		
 	}
-
-	/**
-	 * Overwritten pageDataFromTitle which will use our mTitle attribute instead 
-	 * of the title passed
 	 */
-	function pageDataFromTitle($dbr, $title) {
-		return parent::pageDataFromTitle($dbr, $this->mTitle);
-	}
 };
-
-/**
- * End of file.
- */

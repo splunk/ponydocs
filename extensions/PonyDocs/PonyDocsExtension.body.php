@@ -412,7 +412,7 @@ class PonyDocsExtension
 		exit( 0 );
 	}
 
-	static public function onArticleFromTitle_New( &$title, &$article, $context )
+	static public function onArticleFromTitle_New( &$title, &$article )
 	{
 		global $wgScriptPath;
 		global $wgArticlePath, $wgTitle, $wgOut, $wgHooks;
@@ -582,21 +582,18 @@ class PonyDocsExtension
 					$title = Title::newFromText( $row->cl_sortkey_prefix );
 
 					$article = new PonyDocsAliasArticle( $title );
-					$article->loadContent( );
+					$article->loadContent();
 
-					//die( $pV->getName( ));
-
-					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName( ), $pV->getVersionName( ));
+					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionName() );
 
 					if ( !$article->exists() ) {
-						$article = null;
+						$article = NULL;
 					} else {
-						// DEBUG: apparently we need to set these manually now
+						// Without this we lose SplunkComments - probably we can replace with a RequestContext in the future...
 						$wgTitle = $title;
-						$context->setTitle($title);
 					}
 
-					return true;
+					return TRUE;
 				}
 			}
 
