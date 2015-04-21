@@ -75,7 +75,7 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 2");
 		}
 		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product, $wgArticlePath ));
-	} else if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(Manuals|Versions)/i', $title, $match )) {
+	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(Manuals|Versions)/i', $title, $match )) {
 		if (PONYDOCS_REDIRECT_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 3");
 		}
@@ -165,7 +165,7 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 		if (PONYDOCS_REDIRECT_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 4");
 		}
-	} else if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)/i', $title, $match )) {
+	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)/i', $title, $match )) {
                 //Redirection for WEB-10264
                 $response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version . '/' . $match[3] , $wgArticlePath ));
                 if (PONYDOCS_REDIRECT_DEBUG) {
