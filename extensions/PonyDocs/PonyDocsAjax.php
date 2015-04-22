@@ -166,12 +166,12 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 4");
 		}
 	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)/i', $title, $match )) {
-                //Redirection for WEB-10264
-                $response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version . '/' . $match[3] , $wgArticlePath ));
-                if (PONYDOCS_REDIRECT_DEBUG) {
-                        error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule to switch versions on a static manual");
-                }
-        } else {
+		//Redirection for WEB-10264
+		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version . '/' . $match[3] , $wgArticlePath ));
+		if (PONYDOCS_REDIRECT_DEBUG) {
+			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule to switch versions on a static manual");
+		}
+	} else {
 		$add_text = str_replace( '$1', $defaultTitle . '/' . $product . '/' . $version, $wgArticlePath );
 		$response->addText( $add_text );
 		if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 5");}
