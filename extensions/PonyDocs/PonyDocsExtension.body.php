@@ -1854,6 +1854,33 @@ HEREDOC;
 		}
 		return $cacheEntry;
 	}
+	/**
+	 * Handle 302 redirects
+	**/
+	static public function handle302($url) {
+		global $wgOut, $wgServer;
+		$wgOut->redirect( $wgServer . $url );
+		return false;
+	}
+
+	/**
+	 * Get the Default URL
+	**/
+	static public function getDefaultUrl() {
+		global $wgArticlePath;
+		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		return $defaultRedirect;
+	}
+
+	/**
+	 * function which
+	 * -  redirect to the landing page
+	**/
+	static public function redirectToLandingPage() {
+		$defaultUrl = self::getDefaultUrl();
+  		return self::handle302($defaultUrl);
+	}
+		
 
 	/**
 	 * Hook function which
@@ -1875,6 +1902,18 @@ HEREDOC;
 				else {
 					PonyDocsProductVersion::SetSelectedVersion($targetProduct, $targetVersion);
 				}
+			}
+		}
+
+		// Match a URL like /Documentation/PRODUCT
+		if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)$/i', $_SERVER['PATH_INFO'], $match)) {
+			$targetProduct = $match[1];
+			$version = PonyDocsProductVersion::GetVersions($targetProduct, TRUE);
+			//check for product not found
+			if (empty($version)) {
+				PonyDocsExtension::redirectToLandingPage();
+				return false;
 			}
 		}
 
