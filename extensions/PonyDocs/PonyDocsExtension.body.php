@@ -135,7 +135,7 @@ class PonyDocsExtension
 		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
 			return false;
 
-		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		/**
 		 * At this point $matches contains:
@@ -307,7 +307,7 @@ class PonyDocsExtension
 	{
 		global $wgArticlePath;
 
-		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		// If this article doesn't have a valid manual, don't display the article
 		$articleMetadata = PonyDocsArticleFactory::getArticleMetadataFromTitle($title->__toString());
@@ -415,7 +415,7 @@ class PonyDocsExtension
 		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', $title->__toString( ), $matches ))
 			return false;
 
-		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		/**
 		 * At this point $matches contains:
@@ -1854,15 +1854,7 @@ HEREDOC;
 		}
 		return $cacheEntry;
 	}
-	/**
-	 * Handle 302 redirects
-	**/
-	static public function handle302($url) {
-		global $wgOut, $wgServer;
-		$wgOut->redirect( $wgServer . $url );
-		return false;
-	}
-
+	
 	/**
 	 * Get the Default URL
 	**/
@@ -1877,8 +1869,9 @@ HEREDOC;
 	 * -  redirect to the landing page
 	**/
 	static public function redirectToLandingPage() {
-		$defaultUrl = self::getDefaultUrl();
-  		return self::handle302($defaultUrl);
+		global $wgOut, $wgServer;		
+		$defaultUrl = self::getDefaultUrl();		
+		$wgOut->redirect( $wgServer . $defaultUrl );  		
 	}
 		
 
@@ -1886,6 +1879,7 @@ HEREDOC;
 	 * Hook function which
 	 * - Sets the version correctly when editing a topic
 	 * - Redirects to the first topic in a manual if the user requested a bare manual URL
+	 * - Redirect to the landing page when there are no available versions
 	 */
 	public function onArticleFromTitleQuickLookup(&$title, &$article) {
 		global $wgScriptPath;
@@ -1913,7 +1907,7 @@ HEREDOC;
 			//check for product not found
 			if (empty($version)) {
 				PonyDocsExtension::redirectToLandingPage();
-				return false;
+				return true;
 			}
 		}
 

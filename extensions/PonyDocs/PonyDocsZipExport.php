@@ -32,7 +32,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		PonyDocsExtension::onUserCan( $wgTitle, $wgUser, 'zipmanual', &$zipAllowed );
 		if ( !$zipAllowed ) {
 			error_log("WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission.");
-			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 			header( "Location: " . $defaultRedirect );
 			exit;
 		}
@@ -58,7 +58,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 			$pieces[2] = substr($pieces[2], 0, strpos($pieces[2], "TOC"));
 		} else if (count($pieces) != 5) {
 			// something is wrong, let's get out of here
-			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 			if (PONYDOCS_REDIRECT_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
 			}
