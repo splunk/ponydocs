@@ -397,10 +397,14 @@ class PonyDocsExtension
 				$article->loadContent( );
 
 				if ( !$article->exists() ) {
-					$article = null;
+					$article = NULL;
+				} else {
+					// Without this we lose SplunkComments and version switcher.
+					// Probably we can replace with a RequestContext in the future...
+					$wgTitle = $title;
 				}
-
-				return true;
+					
+				return TRUE;
 			}
 		}
 
@@ -589,7 +593,8 @@ class PonyDocsExtension
 					if ( !$article->exists() ) {
 						$article = NULL;
 					} else {
-						// Without this we lose SplunkComments - probably we can replace with a RequestContext in the future...
+						// Without this we lose SplunkComments and version switcher.
+						// Probably we can replace with a RequestContext in the future...
 						$wgTitle = $title;
 					}
 
@@ -650,14 +655,18 @@ class PonyDocsExtension
 			$article = new PonyDocsAliasArticle( $title );
 			$article->loadContent( );
 
-			if( !$article->exists( ))
-				$article = null;
+			if ( !$article->exists() ) {
+				$article = NULL;
+			} else {
+				// Without this we lose SplunkComments and version switcher.
+				// Probably we can replace with a RequestContext in the future...
+				$wgTitle = $title;
+			}
 
-			return true;
-
+			return TRUE;
 		}
 
-		return false;
+		return FALSE;
 	}
 
 	/**
