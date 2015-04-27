@@ -2290,7 +2290,7 @@ HEREDOC;
 	static public function onBeforePageDisplay(&$out, &$sk) {
 		global $wgScriptPath;
 		// Add our js files
-		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery.json-2.2.min.js");
+		//$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery.json-2.2.min.js");
 		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/docs.js");
 		return true;
 	}
