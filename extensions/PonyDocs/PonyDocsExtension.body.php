@@ -135,7 +135,7 @@ class PonyDocsExtension
 		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
 			return false;
 
-		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		/**
 		 * At this point $matches contains:
@@ -307,7 +307,7 @@ class PonyDocsExtension
 	{
 		global $wgArticlePath;
 
-		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		// If this article doesn't have a valid manual, don't display the article
 		$articleMetadata = PonyDocsArticleFactory::getArticleMetadataFromTitle($title->__toString());
@@ -415,7 +415,7 @@ class PonyDocsExtension
 		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', $title->__toString( ), $matches ))
 			return false;
 
-		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		/**
 		 * At this point $matches contains:
@@ -1854,11 +1854,32 @@ HEREDOC;
 		}
 		return $cacheEntry;
 	}
+	
+	/**
+	 * Get the Default URL
+	**/
+	static public function getDefaultUrl() {
+		global $wgArticlePath;
+		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		return $defaultRedirect;
+	}
+
+	/**
+	 * function which
+	 * -  redirect to the landing page
+	**/
+	static public function redirectToLandingPage() {
+		global $wgOut, $wgServer;		
+		$defaultUrl = self::getDefaultUrl();		
+		$wgOut->redirect( $wgServer . $defaultUrl );  		
+	}
+		
 
 	/**
 	 * Hook function which
 	 * - Sets the version correctly when editing a topic
 	 * - Redirects to the first topic in a manual if the user requested a bare manual URL
+	 * - Redirect to the landing page when there are no available versions
 	 */
 	public function onArticleFromTitleQuickLookup(&$title, &$article) {
 		global $wgScriptPath;
@@ -1875,6 +1896,18 @@ HEREDOC;
 				else {
 					PonyDocsProductVersion::SetSelectedVersion($targetProduct, $targetVersion);
 				}
+			}
+		}
+
+		// Match a URL like /Documentation/PRODUCT
+		if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)$/i', $_SERVER['PATH_INFO'], $match)) {
+			$targetProduct = $match[1];
+			$version = PonyDocsProductVersion::GetVersions($targetProduct, TRUE);
+			//check for product not found
+			if (empty($version)) {
+				PonyDocsExtension::redirectToLandingPage();
+				return true;
 			}
 		}
 
