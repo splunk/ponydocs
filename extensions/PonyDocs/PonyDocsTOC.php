@@ -358,6 +358,7 @@ class PonyDocsTOC
 		if ( is_array ($toc) && sizeof($toc) == 0 ) {
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 			header('Location: ' . $defaultRedirect);
+			exit;
 		}
 		
 		// Go through and determine start, prev, next and current elements.
