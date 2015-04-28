@@ -163,6 +163,17 @@ $wgHooks['LanguageGetMagic'][] = 'efManualDescriptionParserFunction_Magic';
 $wgPonyDocs = new PonyDocsExtension();
 
 /**
+ * Register a module for our scripts and css
+ */
+$wgResourceModules['ext.PonyDocs'] = array(
+	'scripts' => 'js/docs.js',
+	'dependencies' => 'jquery.json',
+	'localBasePath' => __DIR__,
+	'remoteExtPath' => 'PonyDocs',
+	'position' => 'top',
+);
+
+/**
  * Our primary setup function simply handles URL rewrites for aliasing (per spec) and calls our PonyDocsWiki singleton instance
  * to ensure it runs the data retrieval functions for versions and manuals and the like. 
  */
