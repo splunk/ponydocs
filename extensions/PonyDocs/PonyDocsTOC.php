@@ -353,6 +353,13 @@ class PonyDocsTOC
 
 		$currentIndex = -1;
 		$start = array();
+
+		// Redirect to /Documentation for WEB-10038
+		if ( is_array ($toc) && sizeof($toc) == 0 ) {
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+			header('Location: ' . $defaultRedirect);
+		}
+		
 		// Go through and determine start, prev, next and current elements.
 
 		foreach ( $toc as $idx => &$entry ) {
