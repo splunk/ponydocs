@@ -58,11 +58,10 @@ class PonyDocsTopic {
 	 */
 	public function __construct( Article &$article ) {
 		$this->pArticle = $article;
-		//$this->pArticle->loadContent( );
-		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle();
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString() ) )
-			$this->mIsDocumentationTopic = true;
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString() ) ) {
+			$this->mIsDocumentationTopic = TRUE;
+		}
 	}
 
 	/**
@@ -91,17 +90,17 @@ class PonyDocsTopic {
 	 * @param boolean $reload If true, force reload from database; else used cache copy (if found).
 	 * @return array
 	 */
-	public function getProductVersions( $reload = false ) {
-		if( sizeof( $this->versions ) && !$reload ) {
+	public function getProductVersions( $reload = FALSE ) {
+		if ( sizeof( $this->versions ) && !$reload ) {
 			return $this->versions;
 		}
 		
 		$dbr = wfGetDB( DB_SLAVE );
 		$revision = $this->pArticle->mRevision;
 
-		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
 		$res = $dbr->select(
-			'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
+			'categorylinks', 'cl_to', "cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $this->pTitle->__toString() ) ) . "%'",
+			__METHOD__ );
 
 		$this->versions = array();
 		
@@ -116,7 +115,6 @@ class PonyDocsTopic {
 
 		// Sort by the order on the versions admin page
 		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
-
 		return $this->versions;
 	}
 
