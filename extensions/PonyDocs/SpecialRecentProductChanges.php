@@ -20,9 +20,7 @@ class SpecialRecentProductChanges extends SpecialRecentChanges {
 	var $rcOptions, $rcSubpage;
 
 	public function __construct() {
-		
   		SpecialPage::__construct( 'RecentProductChanges');
-		$this->includable( true);
 	}
 	
 	/**
