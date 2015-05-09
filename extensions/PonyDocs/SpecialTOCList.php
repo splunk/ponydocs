@@ -62,10 +62,10 @@ class SpecialTOCList extends SpecialPage
 		foreach (PonyDocsProductVersion::GetVersions($product) as $v) $allowed_versions[] = $v->getVersionName();
 		
 		foreach( $manuals as $pMan ) {
-			$qry = "SELECT DISTINCT( cl_sortkey, cl_sortkey_prefix )"
+			$qry = "SELECT DISTINCT cl_sortkey, cl_sortkey_prefix "
 				. " FROM categorylinks"
 				. " WHERE cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $product ) ) . ':'
-				. $dbr->strencode( strtoupper( $pMan->getShortName( ))) . "TOC%'";
+				. $dbr->strencode( strtoupper( $pMan->getShortName())) . "TOC%'";
 
 			$res = $dbr->query( $qry );
 
