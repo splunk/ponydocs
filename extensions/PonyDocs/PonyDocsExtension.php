@@ -297,7 +297,7 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 			array('cl_sortkey_prefix', 'cl_to' ),
 			array(
 				"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $productName ) ) . ':'
-					. $dbr->strencode( strtoupper( $manualName ) ) . "toc%'",
+					. $dbr->strencode( strtoupper( $manualName ) ) . "TOC%'",
 				"cl_to = 'V:" . $productName . ':' . $version . "'" ),
 			__METHOD__
 		);
