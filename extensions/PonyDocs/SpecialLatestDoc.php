@@ -139,7 +139,7 @@ class SpecialLatestDoc extends SpecialPage {
 						array( 'cl_sortkey_prefix', 'cl_to' ),
 						"cl_sortkey REGEXP '" . $dbr->strencode(
 							'^' . strtoupper(
-								PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) )
+								PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+" ) )
 							. "'"
 							. " AND CAST(cl_to AS CHAR) IN" . $versionSql, 
 						__METHOD__
@@ -163,7 +163,7 @@ class SpecialLatestDoc extends SpecialPage {
 						'categorylinks',
 						array( 'cl_sortkey_prefix', 'cl_to' ),
 						"cl_sortkey REGEXP '" . $dbr->strencode(
-							'^' . strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) )
+							'^' . strtoupper( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+" ) )
 							. "'"
 							. " AND CAST(cl_to AS CHAR) IN" . $versionSql, 
 						__METHOD__
