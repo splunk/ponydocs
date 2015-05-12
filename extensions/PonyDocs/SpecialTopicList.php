@@ -67,7 +67,7 @@ class SpecialTopicList extends SpecialPage
 		$wgOut->addHTML(
 			'<h2>Topic Listing For Topic <b>'. $match[3] . '</b> in ' . $match[2] . ' manual for ' . $match[1] . ' product.</h2>' );
 
-		$q = "SELECT DISTINCT(cl_sortkey, cl_sortkey_prefix)"
+		$q = "SELECT DISTINCT cl_sortkey, cl_sortkey_prefix"
 			. " FROM categorylinks" 
 			. " WHERE cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $topic ) ) . ":%'";
 
