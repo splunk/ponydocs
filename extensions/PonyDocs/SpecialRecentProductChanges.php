@@ -40,25 +40,8 @@ class SpecialRecentProductChanges extends SpecialRecentChanges {
 	 */
 	public function getDefaultOptions() {
 		global $wgUser;
-		$opts = new FormOptions();
+		$opts = parent::getDefaultOptions();
 
-		$opts->add( 'days',  (int)$wgUser->getOption( 'rcdays' ) );
-		$opts->add( 'limit', (int)$wgUser->getOption( 'rclimit' ) );
-		$opts->add( 'from', '' );
-
-		$opts->add( 'hideminor',	 $wgUser->getBoolOption( 'hideminor' ) );
-		$opts->add( 'hidebots',	  true  );
-		$opts->add( 'hideanons',	 false );
-		$opts->add( 'hideliu',	   false );
-		$opts->add( 'hidepatrolled', $wgUser->getBoolOption( 'hidepatrolled' ) );
-		$opts->add( 'hidemyself',	false );
-
-		$opts->add( 'namespace', '', FormOptions::INTNULL );
-		$opts->add( 'invert', false );
-
-		$opts->add( 'categories', '' );
-		$opts->add( 'categories_any', false );
-		$opts->add( 'tagfilter', '' );
 		$opts->add( 'product', isset($_GET['product']) ? $_GET['product'] : PonyDocsProduct::GetSelectedProduct());
 		return $opts;
 	}
