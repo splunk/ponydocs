@@ -1974,7 +1974,11 @@ HEREDOC;
 						die();
 					}
 				}
-				die();
+				if (empty($toc)) {
+					$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+					header('Location: ' . $defaultRedirect);
+					die;
+				}				
 			}
 		}
 		return true;
