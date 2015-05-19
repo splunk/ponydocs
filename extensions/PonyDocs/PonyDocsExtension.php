@@ -742,22 +742,22 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' ) {
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
  */
 
-$wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
-$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
-$wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
-$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave_AutoLinks';
-$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
-$wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
-$wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
-$wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
-$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit';
-$wgHooks['userCan'][] = 'PonyDocsExtension::onUserCan';
-$wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
+$wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
 $wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitleStatic';
 $wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitleQuickLookup';
-$wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
-$wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
+$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
+$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave_AutoLinks';
+$wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
+$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
+$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit';
+$wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
+$wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
+$wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
+$wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
+$wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
+$wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
+$wgHooks['userCan'][] = 'PonyDocsExtension::onUserCan';
 
 // Add version field to edit form
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';

@@ -2052,19 +2052,22 @@ HEREDOC;
 	/**
 	 * Called when an article is deleted, we want to purge any doclinks entries 
 	 * that refer to that article if it's in the documentation namespace.
+	 *
+	 * NB $article is a WikiPage and not an article
 	 */
-	static public function onArticleDelete(&$article, &$user, &$user, $error) {
+	static public function onArticleDelete( &$article, &$user, &$user, $error ) {
 		$title = $article->getTitle();
+		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		// Delete doc links
-		PonyDocsExtension::updateOrDeleteDocLinks("delete", $article);
+		PonyDocsExtension::updateOrDeleteDocLinks("delete", $realArticle);
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString(), $matches ) ) {
 			return true;
 		}
 		// Okay, article is in doc namespace
 		
-		PonyDocsExtension::clearArticleCategoryCache($article);
+		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 		return true;
 	}
 
@@ -2072,18 +2075,24 @@ HEREDOC;
 	 * When an article is fully saved, we want to update the doclinks for that 
 	 * article in our doclinks table.  Only if it's in the documentation 
 	 * namepsace, however.
+	 * 
+	 * NB $article is a WikiPage and not an article
+	 * TODO: Switch to PageContentSaveComplete hook as this hook is deprecated
+	 * https://www.mediawiki.org/wiki/Manual:Hooks/PageContentSaveComplete
+	 * @deprecated
 	 *
 	 */
-	static public function onArticleSaveComplete(&$article, &$user, $text, $summary, $minoredit, $watchthis,
-												 $sectionanchor, &$flags, $revision, &$status, $baseRevId) {
+	static public function onArticleSaveComplete(
+		&$article, &$user, $text, $summary, $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
 
 		$title = $article->getTitle();
+		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		// Update doc links
-		PonyDocsExtension::updateOrDeleteDocLinks("update", $article, $text);
+		PonyDocsExtension::updateOrDeleteDocLinks( "update", $realArticle, $text );
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
-			return true;
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString(), $matches ) ) {
+			return TRUE;
 		}
 		// Okay, article is in doc namespace
 
@@ -2104,7 +2113,7 @@ HEREDOC;
 		}
 
 		// Clear any TOC cache entries this article may be related to.
-		$topic = new PonyDocsTopic($article);
+		$topic = new PonyDocsTopic( $realArticle );
 		$manVersionList = $topic->getProductVersions( );
 		// Clear all TOC cache entries for each version.
 		if($manual) {
@@ -2113,7 +2122,7 @@ HEREDOC;
 				PonyDocsProductVersion::clearNAVCache($version);
 			}
 		}
-		PonyDocsExtension::clearArticleCategoryCache($article);
+		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
 		// if this is product versions or manuals page, clear navigation cache
 		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString(), $matches ) ||
