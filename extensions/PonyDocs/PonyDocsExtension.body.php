@@ -1967,9 +1967,8 @@ HEREDOC;
 				list($toc, $prev, $next, $start) = $toc->loadContent();
 				//Added empty check for WEB-10038
 				if (empty($toc)) {
-					error_log("WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl());
 					PonyDocsExtension::redirectToLandingPage();
-					return false;
+					return FALSE;
 				}
 				foreach($toc as $entry) {
 					if(isset($entry['link']) && $entry['link'] != "") {
@@ -1980,10 +1979,14 @@ HEREDOC;
 						die();
 					}
 				}
-				die;
+				if (empty($toc)) {
+					error_log("WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl());
+					PonyDocsExtension::redirectToLandingPage();
+					return FALSE;
+				}
 			}
 		}
-		return true;
+		return TRUE;
 	}
 
 	/**
