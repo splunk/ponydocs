@@ -82,7 +82,6 @@ class SpecialTopicList extends SpecialPage
 			'DISTINCT'
 		);
 
-		$res = $dbr->query( $q, __METHOD__ );
 		if ( !$res->numRows() ) {
 			return;
 		}

@@ -53,7 +53,6 @@ class PonyDocsWiki
 	 * @return array  array of product arrays, keyed by shortname
 	 */
 	public function getProductsForTemplate() {
-		$dbr = wfGetDB(DB_SLAVE);
 		$product = PonyDocsProduct::GetProducts();
 		$productAry = array();
 

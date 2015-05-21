@@ -9,7 +9,7 @@ class PonyDocsCategoryLinks
 			'categorylinks',
 			'cl_to', 
 			array(
-				"cl_to = 'V:" . $dbr->strencode( $productShort . ":" . $version) . "'",
+				"cl_to = 'V:" . $dbr->strencode( "$productShort:$version" ) . "'",
 				'cl_type = "page"',
 				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productShort:$manualShort" ) ) . "TOC%'",
 			),
@@ -24,7 +24,7 @@ class PonyDocsCategoryLinks
 			'categorylinks',
 			array('cl_to', 'COUNT(*) AS cl_to_ct'), 
 			array(
-				"cl_to LIKE 'V:" . $dbr->strencode( $productShort ) . "%'",
+				"cl_to LIKE 'V:" . $dbr->strencode( $productShort ) . ":%'",
 				'cl_type = "page"',
 				"cl_sortkey LIKE '%TOC%'",
 			),

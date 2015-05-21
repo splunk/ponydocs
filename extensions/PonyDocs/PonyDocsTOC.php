@@ -147,7 +147,7 @@ class PonyDocsTOC
 		// TODO: We can't rely on cl_sortkey_prefix - we need to join with page and translate namespace to get the full title here
 		$res = $dbr->select(
 			array('categorylinks', 'page'),
-			array('cl_sort_key', 'page_title') ,
+			array('cl_sortkey', 'page_title') ,
 			array(
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',

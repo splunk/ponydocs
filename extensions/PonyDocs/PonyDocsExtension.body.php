@@ -1682,7 +1682,11 @@ HEREDOC;
 						$res = $dbr->select(
 							'categorylinks',
 							'cl_from', 
-							"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
+							array(
+								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
+								'cl_type = "page"',
+								'cl_sortkey LIKE "' . $dbr->strencode( strtoupper( "{$pieces[1]}:{$pieces[2]}" ) ) . ':%"',
+							),
 							__METHOD__
 						);
 
@@ -1705,6 +1709,7 @@ HEREDOC;
 							}
 							$href = str_replace( 
 								'$1',
+								//TODO: There is no $pieces[3] per the if clause we're in, so???
 								PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' 
 									. ( $latest ? "latest" : $selectedVersion ) . '/' . $pieces[2] . '/'  
 									. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '',
