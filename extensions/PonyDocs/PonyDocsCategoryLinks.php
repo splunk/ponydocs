@@ -9,9 +9,10 @@ class PonyDocsCategoryLinks
 			'categorylinks',
 			'cl_to', 
 			array(
-				"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $productShort ) . ':'
-					. strtoupper( $manualShort ) ) . "TOC%'",
-				"cl_to = 'V:" . $dbr->strencode( $productShort . ":" . $version) . "'" ),
+				"cl_to = 'V:" . $dbr->strencode( $productShort . ":" . $version) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productShort:$manualShort" ) ) . "TOC%'",
+			),
 			__METHOD__
 		);
 		return $res;
@@ -19,24 +20,33 @@ class PonyDocsCategoryLinks
 
 	static public function getTOCCountsByProductVersion( $productShort ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$res = $dbr->query(
-			"SELECT cl_to, COUNT(*) AS cl_to_ct"
-			. " FROM categorylinks"
-			. " WHERE cl_sortkey LIKE 'DOCUMENTATION:%TOC%'"
-			. " AND cl_to LIKE 'V:" . $dbr->strencode( $productShort ) . "%'"
-			. " GROUP BY cl_to"
+		$res = $dbr->select(
+			'categorylinks',
+			array('cl_to', 'COUNT(*) AS cl_to_ct'), 
+			array(
+				"cl_to LIKE 'V:" . $dbr->strencode( $productShort ) . "%'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '%TOC%'",
+			),
+			__METHOD__,
+			'GROUP BY cl_to'
 		);
 		return $res;
 	}
 
 	static public function getTOCCountsByProduct() {
 		$dbr = wfGetDB( DB_SLAVE );
-		$res = $dbr->query(
-			"SELECT cl_to, COUNT(*) AS cl_to_ct"
-			. " FROM categorylinks"
-			. " WHERE cl_sortkey LIKE 'DOCUMENTATION:%TOC%'"
-			. " AND cl_to LIKE 'V:%'"
-			. " GROUP BY cl_to"
+
+		$res = $dbr->select(
+			'categorylinks',
+			array('cl_to', 'COUNT(*) AS cl_to_ct'), 
+			array(
+				"cl_to LIKE 'V:%:%'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '%TOC%'",
+			),
+			__METHOD__,
+			'GROUP BY cl_to'
 		);
 		return $res;
 	}

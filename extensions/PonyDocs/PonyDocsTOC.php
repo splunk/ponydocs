@@ -146,13 +146,18 @@ class PonyDocsTOC
 		
 		// TODO: We can't rely on cl_sortkey_prefix - we need to join with page and translate namespace to get the full title here
 		$res = $dbr->select(
-			'categorylinks',
-			'cl_sortkey_prefix',
+			array('categorylinks', 'page'),
+			array('cl_sort_key', 'page_title') ,
 			array(
-				"cl_sortkey LIKE 'DOCUMENTATION:" . strtoupper( $dbr->strencode( $this->pProduct->getShortName() ) )
-					. ":" . $dbr->strencode( strtoupper( $this->pManual->getShortName() ) ) . "TOC%'",
-				"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName() ) . ":"
-					. $dbr->strencode( $this->pInitialVersion->getVersionName() ) . "'" ),
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:"
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionName() ) . "'" ,
+				'cl_type = "page"',
+				"cl_sortkey LIKE '"
+					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
+					. "TOC%'",
+			),
 			__METHOD__ );
 
 		if ( !$res->numRows() ) {
@@ -160,10 +165,20 @@ class PonyDocsTOC
 		}
 
 		$row = $dbr->fetchObject( $res );
-		$mTOCPageTitle = $row->cl_sortkey_prefix;
+			$mTOCPageTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 		$this->mTOCPageTitle = $mTOCPageTitle;
 		
-		$res = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $mTOCPageTitle ) . "'", __METHOD__ );
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_to',
+			array(
+				'cl_to LIKE "V:%:%"',
+				'cl_type = "page"',
+				"cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'",
+			),
+			__METHOD__
+		);
+		
 		while( $row = $dbr->fetchObject( $res ) ) {
 			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
 				$addV = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );

@@ -293,16 +293,20 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 		//       or maybe actually get the manual object and query it
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select(
-			'categorylinks',
-			array('cl_sortkey_prefix', 'cl_to' ),
+			array('categorylinks', 'page'),
+			'page_title',
 			array(
-				"cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $productName ) ) . ':'
-					. $dbr->strencode( strtoupper( $manualName ) ) . "TOC%'",
-				"cl_to = 'V:" . $productName . ':' . $version . "'" ),
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:$productName:$version'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" .
+					$dbr->strencode( strtoupper( $productName ) ) . ':' . $dbr->strencode( strtoupper( $manualName ) ) . "TOC%'"
+			),
 			__METHOD__
 		);
 
-		if (!$res->numRows() )	{
+		if ( !$res->numRows() )	{
 			/**
 			 * Link to create new TOC page -- should link to current version TOC and then add message to explain.
 			 */
@@ -314,8 +318,9 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 				. "<span style=\"padding-left: 20px;\">Click manual to create TOC for current version (" . $version . ").</span>\n";
 		} else {
 			$row = $dbr->fetchObject( $res );
-			$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey_prefix, $wgArticlePath ) . '" style="font-size: 1.3em;">'
-				. $longName . "</a></p>\n";
+			$output = '<p><a href="'
+				. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath )
+				. '" style="font-size: 1.3em;">' . $longName . "</a></p>\n";
 		}
 	}
 	
@@ -551,12 +556,15 @@ function efGetTitleFromMarkup( $markup = '' ) {
 	}
 
 	$res = $dbr->select(
-		'categorylinks',
-		'cl_sortkey_prefix',
+		array('categorylinks', 'page'),
+		'page_title',
 		array(
-			"cl_sortkey LIKE 'DOCUMENTATION:"
-				. $dbr->strencode( strtoupper( $manualShortName . ':' . $wikiTopic ) ) . ":%'",
-			"cl_to IN ( 'V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')" ),
+			'cl_from = page_id',
+			'page_namespace = "' . NS_PONYDOCS . '"',
+			"cl_to IN ( 'V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')",
+			'cl_type = "page"',
+			"cl_sortkey LIKE '"	. $dbr->strencode( strtoupper( $manualShortName . ':' . $wikiTopic ) ) . ":%'"
+		),
 		__METHOD__
 	);
 
@@ -569,7 +577,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
-		$topicName = $row->cl_sortkey_prefix;
+		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 	}
 
 	return $topicName;
@@ -663,12 +671,16 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 	}
 
 	$res = $dbr->select(
-		'categorylinks',
-		'cl_sortkey_prefix',		
+		array('categorylinks', 'page'),
+		'page_title',
 		array(
-			"cl_sortkey LIKE 'DOCUMENTATION:"
-				. $dbr->strencode( strtoupper( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) ) . ":%'",
-			"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
+			'cl_from = page_id',
+			'page_namespace = "' . NS_PONYDOCS . '"',
+			"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')",
+			'cl_type = "page"',
+			"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) )
+				. ":%'",
+		),
 		__METHOD__
 	);
 
@@ -681,7 +693,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
-		$topicName = $row->cl_sortkey_prefix;
+		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 	}
 
 	$output = '<a href="' . wfUrlencode( str_replace( '$1', $topicName, $wgArticlePath ) ) . '">' . $param1 . '</a>'; 

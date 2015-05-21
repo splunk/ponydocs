@@ -99,8 +99,15 @@ class PonyDocsTopic {
 		$revision = $this->pArticle->mRevision;
 
 		$res = $dbr->select(
-			'categorylinks', 'cl_to', "cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $this->pTitle->__toString() ) ) . "%'",
-			__METHOD__ );
+			'categorylinks',
+			'cl_to',
+			array(
+				'cl_to LIKE "V:%:%"',
+				'cl_type = "page"',
+				"cl_sortkey = '" . $dbr->strencode( strtoupper( $this->pTitle->getText() ) ) . "'",
+			),
+			__METHOD__ 
+		);
 
 		$this->versions = array();
 		
@@ -128,13 +135,18 @@ class PonyDocsTopic {
 	 */
 	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product ) {
 		$dbr = wfGetDB( DB_SLAVE );
+		$noPrefixText = preg_replace('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', '', $baseTopic);
 
 		$res = $dbr->select(
-			'categorylinks',
-			'cl_sortkey_prefix',
+			array('categorylinks', 'page'),
+			'page_title' ,
 			array(
-				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $baseTopic )) . ":%'",
-				"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ),
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $noPrefixText ) ) . ":%'",
+			),
 			__METHOD__ 
 		);
 
@@ -144,7 +156,7 @@ class PonyDocsTopic {
 
 		$row = $dbr->fetchObject( $res );
 
-		return $row->cl_sortkey_prefix;
+		return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 	}
 
 	/**

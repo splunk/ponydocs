@@ -1,24 +1,19 @@
-PonyDocs 1.0 Beta 2 - June 14th, 2012
-=====================================
+PonyDocs 1.1 - May 2015
+=======================
 
-Open Source documentation based on MediaWiki
+Open Source Technical Documentation Extension for MediaWiki
 
-For any assistance, please email ponydocs@splunk.com
+For assistance, please email ponydocs@splunk.com or find us at #ponydocs on efnet.
 
 Prerequisites & Assumptions
 ---------------------------
 
-1. You're a sysadmin
-2. You have a MediaWiki system at the ready.
-   Beta 2 only tested with [MW 1.16.4](http://bit.ly/KqnCbw?mediawiki-installer), PHP 5.2.16 and 5.3.3 and MySQL 5.1.52.
-3. You can update apache's conf files for the MediaWiki vhost
-4. You can run SQL commands on the MediaWiki DB
-5. You know this is Beta ;)
-6. You promise to read AND follow all these steps IN ORDER
-7. You've made a backup of your MediaWiki DB in case you didn't meet the previous requirement
+### For Ponydocs
 
-It is further assumed that have 4 classes of users of your wiki:
-
+1. LAMP stack.
+1. MediaWiki 1.24.x, PHP 5.2.x or 5.3.x, MySQL 5.x
+1. Apache 2.x
+1. There are four classes of users in your wiki:
 * Anonymous and guests who are logged in
 	* These are folks who fall into the (default) or "user" group. 
 	* They can *only* read and can not edit any pages.
@@ -33,10 +28,15 @@ It is further assumed that have 4 classes of users of your wiki:
 * Admins
 	* Folks who can add, remove, and move Employees and Editors to the different product docteam groups
 
+### For this INSTALL document
+
+1. You can run SQL commands on the MediaWiki DB
+1. You backed up your MediaWiki DB before starting the INSTALL
+
 Quick Install Instructions
 --------------------------
 
-Notes: Please complete all install instructions before attempting to use your new PonyDocs installation.
+Notes: Please complete all install instructions before attempting to use your new PonyDocs installation. 
 Failure to do so will result in frustration and keyboard tossing.
 
 ### 1) Configure Apache.

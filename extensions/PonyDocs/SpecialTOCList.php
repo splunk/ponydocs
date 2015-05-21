@@ -62,16 +62,30 @@ class SpecialTOCList extends SpecialPage
 		foreach (PonyDocsProductVersion::GetVersions($product) as $v) $allowed_versions[] = $v->getVersionName();
 		
 		foreach( $manuals as $pMan ) {
-			$qry = "SELECT DISTINCT cl_sortkey, cl_sortkey_prefix "
-				. " FROM categorylinks"
-				. " WHERE cl_sortkey LIKE 'DOCUMENTATION:" . $dbr->strencode( strtoupper( $product ) ) . ':'
-				. $dbr->strencode( strtoupper( $pMan->getShortName())) . "TOC%'";
-
-			$res = $dbr->query( $qry );
-
-			while( $row = $dbr->fetchObject( $res ) ) {
+			
+			$res = $dbr->select(
+				array('categorylinks', 'page'),
+				array('cl_sortkey', 'page_title') ,
+				array(
+					'cl_from = page_id',
+					'page_namespace = "' . NS_PONYDOCS . '"',
+					'cl_to LIKE "V:%:%"',
+					'cl_type = "page"',
+					"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$product:" . $pMan->getShortName() ) ) . "TOC%'",
+				),
+				__METHOD__,
+				'DISTINCT'
+			);
+			
+			while ( $row = $dbr->fetchObject( $res ) ) {
 				$subres = $dbr->select(
-					'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'", __METHOD__ );
+					'categorylinks',
+					'cl_to',
+					'cl_to LIKE "V:%:%"',
+					'cl_type = "page"',
+					"cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'",
+					__METHOD__
+				);
 				$versions = array();
 
 				while( $subrow = $dbr->fetchObject( $subres ) ) {
@@ -82,8 +96,10 @@ class SpecialTOCList extends SpecialPage
 				}
 
 				if ( sizeof( $versions ) ) {
-					$wgOut->addHTML( '<a href="' . str_replace( '$1', $row->cl_sortkey_prefix, $wgArticlePath ) . '">'
-						. $row->cl_sortkey_prefix . '</a> - Versions: ' . implode( ' | ', $versions ) . '<br />' );
+					$wgOut->addHTML( '<a href="' 
+						. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath ) . '">'
+						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" . '</a> - Versions: ' 
+						. implode( ' | ', $versions ) . '<br />' );
 				}
 			}
 		}
