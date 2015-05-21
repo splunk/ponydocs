@@ -1979,11 +1979,10 @@ HEREDOC;
 						die();
 					}
 				}
-				if (empty($toc)) {
-					error_log("WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl());
-					PonyDocsExtension::redirectToLandingPage();
-					return FALSE;
-				}
+				//Replace die with a warning log and redirect
+				error_log("WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl());
+				PonyDocsExtension::redirectToLandingPage();
+				return FALSE;
 			}
 		}
 		return TRUE;
