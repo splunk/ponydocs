@@ -13,10 +13,6 @@ $( function() {
 	if ( $( "#renameversion" ).length > 0 ) {
 		SplunkRenameVersion.init();
 	}
-	
-	if ( typeof( ponydocsOnLoad ) !== 'undefined' ) {
-		ponydocsOnLoad();
-	}
 });
 
 PonyDocsEventHandlers = function() {

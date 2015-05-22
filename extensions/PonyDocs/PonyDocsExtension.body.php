@@ -1376,33 +1376,28 @@ HEREDOC;
 	}
 
 	/**
-	 * This hook is called when 'edit' is selected for a title.  In this case we intercept it for TOC management pages which are
-	 * NEW (do not yet exist and have content).  When this occurs we need to take the currently selected version and then populate
-	 * the edit box with a version tag for it.  For some reason there is no way I can find to do this via the supplied EditPage
-	 * object, nor does simply adding an inline script to set the content work.  So instead, the template sets a body_onload param
-	 * telling it to call the 'ponydocsOnLoad' function.  We define it here to set the edit box.
+	 * When a new TOC is being edited for the first time, use a JS document.ready() function to add a version category.
 	 *
 	 * @param EditPage $editpage
-	 * @return mixed 
+	 * @return boolean
 	 */
-	static public function onEdit_TOCPage( $editpage )
-	{
+	static public function onEdit_TOCPage( $editpage ) {
 		global $wgTitle, $wgOut;
 		
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString( ), $match ))
-			return true;
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
+			return TRUE;
+		}
 
-		if( !$wgTitle->exists( ))
-		{
+		if ( !$wgTitle->exists() ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
-			$script = 	"function ponydocsOnLoad() {
-							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . "]]\");
-						};";
+			$script = "$(function() {\n"
+				. "\t$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . "]]\");\n"
+				. "});";
 			$wgOut->addInLineScript( $script );
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	/**

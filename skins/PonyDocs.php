@@ -128,8 +128,6 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$this->html( 'headelement' ); ?>
 		<script type="text/javascript">
-			function ponyDocsOnLoad() {}
-
 			function AjaxChangeProduct_callback( o ) {
 				document.getElementById( 'docsProductSelect' ).disabled = true;
 				var s = new String( o.responseText );
