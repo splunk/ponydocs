@@ -28,6 +28,7 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsProduct.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsProductManual.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsProductVersion.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsRenameVersionEngine.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTOC.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
