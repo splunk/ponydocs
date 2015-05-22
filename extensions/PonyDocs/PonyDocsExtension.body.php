@@ -702,17 +702,18 @@ class PonyDocsExtension
 	}
 
 	/**
-	 * This is an ArticleSave hook that creates topics which don't exist yet when saving a TOC.
-	 * We should then regenerate the TOC cache (PonyDocsTOC) for this TOC, either here or on an AFTER ArticleSave sort of hook.
+	 * This is an ArticleSaveComplete hook that creates topics which don't exist yet when saving a TOC.
 	 * 
-	 * @param Article $article
+	 * @param WikiPage $article
 	 * @param User $user
 	 * @param string $text
 	 * @param string $summary
-	 * @param bool $minor
-	 * @param unknown_type $watch
-	 * @param unknown_type $sectionanchor
-	 * @param unknown_type $flags
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * 
+	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
 	static public function onArticleSave_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
 
@@ -723,6 +724,7 @@ class PonyDocsExtension
 		}
 
 		$title = $article->getTitle();
+		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		$matches = array();
 
@@ -744,7 +746,7 @@ class PonyDocsExtension
 			 */
 			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
 			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2] );
-			$pManualTopic = new PonyDocsTopic( $article );
+			$pManualTopic = new PonyDocsTopic( $realArticle );
 
 			$manVersionList = $pManualTopic->getProductVersions();
 			if ( !sizeof( $manVersionList ) ) {
@@ -815,15 +817,19 @@ class PonyDocsExtension
 	 * Hook called AFTER an article was SUCCESSFULLY saved (meaning a new revision was created).  This specific hook is used
 	 * to regenerate the manual TOC cache for this manual.
 	 *
-	 * @param Article $article
+	 * TODO: AFAICT no one calls this. Let's confirm and then delete it.
+	 * 
+	 * @param WikiPage $article
 	 * @param User $user
 	 * @param string $text
 	 * @param string $summary
-	 * @param bool $minor
-	 * @param unknown_type $watch NOT USED AS OF 1.8
-	 * @param unknown_type $sectionanchor NOT USED AS OF 1.8
-	 * @param unknown_type $flags Bitfield.
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
 	 * @param Revision $revision
+	 * 
+	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
 	static public function onArticleSaveComplete_UpdateTOCCache( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags, $revision )
 	{
@@ -874,10 +880,12 @@ class PonyDocsExtension
 	 * @param User $user
 	 * @param string $text
 	 * @param string $summary
-	 * @param bool $minor
-	 * @param unknown_type $watch
-	 * @param unknown_type $sectionanchor
-	 * @param unknown_type $flags
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * 
+	 * @deprecated Use PageContentSave hook instead
 	 */
 	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath, $wgHooks, $wgPonyDocsEmployeeGroup;
@@ -1088,6 +1096,17 @@ HEREDOC;
 				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 	 *
 	 * When creating the link in Documentation namespace, it uses the CURRENT MANUAL being viewed.. and the selected version?
+	 * 
+	 * @param Article $article
+	 * @param User $user
+	 * @param string $text
+	 * @param string $summary
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * 
+	 * @deprecated Use PageContentSave hook instead
 	 */
 	static public function onArticleSave_AutoLinks( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags )
 	{
@@ -2184,10 +2203,19 @@ HEREDOC;
 	 * article in our doclinks table.  Only if it's in the documentation 
 	 * namepsace, however.
 	 * 
-	 * NB $article is a WikiPage and not an article
-	 * TODO: Switch to PageContentSaveComplete hook as this hook is deprecated
-	 * https://www.mediawiki.org/wiki/Manual:Hooks/PageContentSaveComplete
-	 * @deprecated
+	 * @param WikiPage $article
+	 * @param User $user
+	 * @param string $text
+	 * @param string $summary
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * @param Revision $revision
+	 * @param Status $status
+	 * @param integer $baseRevId
+	 * 
+	 * @deprecated Replace with PageContentSaveComplete hook
 	 *
 	 */
 	static public function onArticleSaveComplete(
