@@ -1965,6 +1965,11 @@ HEREDOC;
 				// Get the TOC out of here! heehee
 				$toc = new PonyDocsTOC($manual, $ver, $p);
 				list($toc, $prev, $next, $start) = $toc->loadContent();
+				//Added empty check for WEB-10038
+				if (empty($toc)) {
+					PonyDocsExtension::redirectToLandingPage();
+					return FALSE;
+				}
 				foreach($toc as $entry) {
 					if(isset($entry['link']) && $entry['link'] != "") {
 						// We found the first article in the manual with a link.  
@@ -1974,10 +1979,13 @@ HEREDOC;
 						die();
 					}
 				}
-				die();
+				//Replace die with a warning log and redirect
+				error_log("WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl());
+				PonyDocsExtension::redirectToLandingPage();
+				return FALSE;
 			}
 		}
-		return true;
+		return TRUE;
 	}
 
 	/**
