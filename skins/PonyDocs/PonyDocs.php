@@ -24,6 +24,6 @@ $wgResourceModules['skins.ponydocs.css'] = array(
 	'position' => 'top',
 );
 
-$wgValidSkinNames['splunk'] = 'PonyDocs';
-$wgAutoloadClasses['SkinSplunk'] = __DIR__ . '/SkinPonyDocs.php';
-$wgAutoloadClasses['SplunkTemplate'] = __DIR__ . '/PonyDocsTemplate.php';
+$wgValidSkinNames['ponydocs'] = 'PonyDocs';
+$wgAutoloadClasses['SkinPonyDocs'] = __DIR__ . '/SkinPonyDocs.php';
+$wgAutoloadClasses['PonyDocsTemplate'] = __DIR__ . '/PonyDocsTemplate.php';
