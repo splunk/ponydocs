@@ -188,7 +188,8 @@ Failure to do so will result in frustration and keyboard tossing.
 	// This will be fixed in later versions
 	$ponyDocsProductsList = array('Foo');
 
-	include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");
+	require_once("$IP/extensions/PonyDocs/PonyDocsExtension.php");
+	require_once("$IP/skins/PonyDocs/PonyDocs.php");
 	#################  PONYDOCS END #################
 	```
 
