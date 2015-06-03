@@ -15,7 +15,7 @@ class SkinPonyDocs extends SkinTemplate {
 		global $wgHandheldStyle;
 
 		parent::setupSkinUserCss( $out );
-		$out->addModuleStyles('skins.splunk.css');
+		$out->addModuleStyles('skins.ponydocs.css');
 
 		$out->addStyle( 'css/IE50Fixes.css', 'screen', 'lt IE 5.5000' );
 		$out->addStyle( 'css/IE55Fixes.css', 'screen', 'IE 5.5000' );
