@@ -109,7 +109,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			}
 
 			function changeManual(){
-				var url = $( "#docsManualSelect" ).attr( "value" );
+				var url = $( "#docsManualSelect" ).val();
 				if ( url != "" ){
 					window.location.href = url;
 				}
