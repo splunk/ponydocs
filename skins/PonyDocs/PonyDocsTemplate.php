@@ -43,10 +43,12 @@ class PonyDocsTemplate extends QuickTemplate {
 		}
 		$this->data['versionurl'] = $this->data['wgScript'] . '?title=' . $this->data['thispage'] . '&action=changeversion';
 
-		$this->skin = $skin = $this->data['skin'];
+		$this->skin = $this->data['skin'];
+		// TODO remove this, and replace elsewhere (template files mostly) with $this->skin
+		$skin = $this->data['skin'];
 
-		if ( $skin->mTitle ) {
-			$this->data['canonicalURI'] = $skin->mTitle->getFullURL();
+		if ( $this->skin->getTitle() ) {
+			$this->data['canonicalURI'] = $this->skin->getTitle()->getFullURL();
 		}
 
 		$action = $wgRequest->getText( 'action' );
