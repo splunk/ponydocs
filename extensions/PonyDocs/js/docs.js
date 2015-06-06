@@ -80,13 +80,14 @@ PonyDocsValidators = function() {
 			var badTitles = [];
 			var matchedTopics = content.match( /{{#topic:(.*)/gi );
 			var forbiddenCharsInTopics = /[*\/&?<>'"]/;
-			for ( var i = 0; i < matchedTopics.length; i++ ) {
-				topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
-				if ( forbiddenCharsInTopics.test( topic ) ) {
-					badTitles.push( topic );
+			if (matchedTopics !== null) {
+				for ( var i = 0; i < matchedTopics.length; i++ ) {
+					topic = matchedTopics[i].replace( '{{#topic:', '' ).replace( '}}', '' );
+					if ( forbiddenCharsInTopics.test( topic ) ) {
+						badTitles.push( topic );
+					}
 				}
 			}
-			
 			return badTitles;
 		}
 	}
