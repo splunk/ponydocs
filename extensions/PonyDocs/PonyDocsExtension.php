@@ -227,7 +227,7 @@ function efPonyDocsSetup() {
 		$result = PonyDocsProductVersion::SetSelectedVersion( $match[3], $match[4] );
 		if ( is_null( $result ) ) {
 			// this version isn't available to this user; go away
-			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 			if ( PONYDOCS_REDIRECT_DEBUG ) {
 				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 			}

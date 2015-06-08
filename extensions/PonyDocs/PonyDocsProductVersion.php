@@ -443,15 +443,18 @@ class PonyDocsProductVersion {
 	/**
 	 * Returns whether or not a supplied version is defined.
 	 *
-	 * @static 	
-	 * @param string $version Name of version to check.
+	 * @param string $productName
+	 * @param string $versionName Version name OR old-style Version Category tag
 	 * @return boolean
+	 * 
+	 * @static
+	 * @TODO: Remove old-style Version Category tag option, since we no longer use tags like that (so it must be a dead path)
 	 */
-	static public function IsVersion( $productName, $version ) {
-		if ( preg_match( '/^v:(.*)/i', $version, $match ) ) {
-			$version = $match[1];
+	static public function IsVersion( $productName, $versionName ) {
+		if ( preg_match( '/^v:(.*)/i', $versionName, $match ) ) {
+			$versionName = $match[1];
 		}
-		return isset( self::$sVersionMap[$productName][$version] );
+		return isset( self::$sVersionMap[$productName][$versionName] );
 	}
 
 	/**
@@ -551,6 +554,23 @@ class PonyDocsProductVersion {
 			return self::$sVersionListPreview[$productName][sizeof( self::$sVersionListPreview[$productName] ) - 1];
 		}
 		return NULL;
+	}
+
+	/**
+	 * If the Version does not exist, return the latest released Version.
+	 * 
+	 * @param string $productName
+	 * @param string $versionName
+	 * @return PonyDocsProductVersion $version
+	 */
+	static public function getVersionOrLatestReleasedVersion( $productName, $versionName ) {
+		if ( self::IsVersion( $productName, $versionName ) ) {
+			$version = self::$sVersionMap[$productName][$versionName];
+		} else {
+			$version = self::GetLatestReleasedVersion( $productName );
+		}
+		
+		return $version;
 	}
 
 	/**
