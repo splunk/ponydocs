@@ -207,7 +207,6 @@ Failure to do so will result in frustration and keyboard tossing.
 	* This skin is just a starting point. Please customize this skin to suit your needs.
 	* To activate the skin, update the `$wgDefaultSkin` value in LocalSettings.php:
 	  `$wgDefaultSkin = 'ponydocs';`
-4. Create a "log" dir in "/tmp/log" this is used for Branch / Inherit progress log, Make the "log" dir a shared mount if you have multiple web 	servers.
 
 ### 4) Review PonyDocsConfig.php
 
