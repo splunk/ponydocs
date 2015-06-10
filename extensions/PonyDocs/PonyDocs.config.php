@@ -19,7 +19,6 @@ define( 'PONYDOCS_PRODUCTMANUAL_TITLE_REGEX',
 	'/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)' . PONYDOCS_PRODUCTMANUAL_SUFFIX . '/' );
 
 // Directories
-define( 'PONYDOCS_TEMP_DIR', '/tmp/' );
 define( 'PONYDOCS_STATIC_DIR', '/var/www/useruploads/docs/staticDocs' );
 define( 'PONYDOCS_STATIC_PATH', 'DocumentationStatic' );
 define( 'PONYDOCS_STATIC_URI', '/' . PONYDOCS_STATIC_PATH . '/' );

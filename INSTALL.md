@@ -178,6 +178,9 @@ Failure to do so will result in frustration and keyboard tossing.
 	define( 'PONYDOCS_DOCLINKS_DEBUG', FALSE );
 	define( 'PONYDOCS_REDIRECT_DEBUG', FALSE );
 	define( 'PONYDOCS_SESSION_DEBUG', FALSE );
+	
+	// Temp directory
+	define( 'PONYDOCS_TEMP_DIR', '/tmp/');
 
 	// Category cache expiration in seconds
 	define( 'CATEGORY_CACHE_TTL', 300 );
