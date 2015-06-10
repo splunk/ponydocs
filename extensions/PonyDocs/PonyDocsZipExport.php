@@ -29,7 +29,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		}
 
 		$zipAllowed = false;
-		PonyDocsExtension::onUserCan( $wgTitle, $wgUser, 'zipmanual', &$zipAllowed );
+		PonyDocsExtension::onUserCan( $wgTitle, $wgUser, 'zipmanual', $zipAllowed );
 		if ( !$zipAllowed ) {
 			error_log("WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission.");
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
@@ -130,8 +130,8 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$coverPageDoc = new DOMDocument();
 		@$coverPageDoc->loadHTML($coverPageHTML);
 
-		self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  &$imgData);
-		self::prepareImageRequests($coverPageDoc, $rollingCurl, $tempDirPath, &$imgData);
+		self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  $imgData);
+		self::prepareImageRequests($coverPageDoc, $rollingCurl, $tempDirPath, $imgData);
 
 		// Execute the RollingCurl requests
 		$rollingCurl->execute();
@@ -201,7 +201,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 	 * @param string $tempDirPath   The directory to store images
 	 * @param array $imgData 	The data array to populate
 	 */	
-	private function prepareImageRequests($doc, $rollingCurl, $tempDirPath, $imgData) {
+	private function prepareImageRequests($doc, $rollingCurl, $tempDirPath, &$imgData) {
 		global $wgServer;
 		// Ensure there's a trailing slash after our $wgServer name
 		if (substr($wgServer, -1) !== '/') {

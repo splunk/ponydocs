@@ -589,8 +589,8 @@ class PonyDocsTemplate extends QuickTemplate {
 						</li>
 						<?php
 					}
-					wfRunHooks( 'PonyDocsTemplateToolboxEnd', array( &$this ) );
-					wfRunHooks( 'SkinTemplateToolboxEnd', array( &$this ) ); ?>
+					wfRunHooks( 'PonyDocsTemplateToolboxEnd', array( $this ) );
+					wfRunHooks( 'SkinTemplateToolboxEnd', array( $this ) ); ?>
 				</ul>
 			</div>
 		</div>

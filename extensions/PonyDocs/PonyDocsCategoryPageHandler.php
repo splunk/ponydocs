@@ -66,7 +66,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 			// available.
 			// Make sure we run the ArticleFromTitle hook...
 			$article = null;
-			wfRunHooks('ArticleFromTitle', array(&$title, &$article));
+			wfRunHooks('ArticleFromTitle', array($title, $article));
 			if(!$article) {
 				$article = new Article($title);
 			}
