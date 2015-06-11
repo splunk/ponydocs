@@ -179,7 +179,7 @@ class PonyDocsExtension
 				 * What happened here is we requested a topic that does not exist or is not linked to any version.
 				 * Perhaps setup a default redirect, Main_Page or something?
 				 */
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -222,7 +222,7 @@ class PonyDocsExtension
 
 					if( !$res->numRows( ))
 					{
-						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 						header( "Location: " . $defaultRedirect );
 						exit( 0 );
 					}
@@ -235,7 +235,7 @@ class PonyDocsExtension
 			/**
 			 * Invalid redirect -- go to Main_Page or something.
 			 */
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
 		}
@@ -248,7 +248,7 @@ class PonyDocsExtension
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if( !$version )
 			{
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -266,7 +266,7 @@ class PonyDocsExtension
 				/**
 				 * Handle invalid redirects?
 				 */
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -323,7 +323,7 @@ class PonyDocsExtension
 
 		if( !$res->numRows( ))
 		{
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
 		}
@@ -372,7 +372,7 @@ class PonyDocsExtension
 
 				if( !$res->numRows( ))
 				{
-					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+					if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 					header( "Location: " . $defaultRedirect );
 					exit( 0 );
 				}
@@ -393,7 +393,7 @@ class PonyDocsExtension
 		/**
 		 * Invalid redirect -- go to Main_Page or something.
 		 */
-		if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+		if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 		header( "Location: " . $defaultRedirect );
 		exit( 0 );
 	}
@@ -487,7 +487,7 @@ class PonyDocsExtension
 				 * What happened here is we requested a topic that does not exist or is not linked to any version.
 				 * Perhaps setup a default redirect, Main_Page or something?
 				 */
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -525,7 +525,7 @@ class PonyDocsExtension
 				}
 			}
 			if(!$found) {
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");}
 				header("Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", true, 301);
 				exit(0);
 			}
@@ -549,7 +549,7 @@ class PonyDocsExtension
 
 					if( !$res->numRows( ))
 					{
-						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 						header( "Location: " . $defaultRedirect );
 						exit( 0 );
 					}
@@ -574,7 +574,7 @@ class PonyDocsExtension
 			/**
 			 * Invalid redirect -- go to Main_Page or something.
 			 */
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
 		}
@@ -588,7 +588,7 @@ class PonyDocsExtension
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if( !$version )
 			{
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -725,7 +725,7 @@ class PonyDocsExtension
 							$content,
 							'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ),
 							EDIT_NEW );
-						if ( PONYDOCS_AUTOCREATE_DEBUG ) {
+						if ( PONYDOCS_DEBUG ) {
 							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
 								. $title->__toString() );
 						}
@@ -1119,7 +1119,7 @@ HEREDOC;
 									$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
 									$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-									if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
+									if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
 								}
 							}
 						}
@@ -1150,7 +1150,7 @@ HEREDOC;
 								$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
 								$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-								if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
+								if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
 							} 
 						}
 					}
@@ -1178,7 +1178,7 @@ HEREDOC;
 									$content = '= ' . $match[1] . " =\n";
 
 								$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-								if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created " . $topicTitle . " using link " . $match[1] . " in " . $title->__toString( ));}
+								if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created " . $topicTitle . " using link " . $match[1] . " in " . $title->__toString( ));}
 							}
 						}
 					}
@@ -1227,7 +1227,7 @@ HEREDOC;
 							$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
 							$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-							if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
+							if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
 						}
 					}
 				}
@@ -1800,7 +1800,7 @@ HEREDOC;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get( $key );
 		if ( $cacheEntry === null ) {
-			if ( PONYDOCS_CACHE_DEBUG ) {
+			if ( PONYDOCS_DEBUG ) {
 				error_log(
 					"DEBUG [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version" );
 			}
@@ -1848,7 +1848,7 @@ HEREDOC;
 			PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
 		}
 		else {
-			if (PONYDOCS_CACHE_DEBUG) {
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . "] Fetched navigation cache from PonyDocsCache for product $product");
 			}
 		}
@@ -1912,7 +1912,7 @@ HEREDOC;
 				$ver = PonyDocsProductVersion::GetVersionByName($targetProduct, $targetVersion);
 			}
 			if(!$ver) {
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
 				header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
 				die();
 			}
@@ -1922,7 +1922,7 @@ HEREDOC;
 			$manual = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
 			if ( !$manual ) {
 				// Rewrite to Main documentation
-				if (PONYDOCS_REDIRECT_DEBUG) {
+				if (PONYDOCS_DEBUG) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/"
 						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
 				}
@@ -1936,7 +1936,7 @@ HEREDOC;
 					if(isset($entry['link']) && $entry['link'] != "") {
 						// We found the first article in the manual with a link.  
 						// Redirect to it.
-						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
+						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
 						header("Location: " . $entry['link']);
 						die();
 					}
@@ -2296,7 +2296,7 @@ HEREDOC;
 
 	static public function translateTopicTitleForDocLinks($title, $fromNamespace = NULL, $ver = NULL, $topic = NULL) {
 
-		if (PONYDOCS_DOCLINKS_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [PonyDocs] [" . __METHOD__ . "] Raw title: " . $title);
 		}
 
@@ -2368,7 +2368,7 @@ HEREDOC;
 			}
 		}
 
-		if (PONYDOCS_DOCLINKS_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [PonyDocs] [" . __METHOD__ . "] Final title: " . $toUrl);
 		}
 
