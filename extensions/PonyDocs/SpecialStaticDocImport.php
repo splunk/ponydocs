@@ -295,12 +295,12 @@ class SpecialStaticDocImport extends SpecialPage {
 		
 		$wgOut->addHTML( '<h2>Other Useful Management Pages</h2>'
 			. '<a href="' 
-				. str_replace(
-					'$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath )
+				. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+					PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath )
 				. '">Version Management</a> - Define and update available ' . $productName . ' versions.<br />'
 			. '<a href="'
-				. str_replace(
-					'$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath )
+				. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+					PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath )
 				. '">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br />'
 			. '<a href="'
 				. str_replace( '$1', PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $wgArticlePath )

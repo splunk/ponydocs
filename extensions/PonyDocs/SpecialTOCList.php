@@ -84,8 +84,13 @@ class SpecialTOCList extends SpecialPage
 		}
 
 		$html = '<h2>Other Useful Management Pages</h2>' .
-				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath ) . '">Version Management</a> - Define and update available ' . $product . ' versions.<br />' .
-				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath ) . '">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br/><br/>';
+				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product .
+					PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath ) .
+					'">Version Management</a> - Define and update available ' . $product .
+					' versions.<br />' .
+				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product .
+					PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath ) .
+					'">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br/><br/>';
 
 		$wgOut->addHTML( $html );
 	}
