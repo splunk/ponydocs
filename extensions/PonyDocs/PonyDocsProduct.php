@@ -282,27 +282,27 @@ class PonyDocsProduct
 		if ( isset( $_SESSION['wsProduct'] ) && strlen( $_SESSION['wsProduct'] ) ) {
 			// Make sure product exists.
 			if ( !array_key_exists( $_SESSION['wsProduct'], self::$sProductList ) ) {
-				if ( PONYDOCS_SESSION_DEBUG ) {
+				if ( PONYDOCS_DEBUG ) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] product " . $_SESSION['wsProduct'] . " not found in "
 						. print_r( self::$sProductList, true ) );
 				}
-				if ( PONYDOCS_SESSION_DEBUG ) {
+				if ( PONYDOCS_DEBUG ) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unsetting product key " . $_SESSION['wsProduct'] );
 				}
 				unset( $_SESSION['wsProduct'] );
 			} else {
-				if ( PONYDOCS_SESSION_DEBUG ) {
+				if ( PONYDOCS_DEBUG ) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] getting selected product " . $_SESSION['wsProduct'] );
 				}
 				return $_SESSION['wsProduct'];
 			}
 		}
-		if ( PONYDOCS_SESSION_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] no selected product; will attempt to set default" );
 		}
 		/// If we are here there is no product set, use default product from configuration
 		self::SetSelectedProduct( PONYDOCS_DEFAULT_PRODUCT );
-		if ( PONYDOCS_SESSION_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] getting selected product " . $_SESSION['wsProduct'] );
 		}
 		return $_SESSION['wsProduct'];
@@ -311,7 +311,7 @@ class PonyDocsProduct
 	static public function SetSelectedProduct( $p ) {
 		//global $_SESSION;
 		$_SESSION['wsProduct'] = $p;
-		if ( PONYDOCS_SESSION_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] setting selected product to $p");
 		}
 		return $p;

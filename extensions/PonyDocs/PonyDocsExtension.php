@@ -171,7 +171,7 @@ function efPonyDocsSetup() {
 	// force mediawiki to start session for anonymous traffic
 	if ( session_id() == '' ) {
 		wfSetupSession();
-		if ( PONYDOCS_SESSION_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . "] started session" );
 		}
 	}
@@ -216,7 +216,7 @@ function efPonyDocsSetup() {
 		if ( is_null( $result ) ) {
 			// this version isn't available to this user; go away
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-			if ( PONYDOCS_REDIRECT_DEBUG ) {
+			if ( PONYDOCS_DEBUG ) {
 				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 			}
 			header( "Location: " . $defaultRedirect );
