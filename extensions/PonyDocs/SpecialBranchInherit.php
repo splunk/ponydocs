@@ -181,7 +181,6 @@ class SpecialBranchInherit extends SpecialPage
 		global $wgScriptPath;
 		ob_start();
                 
-		$topicActionsStr = $topicActions;
 		$targetVersionName = $targetVersion;
 		$sourceVersionName = $sourceVersion;                             
                 
