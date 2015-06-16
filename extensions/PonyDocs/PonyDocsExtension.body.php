@@ -29,30 +29,26 @@ class PonyDocsExtension
 	/**
 	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
 	 */
-	public function __construct( )
-	{
-		global $wgScriptPath;
-		global $wgHooks, $wgArticlePath;
+	public function __construct() {
+		global $wgArticlePath, $wgHooks, $wgScriptPath;
 
-		$this->setPathInfo( );
+		$this->setPathInfo();
 
-		/**
-		 * If we have a title which is an ALIAS of the form:
-		 * 		Documentation/<product>/<latest|version>/<manual>/<topic>
-		 * Then we need to register a hook to do the translation of this to a real topic name.
-		 */
-		if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)$/i', $_SERVER['PATH_INFO'], $match ))
-		{
+		// If we have a title which is an ALIAS of the form Documentation/<product>/<latest|version>/<manual>/<topic>
+		// Then we need to register a hook to do the translation of this to a real topic name.
+		if ( preg_match( 
+			'/^' . str_replace( "/",	"\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+				. '\/(.*)\/(.*)\/(.*)\/(.*)$/i',
+			$_SERVER['PATH_INFO'],
+			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
 		}
-
-		/**
-		 * If we have a title which is an ALIAS of the form:
-		 * PONYDOCS_DOCUMENTATION_PREFIX . '<product>:<manual>:<topic>'
-		 * With no version.  Use the latest RELEASED version of the topic.
-		 */
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match ))
-		{
+		// If we have a title which is an ALIAS of the form: PONYDOCS_DOCUMENTATION_PREFIX<product>:<manual>:<topic> w/o Version
+		// Use the latest RELEASED version of the topic.
+		elseif ( preg_match(
+			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)$/i',
+			$_SERVER['PATH_INFO'],
+			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
 		}
 	}
