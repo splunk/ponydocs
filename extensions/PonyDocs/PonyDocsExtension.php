@@ -51,45 +51,46 @@ if ( !isset ( $ponyDocsProductsList ) || sizeof( $ponyDocsProductsList ) == 0) {
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
 
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] = true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] = true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload']			= true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload']		= true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared']	= true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit']		= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload'] = TRUE;
 
 // these will be tweaked in PonyDocsExtension::onUserCan()
 $editorPerms = array(
-	'move' => true,
-	'edit' => true,
-	'read' => true,
-	'createpage' => true,
+	'autoconfirmed' => true,
+	'autopatrol' => true,
 	'block' => true,
+	'blockemail' => true,
 	'createaccount' => true,
+	'createpage' => true,
 	'delete' => true,
+	'deletedhistory' => true, // Can view deleted history entries, but not see or restore the text
+	'edit' => true,
 	'editinterface' => true,
 	'import' => true,
 	'importupload' => true,
+	'ipblock-exempt' => true,
 	'move' => true,
 	'patrol' => true,
-	'autopatrol' => true,
 	'protect' => true,
 	'proxyunbannable' => true,
+	'read' => true,
+	'reupload' => true,
+	'reupload-shared' => true,
 	'rollback' => true,
 	'trackback' => true,
 	'upload' => true,
-	'reupload' => true,
-	'reupload-shared' => true,
-	'unwatchedpages' => true,
-	'autoconfirmed' => true,
 	'upload_by_url' => true,
-	'ipblock-exempt' => true,
-	'blockemail' => true,
-	'deletedhistory' => true, // Can view deleted history entries, but not see or restore the text
-	'branchtopic' => true, // Custom permission to branch a single topic.
-	'branchmanual' => true, // Custom permission to branch an entire manual.
-	'inherit' => true, // Custom permission to inherit a topic.
-	'viewall' => true, // Custom permission to handle View All link for topics.
+	'unwatchedpages' => true,
+	// Show 'branch' navigation link on TOCs
+	'branchmanual' => true,
+	// Show 'branch' navigation link on Topics
+	'branchtopic' => true,
+	// Show 'viewall' navigation link on Topics
+	'viewall' => true,
 );
 	
 foreach ( $ponyDocsProductsList as $product ) {

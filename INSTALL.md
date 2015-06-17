@@ -105,51 +105,29 @@ Failure to do so will result in frustration and keyboard tossing.
 	// first things first, set logo
 	$wgLogo = "/extensions/PonyDocs/images/pony.png";
 
-	// Implicit group for all visitors, remove access beyond reading
-	$wgGroupPermissions['*']['createaccount'] = false;
-	$wgGroupPermissions['*']['edit'] = false;
-	$wgGroupPermissions['*']['createpage'] = false;
-	$wgGroupPermissions['*']['upload'] = false;
-	$wgGroupPermissions['*']['reupload'] = false;
-	$wgGroupPermissions['*']['reupload-shared'] = false;
-	$wgGroupPermissions['*']['writeapi'] = false;
-	$wgGroupPermissions['*']['createtalk'] = false;
-	$wgGroupPermissions['*']['read'] = true;
+	// Remove some permissions from the implicit group for all visitors.
+	$wgGroupPermissions['*']['createaccount'] = FALSE;
+	$wgGroupPermissions['*']['createpage'] = FALSE;
+	$wgGroupPermissions['*']['createtalk'] = FALSE;
+	$wgGroupPermissions['*']['edit'] = FALSE;
+	$wgGroupPermissions['*']['writeapi'] = FALSE;
 
-	// User is logged-in. Ensure that they still can't edit.
-	$wgGroupPermissions['user']['read'] = true;
-	$wgGroupPermissions['user']['createtalk'] = false;
-	$wgGroupPermissions['user']['upload'] = false;
-	$wgGroupPermissions['user']['reupload'] = false;
-	$wgGroupPermissions['user']['reupload-shared'] = false;
-	$wgGroupPermissions['user']['edit'] = false;
-	$wgGroupPermissions['user']['move'] = false;
-	$wgGroupPermissions['user']['minoredit'] = false;
-	$wgGroupPermissions['user']['createpage'] = false;
-	$wgGroupPermissions['user']['writeapi'] = false;
-	$wgGroupPermissions['user']['move-subpages'] = false;
-	$wgGroupPermissions['user']['move-rootuserpages'] = false;
-	$wgGroupPermissions['user']['purge'] = false;
-	$wgGroupPermissions['user']['sendemail'] = false;
-	$wgGroupPermissions['user']['writeapi'] = false;
-
-	// Our "in charge" group.
-	$wgGroupPermissions['bureaucrat']['userrights'] = true;
-	// Custom permission to branch ALL topics for a version.
-	$wgGroupPermissions['bureaucrat']['branchall'] = true;
-
-	// Implicit group for accounts that pass $wgAutoConfirmAge
-	$wgGroupPermissions['autoconfirmed']['autoconfirmed'] = true;
-
-	// Implicit group for accounts with confirmed email addresses
-	// This has little use when email address confirmation is off
-	$wgGroupPermissions['emailconfirmed']['emailconfirmed'] = true;
-
-	// Users with bot privilege can have their edits hidden from various log pages by default
-	$wgGroupPermissions['bot']['bot'] = true;
-	$wgGroupPermissions['bot']['autoconfirmed']	= true;
-	$wgGroupPermissions['bot']['nominornewtalk'] = true;
-	$wgGroupPermissions['bot']['autopatrol'] = true;
+	// Remove some permissions from the user group.
+	$wgGroupPermissions['user']['createpage'] = FALSE;
+	$wgGroupPermissions['user']['createtalk'] = FALSE;
+	$wgGroupPermissions['user']['edit'] = FALSE;
+	$wgGroupPermissions['user']['minoredit'] = FALSE;
+	$wgGroupPermissions['user']['move'] = FALSE;
+	$wgGroupPermissions['user']['move-categorypages'] = FALSE;
+	$wgGroupPermissions['user']['movefile'] = FALSE;
+	$wgGroupPermissions['user']['move-subpages'] = FALSE;
+	$wgGroupPermissions['user']['move-rootuserpages']= FALSE;
+	$wgGroupPermissions['user']['purge'] = FALSE;
+	$wgGroupPermissions['user']['reupload'] = FALSE;
+	$wgGroupPermissions['user']['reupload-shared'] = FALSE;
+	$wgGroupPermissions['user']['sendemail'] = FALSE;
+	$wgGroupPermissions['user']['upload'] = FALSE;
+	$wgGroupPermissions['user']['writeapi'] = FALSE;
 
 	$wgArticlePath = '/$1';
 

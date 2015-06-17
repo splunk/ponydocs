@@ -173,29 +173,23 @@ class PonyDocsWiki
 	public function generateSideBar( )
 	{
 		global $wgArticlePath, $wgScriptPath, $wgUser, $wgPonyDocsEmployeeGroup;
-		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT);
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT );
 
-		$g = $wgUser->getAllGroups( );
+		$groups = $wgUser->getAllGroups( );
 
 		$sidebar = array( 'navigation' => array(
-			array( 'text' => 'Main Page', 'href' => str_replace( '$1', 'Main_Page', $wgArticlePath )),
-			array( 'text' => 'Help', 'href' => str_replace( '$1', 'helppage', $wgArticlePath ))
+			array( 'text' => 'Main Page', 'href' => str_replace( '$1', 'Main_Page', $wgArticlePath ) ),
+			array( 'text' => 'Help', 'href' => str_replace( '$1', 'helppage', $wgArticlePath ) )
 			)
 		);
 
 		/**
 		 * Show Special pages if employee or author.
 		 */
-		if( in_array( $authProductGroup, $g ) || in_array( $wgPonyDocsEmployeeGroup, $g ))
-			$sidebar['navigation'][] = array( 'text' => 'Special Pages', 'href' => str_replace( '$1', 'Special:Specialpages', $wgArticlePath ));
-
-		/**
-		 * TOC List Mgmt if author.
-		 */
-		if( in_array( $authorGroupByProduct, $g ))
-			$sidebar['navigation'][] = array( 'text' => 'TOC List Mgmt', 'href' => str_replace( '$1', 'Special:TOCList', $wgArticlePath ));
-
-		//echo '<pre>'; print_r( $sidebar ); die( );
+		if ( in_array( $authProductGroup, $groups ) || in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
+			$sidebar['navigation'][] = 
+				array( 'text' => 'Special Pages', 'href' => str_replace( '$1', 'Special:Specialpages', $wgArticlePath ));
+		}
 
 		return $sidebar;
 	}
