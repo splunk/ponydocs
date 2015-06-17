@@ -185,6 +185,12 @@ class SpecialBranchInherit extends SpecialPage
 		$sourceVersionName = $sourceVersion;                             
                 
 		$topicActions = json_decode($topicActions, true);		
+               
+		// Determine how many topics there are to process.
+		$numOfTopics = $topicActions['numOfTopics'];
+		$numOfTopicsCompleted = $topicActions['numOfTopicsCompleted'];
+		$manualName = $topicActions['manualName'];
+		$sectionName = $topicActions['sectionName'];
                 
 		list ($msec, $sec) = explode(' ', microtime()); 
 		$startTime = (float)$msec + (float)$sec; 
@@ -209,54 +215,32 @@ class SpecialBranchInherit extends SpecialPage
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
 		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
 
-		// Determine how many topics there are to process.
-		$numOfTopics = 0;
-		$numOfTopicsCompleted = 0;
-
-		foreach($topicActions as $manualIndex => $manualData) {
-			foreach($manualData['sections'] as $sectionName => $topics) {
-				// The following is a goofy fix for some browsers.  Sometimes 
-				// the JSON comes along with null values for the first element.  
-				// IT's just an additional element, so we can drop it.
-				if(empty($topics[0]['text'])) {
-					array_shift($topicActions[$manualIndex]['sections'][$sectionName]);
-				}
-				$numOfTopics += count($topicActions[$manualIndex]['sections'][$sectionName]);
-			}
-		}
-		$logFields = "action=topic status=success product=$productName numOfTopics=$numOfTopics "
-			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
-
 		$lastTopicTarget = null;
 
-		foreach($topicActions as $manualName => $manualData) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
-			// Determine if TOC already exists for target version.
-			if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion)) {
-				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version " . $targetVersion->getVersionName() . "</div>");
-				// Crl eate the toc or inherit.
-				if($manualData['tocAction'] != 'default') {
-					// Then they want to force.
-					if($manualData['tocAction'] == 'forceinherit') {
-						print("<div class=\"normal\">Forcing inheritance of source TOC.</div>");
-						PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
-						print("<div class=\"normal\">Complete</div>");
-
-					}
-					else if($manualData['tocAction'] == 'forcebranch') {
-						print("<div class=\"normal\">Forcing branch of source TOC.</div>");
-						PonyDocsBranchInheritEngine::branchTOC($product, $manual, $sourceVersion, $targetVersion);
-						print("<div class=\"normal\">Complete</div>");
-					}
+		$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+		// Determine if TOC already exists for target version.
+		if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion)) {
+			print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version " . $targetVersion->getVersionName() . "</div>");
+			// Crl eate the toc or inherit.
+			if($topicActions['tocAction'] != 'default') {
+				// Then they want to force.
+				if($topicActions['tocAction'] == 'forceinherit') {
+					print("<div class=\"normal\">Forcing inheritance of source TOC.</div>");
+					PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);					
 				}
-				/// WARNING FIXME action "default" has been removed from UI; this else block will never get run
-				else {
-					if($manualData['tocInherit']) {
-						// We need to get the TOC for source version/manual and add 
-						// target version to the category tags.
-						try {
-							print("<div class=\"normal\">Attempting to add target version to existing source version TOC.</div>");
+				else if($topicActions['tocAction'] == 'forcebranch') {
+					print("<div class=\"normal\">Forcing branch of source TOC.</div>");
+					PonyDocsBranchInheritEngine::branchTOC($product, $manual, $sourceVersion, $targetVersion);					
+					print("<div class=\"normal\">Complete</div>");
+				}
+			}
+			/// WARNING FIXME action "default" has been removed from UI; this else block will never get run
+			else {
+				if($topicActions['tocInherit']) {
+					// We need to get the TOC for source version/manual and add 
+					// target version to the category tags.
+					try {
+						print("<div class=\"normal\">Attempting to add target version to existing source version TOC.</div>");
 							PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
 							$logFields = "action=TOC status=success product=$productName manual=$manualName " 
 								. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
@@ -274,12 +258,7 @@ class SpecialBranchInherit extends SpecialPage
 						try {
 							print("<div class=\"normal\">Attempting to create TOC for target version.</div>");
 							$addData = array();
-							foreach($manualData['sections'] as $sectionName => $topics) {
-								$addData[$sectionName] = array();
-								foreach($topics as $topic) {
-									$addData[$sectionName][] = $topic['toctitle'];
-								}
-							}
+							$addData[$sectionName][] = $topicActions['toctitle'];
 							PonyDocsBranchInheritEngine::createTOC($product, $manual, $targetVersion, $addData);
 							$logFields = "action=TOC status=success product=$productName manual=$manualName " 
 								. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
@@ -299,14 +278,7 @@ class SpecialBranchInherit extends SpecialPage
 					try {
 						print("<div class=\"normal\">Attempting to update TOC for target version.</div>");
 						$addData = array();
-						foreach($manualData['sections'] as $sectionName => $topics) {
-							$addData[$sectionName] = array();
-							foreach($topics as $topic) {
-								if(!isset($topic['action']) || (isset($topic['action']) && $topic['action'] != 'ignore')) {
-									$addData[$sectionName][] = $topic['toctitle'];
-								}
-							}
-						}
+						$addData[$sectionName][] = $topicActions['toctitle'];
 						PonyDocsBranchInheritEngine::addCollectionToTOC($product, $manual, $targetVersion, $addData);
 						$logFields = "action=TOC status=success product=$productName manual=$manualName " 
 							. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
@@ -325,108 +297,105 @@ class SpecialBranchInherit extends SpecialPage
 			// branch/inherit.
 			print("Processing topics.\n");
 			$path = PonyDocsExtension::getTempDir() . $jobID;
-			foreach($manualData['sections'] as $sectionName => $topics) {
-				print("<div class=\"normal\">Processing section $sectionName</div>");
-				foreach($topics as $topic) {
-					// Update log file
-					$fp = fopen($path, "w+");
-					fputs($fp, "Completed " . $numOfTopicsCompleted . " of " . $numOfTopics . " Total: " . ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . "%");
-					fclose($fp);
-					if(isset($topic['action']) && $topic['action'] == "ignore") {
-						print("<div class=\"normal\">Ignoring topic: " . $topic['title'] . "</div>");
-						$numOfTopicsCompleted++;
-						continue;
-					}
-					else if(isset($topic['action']) && $topic['action'] == "branchpurge") {
-						try {
-							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and remove existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
-								$topic['title'], $targetVersion, $sectionName, $topic['text'], TRUE, FALSE );
-							$logFields = "action=topic status=success product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"normal\">Complete</div>");
-						} catch(Exception $e) {
-							$logFields = "action=topic status=failure product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
-								. "targetVersion=$targetVersionName";
-							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
-						}
-					}
-					else if(isset($topic['action']) && $topic['action'] == "branch") {
-						try {
-							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . "</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
-								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE, TRUE );
-							$logFields = "action=topic status=success product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"normal\">Complete</div>");
-						} catch(Exception $e) {
-							$logFields = "action=topic status=failure product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
-								. "targetVersion=$targetVersionName";
-							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
-						}
-					}
-					else if(isset($topic['action']) && $topic['action'] == "branchsplit") {
-						try {
-							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and split from existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
-								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE, TRUE );
-							$logFields = "action=topic status=success product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName " 
-								. "targetVersion=$targetVersionName";
-							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"normal\">Complete</div>");
-						} catch(Exception $e) {
-							$logFields = "action=topic status=failure product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
-								. "targetVersion=$targetVersionName";
-							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
-						}
-					}
-					else if(isset($topic['action']) && $topic['action'] == "inherit") {
-						try {
-							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . "</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
-								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE );
-							$logFields = "action=topic status=success product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"normal\">Complete</div>");
-						} catch(Exception $e) {
-							$logFields = "action=topic status=failure product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
-								. "targetVersion=$targetVersionName";
-							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
-						}
-					}
-					else if(isset($topic['action']) && $topic['action'] == "inheritpurge") {
-						try {
-							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . " and remove existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
-								$topic['title'], $targetVersion, $sectionName, $topic['text'], TRUE );
-							$logFields = "action=topic status=success product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"normal\">Complete</div>");
-						} catch(Exception $e) {
-							$logFields = "action=topic status=failure product=$productName manual=$manualName " 
-								. "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
-								. "targetVersion=$targetVersionName";
-							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
-							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
-						}
-					}
-					$numOfTopicsCompleted++;
+
+			print("<div class=\"normal\">Processing section {$sectionName}</div>");
+				
+			// Update log file
+			$fp = fopen($path, "w+");
+			fputs($fp, "Completed " . $numOfTopicsCompleted . " of " . $numOfTopics . " Total: " . ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . "%");
+			fclose($fp);
+			if(isset($topicActions['action']) && $topicActions['action'] == "ignore") {
+				print("<div class=\"normal\">Ignoring topic: " . $topicActions['title'] . "</div>");
+				continue;
+			}
+			else if(isset($topicActions['action']) && $topicActions['action'] == "branchpurge") {
+				try {
+					print("<div class=\"normal\">Attempting to branch topic " . $topicActions['title'] . " and remove existing topic.</div>");
+					$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
+					$topicActions['title'], $targetVersion, $sectionName, $topicActions['text'], TRUE, FALSE );
+					$logFields = "action=topic status=success product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+					error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+					print("<div class=\"normal\">Complete</div>");
+				} catch(Exception $e) {
+					$logFields = "action=topic status=failure product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
+                                            . "targetVersion=$targetVersionName";
+					error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
+					print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 				}
 			}
-		}
+			else if(isset($topicActions['action']) && $topicActions['action'] == "branch") {
+				try {
+					print("<div class=\"normal\">Attempting to branch topic " . $topicActions['title'] . "</div>");
+					$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
+					$topicActions['title'], $targetVersion, $sectionName, $topicActions['text'], FALSE, TRUE );
+					$logFields = "action=topic status=success product=$productName manual=$manualName " 
+                                                . "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+                                        error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"normal\">Complete</div>");
+                                } catch(Exception $e) {
+                                        $logFields = "action=topic status=failure product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
+                                            . "targetVersion=$targetVersionName";
+                                        error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
+                                }
+			}
+			else if(isset($topicActions['action']) && $topicActions['action'] == "branchsplit") {
+				try {
+					print("<div class=\"normal\">Attempting to branch topic " . $topicActions['title'] . " and split from existing topic.</div>");
+					$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
+					$topicActions['title'], $targetVersion, $sectionName, $topicActions['text'], FALSE, TRUE );
+                                        $logFields = "action=topic status=success product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName " 
+                                            . "targetVersion=$targetVersionName";
+                                        error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"normal\">Complete</div>");
+                                } catch(Exception $e) {
+                                        $logFields = "action=topic status=failure product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
+                                            . "targetVersion=$targetVersionName";
+                                        error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
+                                }
+
+			}
+			else if(isset($topicActions['action']) && $topicActions['action'] == "inherit") {
+				try {
+					print("<div class=\"normal\">Attempting to inherit topic " . $topicActions['title'] . "</div>");
+					$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
+					$topicActions['title'], $targetVersion, $sectionName, $topicActions['text'], FALSE );
+                                        $logFields = "action=topic status=success product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+                                        error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"normal\">Complete</div>");
+                                    } catch(Exception $e) {
+                                        $logFields = "action=topic status=failure product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
+                                            . "targetVersion=$targetVersionName";
+                                        error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
+                                    }
+			}
+			else if(isset($topicActions['action']) && $topicActions['action'] == "inheritpurge") {
+				try {
+					print("<div class=\"normal\">Attempting to inherit topic " . $topicActions['title'] . " and remove existing topic.</div>");
+					$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
+					$topicActions['title'], $targetVersion, $sectionName, $topicActions['text'], TRUE );
+					$logFields = "action=topic status=success product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+                                        error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"normal\">Complete</div>");
+                                    } catch(Exception $e) {
+                                        $logFields = "action=topic status=failure product=$productName manual=$manualName " 
+                                            . "topic={$topic['title']} sourceVersion=$sourceVersionName error={$e->getMessage()} " 
+                                            . "targetVersion=$targetVersionName";
+                                        error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
+                                        print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
+                                    }
+			}
+
 		list ($msec, $sec) = explode(' ', microtime()); 
 		$endTime = (float)$msec + (float)$sec; 
 		print("All done!\n");
@@ -439,7 +408,9 @@ class SpecialBranchInherit extends SpecialPage
 		}
 
 		// Okay, let's start the process!
-		unlink($path);
+		if(file_exists($path)) {
+			unlink($path);
+		}
 		$buffer = ob_get_clean();
 		return $buffer;
 	}

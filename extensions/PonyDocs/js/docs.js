@@ -103,6 +103,8 @@ SplunkBranchInherit = function() {
 	var manuals = [];
 	var defaultAction = 'ignore';
 	var topicActions = {};
+	var topicData = {};
+	var topicCount = 0;
 	var jobID = '';
 	var progressTimer = null;
 	var completed = false;
@@ -187,13 +189,16 @@ SplunkBranchInherit = function() {
 						$('#docbranchinherit .topicactions .container .manual').each(function() {
 							var manualName = $(this).find('.manual_shortname').val();
 							var tocAction = $(this).find('.manualtocaction').val();
+							var tocInherit = null;
 							topicActions[manualName] = {};
 							// Determine if we need to create new toc or branch.
 							if($(this).find('option[value=\'ignore\']:selected').length > 0) {
 								topicActions[manualName].tocInherit = false;
+								tocInherit = false;
 							}
 							else {
 								topicActions[manualName].tocInherit = true;
+								tocInherit = true;
 							}
 							topicActions[manualName].tocAction = tocAction;
 							topicActions[manualName].sections = {};
@@ -206,7 +211,17 @@ SplunkBranchInherit = function() {
 									topic.text = $(this).find('.topicname strong').html();
 									topic.toctitle = $(this).find('.action input').val();
 									topic.action = $(this).find('.action select').val();
-									topicActions[manualName].sections[sectionName][topicActions[manualName].sections[sectionName].length] = topic;
+									//added this data to process topic
+									topic.manualName = manualName;
+									topic.sectionName = sectionName;
+									topic.tocAction = tocAction;
+									topic.tocInherit = tocInherit;
+									//checking for empty objects
+									if(topic.title) {
+										topicActions[manualName].sections[sectionName][topicActions[manualName].sections[sectionName].length] = topic;
+										topicCount++;									
+									}
+
 								});
 							});
 						});
@@ -216,16 +231,52 @@ SplunkBranchInherit = function() {
 							SplunkBranchInherit.jobID = res.responseText;
 							sajax_request_type = 'POST';
 							SplunkBranchInherit.fetchProgress();
-							sajax_do_call('SpecialBranchInherit::ajaxProcessRequest', [SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetVersion, $.toJSON(topicActions)], function(res) {
-								completed = true;
-								clearTimeout(progressTimer);
-								progressTimer = null;
-								$("#docbranchinherit .completed .logconsole").html(res.responseText);
-								$("#docbranchinherit .topicactions").fadeOut(function() {
-									$("#docbranchinherit .completed").fadeIn();
-								});
-							});
-						});
+							if(SplunkBranchInherit.jobID != '') {
+								var topicsCompleted = 0;                                
+								for(manual in topicActions) {
+									for(section in topicActions[manual].sections) {
+										for(topic in topicActions[manual].sections[section]) {
+											topicData[topicsCompleted] = {};
+											topicData[topicsCompleted] = topicActions[manual].sections[section][topic];
+											topicData[topicsCompleted].numOfTopics = topicCount;
+											topicData[topicsCompleted].numOfTopicsCompleted = topicsCompleted;                                                                                                                                                                                                                                                          
+											topicsCompleted ++;                                                                            
+										}
+									}
+								}
+								// Iterate over the topics
+								SplunkBranchInherit.processNextTopicRequest();
+							}
+						});						
+				});
+			},
+			processNextTopicRequest: function(){
+				for(topic in topicData){                                
+					var postData = {};
+					postData.rs = 'SpecialBranchInherit::ajaxProcessRequest';
+					postData.rsargs = [];
+					postData.rsargs.push(SplunkBranchInherit.jobID);
+					postData.rsargs.push(sourceProduct);
+					postData.rsargs.push(sourceVersion);
+					postData.rsargs.push(targetVersion);
+					postData.rsargs.push($.toJSON(topicData[topic]));				
+					uri = wgServer + ((wgScript == null) ? (wgScriptPath + "/index.php") : wgScript) + "?action=ajax";
+					$.ajax({
+						url: uri,
+						type: 'POST',
+						data: postData,
+						async: false,
+						success: function(html)  {
+							$("#docbranchinherit .completed .logconsole").append('<br/>' + html);
+						},
+					});
+               }
+				//after complete
+				completed = true;
+				clearTimeout(progressTimer);
+				progressTimer = null;
+				$("#docbranchinherit .topicactions").fadeOut(function() {
+						$("#docbranchinherit .completed").fadeIn();
 				});
 			},
 			setupTopicActions: function(res) {
