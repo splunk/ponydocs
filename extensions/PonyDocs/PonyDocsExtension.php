@@ -53,44 +53,43 @@ $ponyDocsProductsList[] = '';
 
 $wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] = TRUE;
 $wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit'] = TRUE;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] = TRUE;
 $wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload'] = TRUE;
 $wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared'] = TRUE;
 $wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload'] = TRUE;
 
 // these will be tweaked in PonyDocsExtension::onUserCan()
 $editorPerms = array(
-	'autoconfirmed' => true,
-	'autopatrol' => true,
-	'block' => true,
-	'blockemail' => true,
-	'createaccount' => true,
-	'createpage' => true,
-	'delete' => true,
-	'deletedhistory' => true, // Can view deleted history entries, but not see or restore the text
-	'edit' => true,
-	'editinterface' => true,
-	'import' => true,
-	'importupload' => true,
-	'ipblock-exempt' => true,
-	'move' => true,
-	'patrol' => true,
-	'protect' => true,
-	'proxyunbannable' => true,
-	'read' => true,
-	'reupload' => true,
-	'reupload-shared' => true,
-	'rollback' => true,
-	'trackback' => true,
-	'upload' => true,
-	'upload_by_url' => true,
-	'unwatchedpages' => true,
+	'autoconfirmed' => TRUE,
+	'autopatrol' => TRUE,
+	'block' => TRUE,
+	'blockemail' => TRUE,
+	'createaccount' => TRUE,
+	'createpage' => TRUE,
+	'delete' => TRUE,
+	// Can view deleted history entries, but not see or restore the text
+	'deletedhistory' => TRUE,
+	'edit' => TRUE,
+	'editinterface' => TRUE,
+	'import' => TRUE,
+	'importupload' => TRUE,
+	'ipblock-exempt' => TRUE,
+	'move' => TRUE,
+	'patrol' => TRUE,
+	'protect' => TRUE,
+	'proxyunbannable' => TRUE,
+	'reupload' => TRUE,
+	'reupload-shared' => TRUE,
+	'rollback' => TRUE,
+	'trackback' => TRUE,
+	'upload' => TRUE,
+	'upload_by_url' => TRUE,
+	'unwatchedpages' => TRUE,
 	// Show 'branch' navigation link on TOCs
-	'branchmanual' => true,
+	'branchmanual' => TRUE,
 	// Show 'branch' navigation link on Topics
-	'branchtopic' => true,
+	'branchtopic' => TRUE,
 	// Show 'viewall' navigation link on Topics
-	'viewall' => true,
+	'viewall' => TRUE,
 );
 	
 foreach ( $ponyDocsProductsList as $product ) {
