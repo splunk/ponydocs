@@ -148,7 +148,7 @@ class SpecialLatestDoc extends SpecialPage {
 							"cl_to IN " . $versionSql,
 							'cl_type = "page"',						
 							"cl_sortkey REGEXP '"
-								. $dbr->strencode( '^' . strtoupper( "$productName:$manualName:$topicName:[^:]+" ) ) . "'",
+								. $dbr->strencode( '^' . strtoupper( "$productName:$manualName:$topicName:[^:]+" ) ) . "\$'",
 						),
 						__METHOD__
 					);
@@ -176,7 +176,7 @@ class SpecialLatestDoc extends SpecialPage {
 							"cl_to IN " . $versionSql,
 							'cl_type = "page"',						
 							"cl_sortkey REGEXP '"
-								. $dbr->strencode( '^' . strtoupper( "$productName:[^:]+:$topicName:[^:]+" ) ) . "'",
+								. $dbr->strencode( '^' . strtoupper( "$productName:[^:]+:$topicName:[^:]+" ) ) . "\$'",
 						),
 						__METHOD__
 					);

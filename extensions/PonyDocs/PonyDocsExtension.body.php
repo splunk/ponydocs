@@ -69,7 +69,7 @@ class PonyDocsExtension
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
 			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
 		// <namespace>:<product>:<manual>:<topic>
-		// Register a hook to map this versionless title to the latest version
+		// Register a hook to map this versionless title to the latest version if no Version specified in URL
 		} elseif (
 			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX
 				. '([^:]+):([^:]+):([^:]+)$/i',
@@ -1395,9 +1395,11 @@ HEREDOC;
 		if ( !$wgTitle->exists() ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
-			$script = "$(function() {\n"
-				. "\t$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . "]]\");\n"
-				. "});";
+			$script = <<<EOJS
+$(function() {
+	$('#wpTextbox1').val("\n\n[[Category:V:$productName:$versionName]]");
+});
+EOJS;
 			$wgOut->addInLineScript( $script );
 		}
 
