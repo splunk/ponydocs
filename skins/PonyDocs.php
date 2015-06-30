@@ -712,20 +712,31 @@ class PonyDocsTemplate extends QuickTemplate {
 				$wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Manuals Management - '.$this->data['selectedProduct'];
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					. '<i>* Use {{#manual:manualShortName|displayName}} to define a new manual.'
-					. ' If you omit display name, the short name will be used in links.</i></span>');
+					. '<i>* Use {{#manual:manualShortName|displayName|categories}} to define a new manual.</i></span>' );
+				$wgOut->addHTML('<br><span class="' . $helpClass . '"><i>'
+					. '* Prepend manual short name with ' . PONYDOCS_PRODUCT_STATIC_PREFIX . ' to define a static manual.'
+					. '</i></span>');
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* If you omit display name, the short name will be used in links.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* Categories is a comma-separated list of categories</i></span>' );
 			} elseif ( !strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Products Management';
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					.' <i>* Use {{#product:productShortName|displayName|description|parent}}'
-					.' to define a new product.</i></span>' );
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					. '<i>* displayName, description and parent can be left empty.</i></span>');
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					. '<i>* If you leave displayName empty, productShortName will be used in links.</i></span>');
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
-					. '<i>* This product list <b>MUST</b> match the products listed in LocalSettings.php $ponyDocsProductsList.'
+					.' <i>* Use {{#product:productShortName|displayName|description|parent|categories}} to define a new product.'
 					. '</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'
+					. '* Prepend product short name with ' . PONYDOCS_PRODUCT_STATIC_PREFIX . 'to define a static product.'
+					. '</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* displayName, description parent, and categories can be left empty.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* If you leave displayName empty, productShortName will be used in links.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* Categories is a comma-separated list of categories.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* Each product here <b>MUST</b> also be listed in $ponyDocsProductsList,'
+					. ' usually configured in LocalSettings.php.</i></span>' );
 			} elseif ( preg_match( '/(.*)TOC(.*)/', $pieces[2], $matches ) ) {
 				$this->data['titletext'] = $matches[1] . ' Table of Contents Page';
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'

@@ -245,11 +245,12 @@ function efManualParserFunction_Magic( &$magicWords, $langCode ) {
  * management page for that manual.
  *
  * @param Parser $parser
- * @param string $shortName Short name of the manual used in links.
- * @param string $longName Long/display name of manual.
+ * @param string $shortName Short name of the Manual used in links.
+ * @param string $longName Long/display name of Manual.
+ * @param string $categories The categories for the Manual, in a comma-separated list
  * @return array
  */
-function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '' ) {
+function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '', $categories ) {
 	global $wgArticlePath;
 
 	$valid = TRUE;
@@ -271,11 +272,12 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 	// Don't cache Documentation:[product]:Manuals pages because when we switch selected version the content will come from cache
 	$parser->disableCache();
 
-	// If static
+	// If static, link to Special:StaticDocImport
 	if ( $static ) {
 		$output = "<p><a href=\"" . str_replace( '$1', "Special:StaticDocImport/$productName/$manualName" , $wgArticlePath )
 			. "\" style=\"font-size: 1.3em;\">$longName</a></p>\n"
 			. "<span style=\"padding-left: 20px;\">Click manual to manage static documentation.</span>\n";
+	// Otherwise, link to TOC for current Version OR add a link to create a new TOC if none exists
 	} else {
 
 		// TODO: We should call PonyDocsTOC.php or maybe PonyDocsProductManual to see if there's a TOC in this manual
@@ -305,6 +307,10 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 			$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">'
 				. $longName . "</a></p>\n";
 		}
+	}
+	
+	if ( $categories != '' ) {
+		$output .= "<br>Categories: $categories";
 	}
 	
 	return $parser->insertStripItem( $output, $parser->mStripState );
@@ -403,22 +409,23 @@ function efProductParserFunction_Magic( &$magicWords, $langCode ) {
  * When output it currently does nothing but should perhaps be a list to Category:<product>.
  *
  * @param Parser $parser
- * @param string $shortName The product name itself.
- * @param string $longName The long product name.
- * @param string $description The product description
- * @param string $parent The short name of the parent product
+ * @param string $shortName The Product name itself.
+ * @param string $longName The long Product name.
+ * @param string $description The Product description
+ * @param string $parent The short name of the parent Product
+ * @param string $categories The categories for the Product, in a comma-separated list
  *
  * @return array
  */
-function efProductParserFunction_Render( &$parser, $shortName = '', $longName = '', $description = '', $parent = '' ) {
-	global $wgArticlePath, $wgUser, $wgScriptPath;
+function efProductParserFunction_Render(
+	&$parser, $shortName = '', $longName = '', $description = '', $parent = '', $categories = '' ) {
+	global $wgArticlePath, $wgScriptPath, $wgUser;
 
 	$static = FALSE;
 	if ( strpos( $shortName, PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
 		$static = TRUE;
 		$shortName = substr( $shortName, strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
 	}
-	
 	
 	$output = "$shortName ($longName)";
 
@@ -433,6 +440,10 @@ function efProductParserFunction_Render( &$parser, $shortName = '', $longName = 
 	
 	if ( $parent != '' ) {
 		$output .= "<br>Parent: $parent";
+	}
+	
+	if ( $categories != '') {
+		$output .= "<br>Categories: $categories";
 	}
 
 	if ( $static ) {
