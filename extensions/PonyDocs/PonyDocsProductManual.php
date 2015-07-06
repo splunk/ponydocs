@@ -1,7 +1,7 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
-
+}
 
 /**
  * An instance represents a single PonyDocs manual based upon the short/long name.  It also contains static
@@ -10,18 +10,14 @@ if( !defined( 'MEDIAWIKI' ))
 class PonyDocsProductManual
 {
 	/**
-	 * Short/abbreviated name for the manual used in page paths;  it is always lowercase and should be
-	 * alphabetic but is not required.
-	 *
-	 * @var string
+	 * @access protected
+	 * @var string Short/abbreviated name for the manual used in page paths
 	 */
 	protected $mShortName;
 
 	/**
-	 * Long name for the manual which functions as the 'display' name in the list of manuals and so
-	 * forth.
-	 *
-	 * @var string
+	 * @access protected
+	 * @var string Long name for the manual which functions as the 'display' name in the list of manuals.
 	 */
 	protected $mLongName;
 
@@ -31,24 +27,29 @@ class PonyDocsProductManual
 	 */
 	protected $mCategories;
 
-	/** @var string Product name */
+	/** 
+	 * @access protected
+	 * @var string Product name
+	 */
 	protected $pName;
 
-	/** @var boolean Stores whether manual is defined as static */
+	/**
+	 * @access protected 
+	 * @var boolean Stores whether manual is defined as static
+	 */
 	protected $static;
 
 	/**
-	 * Our list of manuals loaded from the special page, stored statically.  This only contains the manuals
-	 * which have a TOC defined and tagged to the currently selected version.
-	 *
-	 * @var array
+	 * @access protected
+	 * @static
+	 * @var array List of manuals loaded from the special page which have a TOC defined for the currently selected version.
 	 */
 	static protected $sManualList = array( );
 
 	/**
-	 * Our COMPLETE list of manuals.
-	 *
-	 * @var array
+	 * @access protected
+	 * @static
+	 * @var array Complete list of manuals.
 	 */
 	static protected $sDefinedManualList = array( );
 	
@@ -60,15 +61,12 @@ class PonyDocsProductManual
 	static protected $sCategoryMap = array();
 
 	/**
-	 * Constructor is simply passed the short and long (display) name.  We convert the short name to lowercase
-	 * immediately so we don't have to deal with case sensitivity.
+	 * Manual constructor, called primarily by LoadManualsForProduct()
 	 *
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '', $categories = '', $static = FALSE )
-	{
-		//$this->mShortName = strtolower( $shortName );
+	public function __construct( $pName, $shortName, $longName = '', $categories = '', $static = FALSE ) {
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
@@ -76,18 +74,15 @@ class PonyDocsProductManual
 		$this->static = $static;
 	}
 
-	public function getShortName( )
-	{
+	public function getShortName() {
 		return $this->mShortName;
 	}
 	
-	public function getLongName( )
-	{
+	public function getLongName() {
 		return $this->mLongName;
 	}
 
-	public function getProductName( )
-	{
+	public function getProductName() {
 		return $this->pName;
 	}
 
@@ -133,8 +128,7 @@ class PonyDocsProductManual
 	 * @return array
 	 */
 
-	static public function LoadManualsForProduct( $productName, $reload = false )
-	{
+	static public function LoadManualsForProduct( $productName, $reload = false ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -150,12 +144,11 @@ class PonyDocsProductManual
 		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
 		$content = $article->getContent( );
 
-		if( !$article->exists( ))
-		{
+		if( !$article->exists() ) {
 			/**
 			 * There is no manuals file found -- just return.
 			 */
-			return array( );
+			return array();
 		}
 
 		/**
@@ -209,8 +202,7 @@ class PonyDocsProductManual
 	 * @static
 	 * @return array
 	 */
-	static public function GetManuals( $productName )
-	{
+	static public function GetManuals( $productName ) {
 		return self::LoadManualsForProduct( $productName );
 	}
 
@@ -220,8 +212,7 @@ class PonyDocsProductManual
 	 * @static
 	 * @returns array
 	 */
-	static public function GetDefinedManuals( $productName )
-	{
+	static public function GetDefinedManuals( $productName ) {
 		self::LoadManualsForProduct( $productName );
 		return self::$sDefinedManualList[$productName];
 	}
@@ -233,8 +224,7 @@ class PonyDocsProductManual
 	 * @param string $shortName
 	 * @return PonyDocsManual&
 	 */
-	static public function & GetManualByShortName( $productName, $shortName )
-	{
+	static public function & GetManualByShortName( $productName, $shortName ) {
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
 		if( self::IsManual( $productName, $convertedName ))
 			return self::$sDefinedManualList[$productName][strtolower($convertedName)];
@@ -248,8 +238,7 @@ class PonyDocsProductManual
 	 * @param string $shortName
 	 * @return boolean
 	 */
-	static public function IsManual( $productName, $shortName )
-	{
+	static public function IsManual( $productName, $shortName ) {
 		// We no longer specify to reload the manual data, because that's just 
 		// insanity.
 		self::LoadManualsForProduct($productName, false);
@@ -264,8 +253,7 @@ class PonyDocsProductManual
 	 * @static
 	 * @return PonyDocsManual
 	 */
-	static public function GetCurrentManual($productName, $title = null )
-	{
+	static public function GetCurrentManual($productName, $title = null ) {
 		global $wgTitle;
 		$targetTitle = $title == null ? $wgTitle : $title;
 		$pcs = explode( ':', $targetTitle->__toString( ));
