@@ -213,7 +213,8 @@ class PonyDocsProduct
 				
 				// Avoid wedging the product page with a fatal error if shortName is omitted by some crazy nihilist
 				if ( isset( $parameters[0] ) && $parameters[0] != '' ) {
-					$pProduct = new PonyDocsProduct( $parameters[0], $parameters[1], $parameters[2], $parameters[3] );
+					$pProduct = new PonyDocsProduct(
+						$parameters[0], $parameters[1], $parameters[2], $parameters[3], $parameters[4] );
 					$pProduct->setStatic( $static );
 					self::$sDefinedProductList[$pProduct->getShortName()] = $pProduct;
 					self::$sProductList[$parameters[0]] = $pProduct;

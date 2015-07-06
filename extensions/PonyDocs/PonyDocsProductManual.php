@@ -25,6 +25,12 @@ class PonyDocsProductManual
 	 */
 	protected $mLongName;
 
+	/**
+	 * @access protected
+	 * @var array Categories that this Manual is in
+	 */
+	protected $mCategories;
+
 	/** @var string Product name */
 	protected $pName;
 
@@ -45,6 +51,13 @@ class PonyDocsProductManual
 	 * @var array
 	 */
 	static protected $sDefinedManualList = array( );
+	
+	/**
+	 * @access protected
+	 * @static
+	 * @var array An array mapping Categories to Manuals which have a TOC defined for the currently selected version
+	 */
+	static protected $sCategoryMap = array();
 
 	/**
 	 * Constructor is simply passed the short and long (display) name.  We convert the short name to lowercase
@@ -53,12 +66,13 @@ class PonyDocsProductManual
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '', $static = FALSE )
+	public function __construct( $pName, $shortName, $longName = '', $categories = '', $static = FALSE )
 	{
 		//$this->mShortName = strtolower( $shortName );
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
+		$this->mCategories = explode( ',', $categories );
 		$this->static = $static;
 	}
 
@@ -155,28 +169,35 @@ class PonyDocsProductManual
 		 * Otherwise, skip it!
 		 */
 
-		if( !preg_match_all( '/{{#manual:\s*(.*)[|](.*)\s*}}/i', $content, $matches, PREG_SET_ORDER ))
-			return array( );
+		// Explode on the closing tag to get an array of manual tags
+		$tags = explode( '}}', $content );
+		foreach ( $tags as $tag ) {
+			$tag = trim( $tag );
+			if ( strpos( $tag, '{{#manual:' ) === 0 ) { 
+				
+				// Remove the opening tag and prefix
+				$manual = str_replace( '{{#manual:', '', $tag ); 
+				$parameters = explode( '|', $manual );
+				$parameters = array_map( 'trim', $parameters );
+				
+				// Set static flag if defined as static
+				$static = FALSE;
+				if ( strpos( $parameters[0], PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
+					$parameters[0] = substr( $parameters[0], strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
+					$static = TRUE;
+				}
+				$pManual = new PonyDocsProductManual( $productName, $parameters[0], $parameters[1], $parameters[2], $static );
 
-		foreach( $matches as $m )
-		{
-			// Set static flag if defined as static
-			$static = FALSE;
-			if ( strpos( $m[1], PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
-				$m[1] = substr( $m[1], strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
-				$static = TRUE;
+				self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
+
+				$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
+
+				if ( !$static && !$res->numRows() ) {
+					continue;
+				}
+
+				self::$sManualList[$productName][strtolower($m[1])] = $pManual;
 			}
-			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $static );
-			
-			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
-
-			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
-
-			if ( !$static && !$res->numRows() ) {
-				continue;
-			}
-
-			self::$sManualList[$productName][strtolower($m[1])] = $pManual;
 		}
 
 		return self::$sManualList[$productName];
