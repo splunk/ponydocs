@@ -218,9 +218,18 @@ class PonyDocsProduct
 					$pProduct->setStatic( $static );
 					self::$sDefinedProductList[$pProduct->getShortName()] = $pProduct;
 					self::$sProductList[$parameters[0]] = $pProduct;
-					if (isset( $parameters[3]) && $parameters[3] != '' ) {
-						// key is parent, value is array of children
+					// Handle child products
+					if ( isset( $parameters[3]) && $parameters[3] != '' ) {
 						self::$sParentChildMap[$parameters[3]][] = $parameters[0];
+					}
+					// Handle product categories
+					if ( isset( $parameters[4] ) && $parameters[4] != '' ) {
+						$categories = explode( ',', $parameters[4] );
+						foreach ( $categories as $category ) {
+							self::$sCategoryMap[$category][] = $pProduct;
+						}
+					} else {
+						self::$sCategoryMap[PONYDOCS_NO_CATEGORY][] = $pProduct;
 					}
 				}
 			}

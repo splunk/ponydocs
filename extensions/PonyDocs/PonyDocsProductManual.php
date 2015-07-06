@@ -181,15 +181,28 @@ class PonyDocsProductManual
 				}
 				$pManual = new PonyDocsProductManual( $productName, $parameters[0], $parameters[1], $parameters[2], $static );
 
-				self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
-
-				$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
-
-				if ( !$static && !$res->numRows() ) {
-					continue;
+				self::$sDefinedManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
+				
+				// Handle Manual Categories
+				if ( isset( $parameters[2] ) && $parameters[2] != '' ) {
+					$categories = explode( ',', $parameters[2] );
+					foreach ( $categories as $category ) {
+						self::$sCategoryMap[$category][] = $pManual;
+					}
+				} else {
+					self::$sCategoryMap[PONYDOCS_NO_CATEGORY][] = $pManual;
 				}
 
-				self::$sManualList[$productName][strtolower($m[1])] = $pManual;
+				// If the Manual is static or there is a TOC for this Product/Manual/Version, add to sManualList
+				if (!$static) {
+					$res = PonyDocsCategoryLinks::getTOCByProductManualVersion(
+						$productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion( $productName ) );
+					if ( !$res->numRows() ) {
+						continue;
+					}
+				}
+
+				self::$sManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
 			}
 		}
 
