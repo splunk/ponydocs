@@ -70,7 +70,7 @@ class PonyDocsProductManual
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
-		$this->mCategories = explode( ',', $categories );
+		$this->mCategories = $categories && $categories != '' ? explode( ',', $categories ) : array();
 		$this->static = $static;
 	}
 
@@ -80,6 +80,14 @@ class PonyDocsProductManual
 	
 	public function getLongName() {
 		return $this->mLongName;
+	}
+	
+	/**
+	 * Getter for categories
+	 * @return array
+	 */
+	public function getCategories() {
+		return $this->mCategories;
 	}
 
 	public function getProductName() {

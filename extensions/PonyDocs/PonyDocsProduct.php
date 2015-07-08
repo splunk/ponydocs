@@ -86,7 +86,7 @@ class PonyDocsProduct
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
 		$this->mDescription = $description;
 		$this->mParent = $parent;
-		$this->mCategories = explode( ',', $categories );
+		$this->mCategories = $categories && $categories != '' ? explode( ',', $categories ) : array();
 	}
 
 	/**
