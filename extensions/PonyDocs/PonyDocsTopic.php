@@ -185,7 +185,7 @@ class PonyDocsTopic {
 	public function getSubContents() {
 		$sections = array();
 
-		if (preg_match('/__NOTOC__/', $this->pArticle->getContent())) {
+		if ( preg_match('/__NOTOC__/', $this->pArticle->getContent() ) ) {
 			return $sections;
 		}
 
@@ -199,7 +199,7 @@ class PonyDocsTopic {
 
 			// We don't want to include any H3s that don't have an H2 parent
 			if ( $level == 2 || ( $level == 3 && $h2 ) ) {
-				if ($level == 2) {
+				if ( $level == 2 ) {
 					$h2 = TRUE;
 				}
 				$headCount = sizeof( $headRefrence[$match[2]] );
