@@ -195,14 +195,18 @@ class PonyDocsTopic {
 		$headCount = 0;
 		foreach ( $matches as $match ) {
 			$level = strlen( $match[1] );
-			$headReference[$match[2]][] = $match[2];
+			if ( !isset($headReference[$match[2]]) ) {
+				$headReference[$match[2]] = 1;
+			} else {
+				$headReference[$match[2]] ++;
+			}
 
 			// We don't want to include any H3s that don't have an H2 parent
 			if ( $level == 2 || ( $level == 3 && $h2 ) ) {
 				if ( $level == 2 ) {
 					$h2 = TRUE;
 				}
-				$headCount = sizeof( $headRefrence[$match[2]] );
+				$headCount = $headReference[$match[2]];
 				if ( $headCount > 1 ) {
 					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial') . '_' . $headCount;
 				} else {
