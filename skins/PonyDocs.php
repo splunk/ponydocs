@@ -358,6 +358,7 @@ class PonyDocsTemplate extends QuickTemplate {
 														}
 														print "<option value='". $manual['firstUrl'] . "'   $selected>";
 														print $manual['longName'];
+														print "<!-- categories: {$manual['categories']} -->";
 														print '</option>';
 													} ?>
 												</select>
@@ -940,6 +941,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$selected = !strcmp( $data['name'], $this->data['selectedProduct'] ) ? 'selected="selected"' : '';
 				echo '<option value="' . $data['name'] . '" ' . $selected . '>';
 				echo $data['label'];
+				echo "<!-- categories: " . implode(',', $data['categories']) . "-->";
 				echo "</option>\n";
 				echo $this->hierarchicalProductSelect( $data['name'] );
 			} elseif ( $parent !== NULL && $data['parent'] == $parent ) {
