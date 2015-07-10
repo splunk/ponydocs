@@ -261,7 +261,7 @@ class PonyDocsTopic {
 		$content = $this->pArticle->getContent();
 		$content = str_replace("<nowiki>", "", $content);
 		$content = str_replace("</nowiki>", "", $content);
-		
+		$content = strip_tags($content, '<h1><h2><h3><h4><h5>');	
 		$headings = array();
 		# A heading is a line that only contains an opening set of '=', some text, and a closing set of '='
 		# There can be an arbitrary amount of whitespace before and after each component of the heading

@@ -21,20 +21,6 @@ if( !defined( 'MEDIAWIKI' ))
  */
 class PonyDocsExtension 
 {
-	/**
-	 * URL mode used on this page load;  0=Normal 1=Aliased URL.
-	 *
-	 * @var integer Mode (normal or aliased) we are viewing this page in so we can retain that.
-	 */
-	protected $mURLMode = 0;
-
-	/**
-	 * Possible modes - NORMAL means normal MW navigation, ALIASED means we got to this page using an aliased
-	 * URL and thus must preserve that nomenclature in wiki links on the content and sidebar nav.
-	 */
-	const URLMODE_NORMAL = 0;
-	const URLMODE_ALIASED = 1;
-
 	const ACCESS_GROUP_PRODUCT = 0;
 	const ACCESS_GROUP_VERSION = 1;
 
@@ -44,32 +30,20 @@ class PonyDocsExtension
 	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
 	 */
 	public function __construct() {
-		global $wgScriptPath;
-		global $wgHooks, $wgArticlePath;
+		global $wgArticlePath, $wgHooks, $wgScriptPath;
 
 		$this->setPathInfo();
 		
-		// <namespace>/<product>/<version>/<manual>
-		// <namespace>/<product>/<version>
-		// <namespace>/<product>/<manual>
-		// set URLMODE_ALIASED
-		if ( preg_match(
-			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME 
-				. '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i',
-			$_SERVER['PATH_INFO'],
-			$match ) ) {
-			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
 		// <namespace>/<product>/<version>/<manual>/<topic>
 		// Register a hook to map the URL to a page
-		} elseif ( preg_match(
+		if ( preg_match(
 			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 				. '\/(.*)\/(.*)\/(.*)\/(.*)$/i',
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
-			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
 		// <namespace>:<product>:<manual>:<topic>
-		// Register a hook to map this versionless title to the latest version if no Version specified in URL
+		// Register a hook to map this title to the latest version if no Version specified in URL
 		} elseif (
 			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX
 				. '([^:]+):([^:]+):([^:]+)$/i',
@@ -101,16 +75,6 @@ class PonyDocsExtension
 			}
 		}
 		return $_SERVER['PATH_INFO'];
-	}
-
-	/**
-	 * Return the URL mode (aliased or normal).
-	 *
-	 * @return integer
-	 */
-	public function getURLMode( )
-	{
-		return $this->mURLMode;
 	}
 
 	/**
