@@ -179,7 +179,9 @@ class PonyDocsProductManual
 				// Remove the opening tag and prefix
 				$manual = str_replace( '{{#manual:', '', $tag ); 
 				$parameters = explode( '|', $manual );
-				$parameters = array_map( 'trim', $parameters );
+				$parameters = array_map( 'trim', $parameters );	
+				// Pad out array to avoid notices
+				$parameters = array_pad( $parameters, 3, '');
 				
 				// Set static flag if defined as static
 				$static = FALSE;

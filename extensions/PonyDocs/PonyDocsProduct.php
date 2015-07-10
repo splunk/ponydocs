@@ -196,6 +196,8 @@ class PonyDocsProduct
 				$product = str_replace( '{{#product:', '', $tag ); 
 				$parameters = explode( '|', $product );
 				$parameters = array_map( 'trim', $parameters );
+				// Pad out array to avoid notices
+				$parameters = array_pad( $parameters, 5, '');
 
 				// Set static flag if defined as static
 				$static = FALSE;
