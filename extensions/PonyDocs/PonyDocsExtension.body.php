@@ -21,20 +21,6 @@ if( !defined( 'MEDIAWIKI' ))
  */
 class PonyDocsExtension 
 {
-	/**
-	 * URL mode used on this page load;  0=Normal 1=Aliased URL.
-	 *
-	 * @var integer Mode (normal or aliased) we are viewing this page in so we can retain that.
-	 */
-	protected $mURLMode = 0;
-
-	/**
-	 * Possible modes - NORMAL means normal MW navigation, ALIASED means we got to this page using an aliased
-	 * URL and thus must preserve that nomenclature in wiki links on the content and sidebar nav.
-	 */
-	const URLMODE_NORMAL = 0;
-	const URLMODE_ALIASED = 1;
-
 	const ACCESS_GROUP_PRODUCT = 0;
 	const ACCESS_GROUP_VERSION = 1;
 
@@ -43,37 +29,26 @@ class PonyDocsExtension
 	/**
 	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
 	 */
-	public function __construct( )
-	{
-		global $wgScriptPath;
-		global $wgHooks, $wgArticlePath;
+	public function __construct() {
+		global $wgArticlePath, $wgHooks, $wgScriptPath;
 
-		$this->setPathInfo( );
+		$this->setPathInfo();
 
-		/**
-		 * If we have a title which is an ALIAS of the form:
-		 * 		Documentation/<product>/<latest|version>/<manual>/<topic>
-		 * Then we need to register a hook to do the translation of this to a real topic name.
-		 */
-		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
-			'\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
-			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
-		}
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
-			'\/(.*)\/(.*)\/(.*)\/(.*)$/i', $_SERVER['PATH_INFO'], $match ))
-		{
+		// If we have a title which is an ALIAS of the form Documentation/<product>/<latest|version>/<manual>/<topic>
+		// Then we need to register a hook to do the translation of this to a real topic name.
+		if ( preg_match( 
+			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+				. '\/(.*)\/(.*)\/(.*)\/(.*)$/i',
+			$_SERVER['PATH_INFO'],
+			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
-			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
-		}
-
-		/**
-		 * If we have a title which is an ALIAS of the form:
-		 * PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':<product>:<manual>:<topic>'
-		 * With no version.  Use the latest RELEASED version of the topic.
-		 */
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
-			':([^:]+):([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match ))
-		{
+		// If we have a title which is an ALIAS of the form: PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':<product>:<manual>:<topic>'
+		// With no version. Use the latest RELEASED version of the topic.
+		} elseif( preg_match(
+			'/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+				. ':([^:]+):([^:]+):([^:]+)$/i',
+			$_SERVER['PATH_INFO'],
+			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
 		}
 	}
@@ -100,16 +75,6 @@ class PonyDocsExtension
 			}
 		}
 		return $_SERVER['PATH_INFO'];
-	}
-
-	/**
-	 * Return the URL mode (aliased or normal).
-	 *
-	 * @return integer
-	 */
-	public function getURLMode( )
-	{
-		return $this->mURLMode;
 	}
 
 	/**
