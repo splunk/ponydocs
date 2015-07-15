@@ -57,7 +57,7 @@ class SpecialTopicList extends SpecialPage
 			return;
 		}
 
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*)/i', $topic, $match ))
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*)/i', $topic, $match ))
 			return;
 
 		$dbr = wfGetDB( DB_SLAVE );

@@ -37,16 +37,16 @@ class PonyDocsExtension
 		// If we have a title which is an ALIAS of the form Documentation/<product>/<latest|version>/<manual>/<topic>
 		// Then we need to register a hook to do the translation of this to a real topic name.
 		if ( preg_match( 
-			'/^' . str_replace( "/",	"\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 				. '\/(.*)\/(.*)\/(.*)\/(.*)$/i',
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
-		}
-		// If we have a title which is an ALIAS of the form: PONYDOCS_DOCUMENTATION_PREFIX<product>:<manual>:<topic> w/o Version
-		// Use the latest RELEASED version of the topic.
-		elseif ( preg_match(
-			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)$/i',
+		// If we have a title which is an ALIAS of the form: PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':<product>:<manual>:<topic>'
+		// With no version. Use the latest RELEASED version of the topic.
+		} elseif( preg_match(
+			'/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+				. ':([^:]+):([^:]+):([^:]+)$/i',
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
@@ -81,7 +81,7 @@ class PonyDocsExtension
 	 * Method used to take a Title object that is ALIASED and extract the real topic it refers to.  These are of
 	 * the form:
 	 * 
-	 * '/' . PONYDOCS_DOCUMENTATION_PREFIX . 'Manual/(latest|version)/Topic'
+	 * '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':Manual/(latest|version)/Topic'
 	 * 
 	 * The 'latest' keyword will return the version of the topic tagged to the most recent version available.  If
 	 * a specific version is specified it will look for the given topic tagged wtih that version.  In any case
@@ -100,7 +100,7 @@ class PonyDocsExtension
 		/**
 		 * We only care about Documentation namespace for rewrites and they must contain a slash, so scan for it.
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
+		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
 			return false;
 
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
@@ -446,8 +446,9 @@ class PonyDocsExtension
 			 */
 
 			$res = $dbr->select( 'categorylinks', 'cl_to',
-								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
-								 __METHOD__ );
+				"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( 
+				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':' . $manualName . ':' .
+				$topicName )) . ":%'", __METHOD__ );
 
 			if( !$res->numRows( ))
 			{
@@ -622,7 +623,7 @@ class PonyDocsExtension
 		$matches = array();
 
 		if ( preg_match(
-			'/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):(['
+			'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):(['
 				. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)/i',
 			$title->__toString( ),
 			$match ) ) {
@@ -658,7 +659,7 @@ class PonyDocsExtension
 
 			foreach ( $matches as $m ) {
 				$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $m[1] );
-				$wikiPath = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ':' . $wikiTopic;
+				$wikiPath = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2] . ':' . $wikiTopic;
 
 				$versionIn = array();
 				foreach ( $manVersionList as $pV ) {
@@ -669,18 +670,19 @@ class PonyDocsExtension
 					'categorylinks',
 					'cl_sortkey',
 					array(
-						"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX
-							. $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
-						"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
-					__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower(
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2] . ":" .
+						$wikiTopic )) . ":%'", "cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
+						__METHOD__
+					);
 
 				$topicName = '';
 				if ( !$res->numRows() ) {
 					/**
 					 * No match -- so this is a "new" topic.  Set name and create.
 					 */
-					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':'
-						. $earliestVersion->getVersionName();
+					$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2].
+						':' . $wikiTopic . ':' . $earliestVersion->getVersionName();
 
 					$topicArticle = new Article( Title::newFromText( $topicName ) );
 					if ( !$topicArticle->exists() ) {
@@ -722,7 +724,7 @@ class PonyDocsExtension
 	{
 		$title = $article->getTitle( );
 
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
+		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
 		{
 			/**
 			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
@@ -797,7 +799,7 @@ class PonyDocsExtension
 			. ($isEmployee ? 'employee' : 'nonemployee') . "\" url=\"" . $article->getTitle()->getFullURL() . "\"" );
 
 		$title = $article->getTitle();
-		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString() ) ) {
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 			return TRUE;
 		}
 
@@ -828,7 +830,7 @@ class PonyDocsExtension
 			/**
 			 * Now let's find out topic name.
 			 * From that we can look in categorylinks for all tags for this topic, regardless of topic name
-			 * (i.e. PONYDOCS_DOCUMENTATION_PREFIX . 'User:HowToFoo:%').
+			 * (i.e. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':User:HowToFoo:%').
 			 * We need to restrict this so that we do not query ourselves (our own topic name)
 			 * and we need to check for 'cl_to' to be in $categories generated above.
 			 * If we get 1 or more hits then we need to inject a form element (or something) and return FALSE.
@@ -838,16 +840,16 @@ class PonyDocsExtension
 
 			$q = '';
 
-			if ( preg_match(
-				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
+			if ( preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/',
+				$title->__toString( ), $titleMatch ) ) {
 				$q = "SELECT cl_to, cl_sortkey FROM categorylinks " .
 					"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
 						. $titleMatch[3] )) . ":%' " .
 					"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
 						. $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
 					"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
-			} elseif ( preg_match(
-				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/', $title->__toString(), $titleMatch ) ) {
+			} elseif ( preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/',
+				$title->__toString(), $titleMatch ) ) {
 				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
 						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' ))
 							. "%' " .
@@ -986,12 +988,13 @@ HEREDOC;
 		$title = $article->getTitle( );
 
 		// We only perform this in Documentation namespace.
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( ))) return true;
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString( ))) return true;
 
 		$missingTopics = array();
 
 		// If this is not a TOC and we don't want to create on article edit, then simply return.
-		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title) && !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
+		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title) &&
+			!PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
 		{
 			return true;
 		}
@@ -1063,7 +1066,7 @@ HEREDOC;
 							 * Does this topic exist?  Look for a topic with this name tagged for the current version and current product.
 							 * If nothing is found, we create a new article.
 							 */
-							$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $manual . ':' . $topic;
+							$sqlMatch = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $manual . ':' . $topic;
 							$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
 													"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
 													"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
@@ -1171,7 +1174,7 @@ HEREDOC;
 					 * Does this topic exist?  Look for a topic with this name tagged for the current version.
 					 * If nothing is found, we create a new article.
 					 */
-					$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $pManual->getShortName( ) . ':' . $match[1];
+					$sqlMatch = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $pManual->getShortName( ) . ':' . $match[1];
 					$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
 											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
 											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
@@ -1218,7 +1221,7 @@ HEREDOC;
 	{
 		global $wgTitle, $wgOut;
 		
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString( ), $match ))
+		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString( ), $match ))
 			return true;
 
 		if( !$wgTitle->exists( ))
@@ -1269,10 +1272,11 @@ HEREDOC;
 		$dbr = wfGetDB( DB_SLAVE );
 
 		// Ignore anything not of the form Documentation:<product>:<manual>:<topic>:<version>.
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $wgTitle->__toString( ), $match ))
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $wgTitle->__toString( ),
+			$match ))
 			return true;
 
-		$baseTopic = sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
+		$baseTopic = sprintf( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':%s:%s:%s', $match[1], $match[2], $match[3] );
 
 		/**
 		 * Select all of our topics which match this one (of any version) that is not our own.
@@ -1443,7 +1447,7 @@ HEREDOC;
 
 		// We want to do link substitution in all namespaces now.
 		$doWikiLinkSubstitution = true;
-		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/');
+		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/');
 
 		$doStripH1 = false;
 		foreach( $matches as $m )
@@ -1599,7 +1603,8 @@ HEREDOC;
 				else
 				{
 					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
-					if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $wgTitle->__toString( )) || !isset($pManual))
+					if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i',
+						$wgTitle->__toString( )) || !isset($pManual))
 						continue;
 					$page = 'documentation:' . strtolower( $selectedProduct . ':' . $pManual->getShortName( )) . ':' . strtolower( $match[1] );
 
@@ -1697,14 +1702,18 @@ HEREDOC;
 	static public function onGetFullURL($title, $url, $query) {
 		global $wgScriptPath;
 		// Check to see if we're in the Documentation namespace when viewing
-		if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)$/i', $_SERVER['PATH_INFO'])) {
-			if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( )))
+		if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+			'\/(.*)$/i', $_SERVER['PATH_INFO'])) {
+			if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString( )))
 				return true;
 			// Okay, we ARE in the documentation namespace.  Let's try and rewrite 
-			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" . PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3", $url);
+			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+)$/i',
+				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" .
+				PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3",
+				$url);
 			return true;
 		}
-		else if(preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString())) {
+		else if(preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString())) {
 			$editing = false; 		// This stores if we're editing an article or not
 			if(preg_match('/&action=submit/', $_SERVER['PATH_INFO'])) {
 				// Then it looks like we are editing.
@@ -1713,7 +1722,9 @@ HEREDOC;
 			// Okay, we're not in the documentation namespace, but we ARE 
 			// looking at a documentation namespace title.  So, let's rewrite
 			if(!$editing) {
-				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$1/$4/$2/$3", $url);
+				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					"/$1/$4/$2/$3", $url);
 			}
 			else {
 				// Then we should inject the user's current version into the 
@@ -1749,7 +1760,9 @@ HEREDOC;
 						}
 					}
 				}
-				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$currentProduct/$targetVersion/$2/$3", $url);
+				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					"/$currentProduct/$targetVersion/$2/$3", $url);
 			}
 			return true;
 		}
@@ -2002,7 +2015,7 @@ HEREDOC;
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks("delete", $article);
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
+		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString( ), $matches )) {
 			return true;
 		}
 		// Okay, article is in doc namespace
@@ -2025,7 +2038,7 @@ HEREDOC;
 		// Update doc links
 		PonyDocsExtension::updateOrDeleteDocLinks("update", $article, $text);
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
+		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString( ), $matches )) {
 			return true;
 		}
 		// Okay, article is in doc namespace

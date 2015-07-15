@@ -5,7 +5,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 /**
  * Class to manage product versions in PonyDocs MediaWiki. 
  * Each instance represents a defined product version based on the
- * PONYDOCS_DOCUMENTATION_PREFIX . [ProductShortName] . PONYDOCS_PRODUCTVERSION_SUFFIX special page.
+ * PONYDOCS_DOCUMENTATION_NAMESPACE_NAME  . ':' . [ProductShortName] . PONYDOCS_PRODUCTVERSION_SUFFIX special page.
  * It also statically contains the complete list of defined versions per product and their mappings.
  */
 class PonyDocsProductVersion {
@@ -342,10 +342,12 @@ class PonyDocsProductVersion {
 
 		self::$sVersionList[$productName] = array();
 		
-		$title = Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTVERSION_SUFFIX );
+		$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+			PONYDOCS_PRODUCTVERSION_SUFFIX );
 
 		$article = new Article(
-			Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTVERSION_SUFFIX ), 0 );
+			Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+			PONYDOCS_PRODUCTVERSION_SUFFIX ), 0 );
 
 		$content = $article->getContent();
 

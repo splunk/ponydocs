@@ -121,7 +121,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		$inDocumentation = FALSE;
 		if ( $this->data['nscanonical'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 			|| $wgTitle->__toString() == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $wgTitle->__toString() ) ) {
+			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $wgTitle->__toString() ) ) {
 			$inDocumentation = TRUE;
 			$this->prepareDocumentation();
 		}
@@ -700,16 +700,16 @@ class PonyDocsTemplate extends QuickTemplate {
 		 * This isn't a specific topic+version -- handle appropriately.
 		 */
 		if ( sizeof( $pieces ) < 4 ) {
-			if ( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX,
-				$wgTitle->__toString() ) ) {
+			if ( !strcmp( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $this->data['selectedProduct'] .
+				PONYDOCS_PRODUCTVERSION_SUFFIX, $wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:name|status}} to define a new version,'
 					. ' where status is released, unreleased, or preview.'
 					. ' Valid chars in version name are A-Z, 0-9, period, comma, and dash.</i></span>' );
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#versiongroup:name|message}} to set a banner'
 					. ' message that will appear on every topic in every version following the versiongroup.</i></span>' );
-			} elseif ( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTMANUAL_SUFFIX,
-				$wgTitle->__toString() ) ) {
+			} elseif ( !strcmp( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $this->data['selectedProduct'] .
+				PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Manuals Management - '.$this->data['selectedProduct'];
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
 					. '<i>* Use {{#manual:manualShortName|displayName}} to define a new manual.'
@@ -795,8 +795,8 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$topic = new PonyDocsTopic( $wgArticle );
 
-		if ( preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $wgTitle->__toString() )
-			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*TOC.*/', $wgTitle->__toString() ) ) {
+		if ( preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $wgTitle->__toString() )
+			|| preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*TOC.*/', $wgTitle->__toString() ) ) {
 			$this->data['topicversions'] = PonyDocsWiki::getVersionsForTopic( $topic );
 			$this->data['inlinetoc'] = $topic->getSubContents();
 			$this->data['versionclasses'] = $topic->getVersionClasses();
@@ -842,7 +842,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['basetopiclink'] = '<a href="' . $wgScriptPath . '/index.php?title=Special:TopicList&topic='
 				. $this->data['basetopicname'] . '">View All</a>';
 		}
-		$temp = PonyDocsTopic::FindH1ForTitle( PONYDOCS_DOCUMENTATION_PREFIX . $topic->getTitle()->getText() );
+		$temp = PonyDocsTopic::FindH1ForTitle( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $topic->getTitle()->getText() );
 		if ( $temp !== false ) {
 			// We got an H1!
 			$this->data['pagetitle'] = $temp;
@@ -855,10 +855,11 @@ class PonyDocsTemplate extends QuickTemplate {
 		$groups = $wgUser->getGroups();
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $wgTitle->__toString(), $match ) ) {
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $wgTitle->__toString(),
+			$match ) ) {
 			if ( in_array( $ponyDocsEmployeeGroup, $groups ) || in_array( $authProductGroup, $groups ) ) {
 				array_pop( $match );  array_shift( $match );
-				$title = PONYDOCS_DOCUMENTATION_PREFIX . implode( ':', $match );
+				$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . implode( ':', $match );
 
 				$this->data['content_actions']['viewall'] = array(
 					'class' => '',
@@ -873,7 +874,7 @@ class PonyDocsTemplate extends QuickTemplate {
 					'href'	=> $wgScriptPath . '/Special:BranchInherit?titleName=' . $wgTitle->__toString()
 				);
 			}
-		} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
+		} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
 			if ( $wgUser->isAllowed( 'branchmanual' ) ) {
 				$this->data['content_actions']['branch'] = array(
 					'class' => '',
@@ -903,7 +904,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				'text' => 'TOC Management' );
 
 			$this->data['nav_urls']['documentation_manuals'] = array(
-				'href' => str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . 'Manuals', $wgArticlePath ),
+				'href' => str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':Manuals', $wgArticlePath ),
 				'text' => 'Manuals' );
 			
 			$partialUrl = SpecialDocumentLinks::getDocumentLinksArticle();

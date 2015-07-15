@@ -43,7 +43,7 @@ class PonyDocsArticleFactory
 				if (count($pageMatches) > 1) {
 					if (PONYDOCS_CASE_INSENSITIVE_DEBUG) {error_log('DEBUG [' . __METHOD__ . ':' . __LINE__ . '] ' . $articleMeta['page_title'] . ' matched more than 1 page record.');}
 				}
-				$titleToLoad = PONYDOCS_DOCUMENTATION_PREFIX . $pageMatches[0]['page_title'];
+				$titleToLoad = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $pageMatches[0]['page_title'];
 			} else {
 				// no matches found
 				if (PONYDOCS_CASE_INSENSITIVE_DEBUG) {error_log('DEBUG [' . __METHOD__ . ':' . __LINE__ . '] no page record matches found for ' . $articleMeta['page_title']);}
@@ -81,7 +81,9 @@ class PonyDocsArticleFactory
 	 */
 	static public function getArticleMetadataFromTitle($title) {
 		$meta = array();
-		if (preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*):([' . Title::legalChars( ) . ']*):([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*))/i', $title, $match)) {
+		if (preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' .
+			PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*):([' . Title::legalChars( ) . ']*):([' .
+			PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*))/i', $title, $match)) {
 			// matched topic regex
 			$meta['type'] = self::ARTICLE_TYPE_TOPIC;
 			$meta['namespace'] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
@@ -91,7 +93,9 @@ class PonyDocsArticleFactory
 			$meta['manual'] = $match[3];
 			$meta['topic'] = $match[4];
 			$meta['base_version'] = $match[5];
-		} elseif (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*))/i', $title, $match )) {
+		} elseif (preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(([' . PONYDOCS_PRODUCT_LEGALCHARS .
+			']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*))/i',
+			$title, $match )) {
 			// matched TOC regex
 			$meta['type'] = self::ARTICLE_TYPE_TOC;
 			$meta['namespace'] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;

@@ -61,7 +61,7 @@ class PonyDocsTopic {
 		//$this->pArticle->loadContent( );
 		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle();
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString() ) )
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $this->pTitle->__toString() ) )
 			$this->mIsDocumentationTopic = true;
 	}
 
@@ -345,8 +345,9 @@ class PonyDocsTopic {
 	 * @return string
 	 */
 	public function getBaseTopicName() {
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(), $match ) ) {
-			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i',
+			$this->pTitle->__toString(), $match ) ) {
+			return sprintf( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
 
 		return '';

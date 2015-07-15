@@ -133,7 +133,8 @@ class PonyDocsProductManual
 		self::$sManualList[$productName] = array();
 
 		// Use 0 as the last parameter to enforce getting latest revision of this article.
-		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
+		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+			PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
 		$content = $article->getContent( );
 
 		if( !$article->exists( ))

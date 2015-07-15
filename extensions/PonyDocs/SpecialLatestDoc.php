@@ -122,10 +122,10 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 1) Same product, different manual, current version.
 					 */
 					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
-										__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
+						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":[^:]+:" .
+						$topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) = '" . $latestVersionSql .
+						"'", __METHOD__ );
 
 					if( $res->numRows( ) )
 					{
@@ -138,10 +138,10 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 2) Same product, same manual, earlier version
 					 */
 					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-										__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
+						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":" .
+						$manualName . ":" . $topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) IN" .
+						$versionSql, __METHOD__ );
 
 					if( $res->numRows( ) )
 					{
@@ -158,10 +158,10 @@ class SpecialLatestDoc extends SpecialPage {
 					 * properly evaluate not matching a string but match others. So we will filter it out of the results.
 					 */
 					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-										__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
+						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+						":[^:]+:" . $topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) IN" .
+						$versionSql, __METHOD__ );
 					if( $res->numRows( ) )
 					{
 						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
