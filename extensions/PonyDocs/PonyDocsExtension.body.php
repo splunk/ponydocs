@@ -1652,6 +1652,21 @@ HEREDOC;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
 		$continueProcessing = true;
+		
+		/**
+		 * WEB-5280 Only docteam and admin users should be able to see these pages
+		 * (Documentation:Products and Documentation:productShortName:Manuals).
+		 */
+		if ( preg_match(PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( )) ||
+			preg_match(PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString( )) ||
+			!strcmp(PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( )) ) {
+			$groups = $user->getGroups();
+			if ( !in_array( $authProductGroup, $groups ) ) {
+				$result = false;
+				$continueProcessing = false;
+			}
+			
+		}
 
 		if ( !strcmp( 'zipmanual', $action ) ) {
 			/**
