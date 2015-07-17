@@ -459,7 +459,7 @@ class PonyDocsTOC
 
 			// Last but not least, get the manual description if there is one.
 			if ( is_object($this->pTOCArticle) 
-				&& preg_match( '/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->mContent, $matches ) ) {
+				&& preg_match( '/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->getContent(), $matches ) ) {
 				$this->mManualDescription = $matches[1];
 			}
 		// $this->pTOCArticle is empty, we're probably creating a new TOC
