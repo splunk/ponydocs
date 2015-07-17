@@ -250,7 +250,7 @@ function efManualParserFunction_Magic( &$magicWords, $langCode ) {
  * @param string $categories The categories for the Manual, in a comma-separated list
  * @return array
  */
-function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '', $categories ) {
+function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '', $categories = '' ) {
 	global $wgArticlePath;
 
 	$valid = TRUE;
