@@ -3,7 +3,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php" );
 
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
@@ -170,59 +170,56 @@ class SpecialStaticDocImport extends SpecialPage {
 		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
 
 		if ( isset( $_POST['version'] ) && isset( $_POST['product'] ) 
-		     && ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
-                       
-                         switch ($action) {
+			&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
+			switch ($action) {
 				case "add":				
-				if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
-					$wgOut->addHTML( '<h3>Results of Import</h3>' );
-					// Okay, let's make sure we have file provided
-					if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
-						$wgOut->addHTML(
-							'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
-					} else {
+					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
+						$wgOut->addHTML( '<h3>Results of Import</h3>' );
+						// Okay, let's make sure we have file provided
+						if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
+							$wgOut->addHTML(
+								'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
+						} else {
+							try {
+								if ( is_null( $manual ) ) {
+									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
+										$_POST['version'] );
+									$wgOut->addHTML(
+										"Success: imported archive for {$_POST['product']} version {$_POST['version']}" );
+								} else {
+									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
+										$_POST['version'], $_POST['manual'] );
+									$wgOut->addHTML(
+										"Success: imported archive for {$_POST['product']} version {$_POST['version']}"
+										. " manual {$_POST['manual']}" );
+								}
+							} catch (Exception $e) {
+								$wgOut->addHTML( 'Error: ' . $e->getMessage() );
+							}
+						}
+					}
+					break;
+
+				case "remove":				
+					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
+						$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
 						try {
 							if ( is_null( $manual ) ) {
-								$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
-									$_POST['version'] );
-								$wgOut->addHTML(
-									"Success: imported archive for {$_POST['product']} version {$_POST['version']}" );
+								$importer->removeVersion( $_POST['product'], $_POST['version'] );
+								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}" );
 							} else {
-								$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
-									$_POST['version'], $_POST['manual'] );
-								$wgOut->addHTML(
-									"Success: imported archive for {$_POST['product']} version {$_POST['version']}"
+								$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
+								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
 									. " manual {$_POST['manual']}" );
 							}
 						} catch (Exception $e) {
-							$wgOut->addHTML( 'Error: ' . $e->getMessage() );
+							$wgOut->addHTML('Error: ' . $e->getMessage() );
 						}
-					}
-				}
-
-				break;
-
-				case "remove":				
-				if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
-					$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
-					try {
-						if ( is_null( $manual ) ) {
-							$importer->removeVersion( $_POST['product'], $_POST['version'] );
-							$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}" );
-						} else {
-							$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
-							$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
-								. " manual {$_POST['manual']}" );
-						}
-					} catch (Exception $e) {
-						$wgOut->addHTML('Error: ' . $e->getMessage() );
-					}
-				}					
-				break;
+					}					
+					break;
 			}
 			$this->clearProductCache($_POST['product'], $_POST['version']);
-       		 }
-                		
+		}
 	}
 	
 	/**
@@ -231,12 +228,12 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param string $version
 	 */
 	 private function clearProductCache( $productName, $versionName ) {
-		 //verify product has the version
-  		 $versionObj = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
-		 if ( $versionObj != FALSE ) {
+		//verify product has the version
+		$versionObj = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
+		if ( $versionObj != FALSE ) {
 			PonyDocsProductVersion::clearNAVCache( $versionObj );
-		 }
-	 }
+		}
+	}
 
 	/**
 	 * Show existing versions and remove form
