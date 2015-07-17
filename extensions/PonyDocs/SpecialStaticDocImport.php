@@ -35,7 +35,7 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param string $par the URL path following the special page name
 	 */
 	public function execute( $par ) {
-		global $wgOut;
+		global $wgOut, $wgUser;
 
 		$this->setHeaders();
 
@@ -224,9 +224,9 @@ class SpecialStaticDocImport extends SpecialPage {
 							$wgOut->addHTML('Error: ' . $e->getMessage() );
 						}
 					} else {
-						$wgOut->addHTML( 'Error: Version does not exist, or is not accessible' );
+						$wgOut->addHTML( "Error: Version {$_POST['version']} does not exist, or is not accessible" );
 						error_log( 'WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
-							. ' message="bad version"' );
+							. ' message="bad version ' . $_POST['version'] . '"' );
 					}
 					break;
 			}
