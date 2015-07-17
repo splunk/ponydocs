@@ -256,7 +256,8 @@ SplunkBranchInherit = function() {
 
 								}
 							});
-							for( section in topicActions[manual].sections ) {
+							for( section in topicActions[manual].sections ) {								
+								$( "#docbranchinherit .completed .logconsole" ).append( '<br/><div  class="normal">Processing section ' + section + '</div>');
 								for( topic in topicActions[manual].sections[section] ) {
 
 									topicActions[manual].sections[section][topic].numOfTopics = topicCount;
@@ -291,6 +292,22 @@ SplunkBranchInherit = function() {
 						completed = true;
 						clearTimeout( progressTimer );
 						progressTimer = null;
+						var postData = {};
+						postData.rs = 'SpecialBranchInherit::unlinkJobFile';
+						postData.rsargs = [];
+						postData.rsargs.push( SplunkBranchInherit.jobID );
+						$.ajax({
+							url: ajaxUri,
+							type: 'POST',
+							data: postData,
+							async: false,
+							success: function( ) {
+								
+							},
+							error: function() {
+
+							}
+						});
 						$( "#docbranchinherit .topicactions" ).fadeOut(function() {
 							$( "#docbranchinherit .completed" ).fadeIn();
 						});

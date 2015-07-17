@@ -14,6 +14,7 @@ $wgAjaxExportList[] = "SpecialBranchInherit::ajaxFetchManuals";
 $wgAjaxExportList[] = "SpecialBranchInherit::ajaxFetchTopics";
 $wgAjaxExportList[] = "SpecialBranchInherit::ajaxProcessTopic";
 $wgAjaxExportList[] = "SpecialBranchInherit::ajaxProcessManual";
+$wgAjaxExportList[] = "SpecialBranchInherit::unlinkJobFile";
 $wgAjaxExportList[] = "SpecialBranchInherit::ajaxFetchJobID";
 $wgAjaxExportList[] = "SpecialBranchInherit::ajaxFetchJobProgress";
 /**
@@ -157,18 +158,18 @@ class SpecialBranchInherit extends SpecialPage
 		}
 		return $progress;
 	}
-	public static function ajaxProcessManual($jobID, $productName, $sourceVersion, $targetVersion, $topicActions) {
+	public static function ajaxProcessManual($jobID, $productName, $sourceVersion, $targetVersion, $manualActions) {
 		global $wgScriptPath;
 		ob_start();
 		$targetVersionName = $targetVersion;
 		$sourceVersionName = $sourceVersion;
-		$topicActions = json_decode($topicActions, true);
+		$manualActions = json_decode($manualActions, true);
 		list ($msec, $sec) = explode(' ', microtime());
 		$startTime = (float) $msec + (float) $sec;
 		$logFields = "action=start status=success product=$productName sourceVersion=$sourceVersionName "
 				. "targetVersion=$targetVersionName";
 		error_log('INFO [' . __METHOD__ . "] [BranchInherit] $logFields");
-		if ($topicActions == false) {
+		if ($manualActions == false) {
 			print("Failed to read request.");
 			return true;
 		}
@@ -181,7 +182,7 @@ class SpecialBranchInherit extends SpecialPage
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
 		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
 		$lastTopicTarget = null;
-		foreach ($topicActions as $manualName => $manualData) {
+		foreach ($manualActions as $manualName => $manualData) {
 			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
 			// Determine if TOC already exists for target version.
 			if (!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion)) {
@@ -274,14 +275,12 @@ class SpecialBranchInherit extends SpecialPage
 		// branch/inherit.
 		print("Processing topics.\n");
 		$path = PonyDocsExtension::getTempDir() . $jobID;
-		print("<div class=\"normal\">Processing section {$sectionName}</div>");
 		// Update log file
-		$fp = fopen($path, "w+");
+		$fp = fopen($path, "w+");		
 		fputs($fp, "Completed " . $numOfTopicsCompleted . " of " . $numOfTopics . " Total: " . ((int) ($numOfTopicsCompleted / $numOfTopics * 100)) . "%");
 		fclose($fp);
 		if( isset($topicActions['action']) && $topicActions['action'] == "ignore" ) {
 			print("<div class=\"normal\">Ignoring topic: " . $topicActions['title'] . "</div>");
-			continue;
 		} else if( isset($topicActions['action']) && $topicActions['action'] == "branchpurge" ) {
 			try {
 				print("<div class=\"normal\">Attempting to branch topic " . $topicActions['title'] . " and remove existing topic.</div>");
@@ -374,13 +373,23 @@ class SpecialBranchInherit extends SpecialPage
 			print("Link to new topic: <a href=\"" . $wgScriptPath . "/" . $lastTopicTarget . "\">" . $lastTopicTarget . "</a>");
 			print("<br />");
 		}
-		// Okay, let's start the process!
-		if( file_exists($path) ) {
-			unlink($path);
-		}
+		
 		$buffer = ob_get_clean();
 		return $buffer;
 	}
+
+	/**
+	 * Unlink the Job file after Branch/Inherit is done succesfully
+	 * @param type $jobID
+	 * 
+	 */
+	public function unlinkJobFile($jobID)
+	{
+		$path = PonyDocsExtension::getTempDir() . $jobID;		
+		unlink($path);		
+		return "Job file unlinked.";
+	}
+	
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
