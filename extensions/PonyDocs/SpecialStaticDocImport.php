@@ -3,7 +3,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php");
 
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
@@ -44,6 +44,14 @@ class SpecialStaticDocImport extends SpecialPage {
 		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
 		$manualName = isset( $parts[1] ) ? $parts[1] : NULL;
 		
+		// Security Check
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
+		$groups = $wgUser->getGroups();
+		if ( !in_array( $authProductGroup, $groups ) ) {
+			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
+			return;
+		}
+
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$productLongName = $product->getLongName();
 
@@ -169,7 +177,7 @@ class SpecialStaticDocImport extends SpecialPage {
 		
 		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
 
-		if ( isset( $_POST['version'] ) && isset( $_POST['product'] ) 
+		if ( isset( $_POST['version'] ) && isset( $_POST['product'] )
 			&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
 			switch ($action) {
 				case "add":				
@@ -200,7 +208,7 @@ class SpecialStaticDocImport extends SpecialPage {
 					}
 					break;
 
-				case "remove":				
+				case "remove":
 					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
 						$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
 						try {
@@ -215,7 +223,11 @@ class SpecialStaticDocImport extends SpecialPage {
 						} catch (Exception $e) {
 							$wgOut->addHTML('Error: ' . $e->getMessage() );
 						}
-					}					
+					} else {
+						$wgOut->addHTML( 'Error: Version does not exist, or is not accessible' );
+						error_log( 'WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
+							. ' message="bad version"' );
+					}
 					break;
 			}
 			$this->clearProductCache($_POST['product'], $_POST['version']);
@@ -227,7 +239,7 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param string $product 
 	 * @param string $version
 	 */
-	 private function clearProductCache( $productName, $versionName ) {
+	private function clearProductCache( $productName, $versionName ) {
 		//verify product has the version
 		$versionObj = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 		if ( $versionObj != FALSE ) {
