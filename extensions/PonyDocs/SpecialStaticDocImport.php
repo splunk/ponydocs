@@ -173,7 +173,7 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param mixed $manual PonyDocsManual or NULL
 	 */
 	private function processImportForm( $action, $product, $manual ) {
-		global $wgOut;
+		global $wgOut, $wgUser;
 		
 		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
 
@@ -226,7 +226,9 @@ class SpecialStaticDocImport extends SpecialPage {
 					} else {
 						$wgOut->addHTML( "Error: Version {$_POST['version']} does not exist, or is not accessible" );
 						error_log( 'WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
-							. ' message="bad version ' . $_POST['version'] . '"' );
+							. ' message="version ' . $_POST['version'] . 'does not exist, or is not accessible"'
+							. ' username="' . $wgUser->getName() . '"'
+							. ' ip="' . IP::sanitizeIP( wfGetIP() ) . '"');
 					}
 					break;
 			}
