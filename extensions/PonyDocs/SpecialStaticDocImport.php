@@ -35,7 +35,7 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param string $par the URL path following the special page name
 	 */
 	public function execute( $par ) {
-		global $wgOut;
+		global $wgOut, $wgUser;
 
 		$this->setHeaders();
 
@@ -44,6 +44,14 @@ class SpecialStaticDocImport extends SpecialPage {
 		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
 		$manualName = isset( $parts[1] ) ? $parts[1] : NULL;
 		
+		// Security Check
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
+		$groups = $wgUser->getGroups();
+		if ( !in_array( $authProductGroup, $groups ) ) {
+			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
+			return;
+		}
+
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$productLongName = $product->getLongName();
 
@@ -165,64 +173,67 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param mixed $manual PonyDocsManual or NULL
 	 */
 	private function processImportForm( $action, $product, $manual ) {
-		global $wgOut;
+		global $wgOut, $wgUser;
 		
 		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
 
-		if ( isset( $_POST['version'] ) && isset( $_POST['product'] ) 
-		     && ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
-                       
-                         switch ($action) {
+		if ( isset( $_POST['version'] ) && isset( $_POST['product'] )
+			&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
+			switch ($action) {
 				case "add":				
-				if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
-					$wgOut->addHTML( '<h3>Results of Import</h3>' );
-					// Okay, let's make sure we have file provided
-					if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
-						$wgOut->addHTML(
-							'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
-					} else {
+					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
+						$wgOut->addHTML( '<h3>Results of Import</h3>' );
+						// Okay, let's make sure we have file provided
+						if ( !isset( $_FILES['archivefile'] ) || $_FILES['archivefile']['error'] != 0 )  {
+							$wgOut->addHTML(
+								'There was a problem using your uploaded file. Make sure you uploaded a file and try again.');
+						} else {
+							try {
+								if ( is_null( $manual ) ) {
+									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
+										$_POST['version'] );
+									$wgOut->addHTML(
+										"Success: imported archive for {$_POST['product']} version {$_POST['version']}" );
+								} else {
+									$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
+										$_POST['version'], $_POST['manual'] );
+									$wgOut->addHTML(
+										"Success: imported archive for {$_POST['product']} version {$_POST['version']}"
+										. " manual {$_POST['manual']}" );
+								}
+							} catch (Exception $e) {
+								$wgOut->addHTML( 'Error: ' . $e->getMessage() );
+							}
+						}
+					}
+					break;
+
+				case "remove":
+					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
+						$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
 						try {
 							if ( is_null( $manual ) ) {
-								$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
-									$_POST['version'] );
-								$wgOut->addHTML(
-									"Success: imported archive for {$_POST['product']} version {$_POST['version']}" );
+								$importer->removeVersion( $_POST['product'], $_POST['version'] );
+								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}" );
 							} else {
-								$importer->importFile($_FILES['archivefile']['tmp_name'], $_POST['product'],
-									$_POST['version'], $_POST['manual'] );
-								$wgOut->addHTML(
-									"Success: imported archive for {$_POST['product']} version {$_POST['version']}"
+								$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
+								$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
 									. " manual {$_POST['manual']}" );
 							}
 						} catch (Exception $e) {
-							$wgOut->addHTML( 'Error: ' . $e->getMessage() );
+							$wgOut->addHTML('Error: ' . $e->getMessage() );
 						}
+					} else {
+						$wgOut->addHTML( "Error: Version {$_POST['version']} does not exist, or is not accessible" );
+						error_log( 'WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
+							. ' message="version ' . $_POST['version'] . 'does not exist, or is not accessible"'
+							. ' username="' . $wgUser->getName() . '"'
+							. ' ip="' . IP::sanitizeIP( wfGetIP() ) . '"');
 					}
-				}
-
-				break;
-
-				case "remove":				
-				if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
-					$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
-					try {
-						if ( is_null( $manual ) ) {
-							$importer->removeVersion( $_POST['product'], $_POST['version'] );
-							$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}" );
-						} else {
-							$importer->removeVersion( $_POST['product'], $_POST['version'], $_POST['manual'] );
-							$wgOut->addHTML( "Successfully deleted {$_POST['product']} version {$_POST['version']}"
-								. " manual {$_POST['manual']}" );
-						}
-					} catch (Exception $e) {
-						$wgOut->addHTML('Error: ' . $e->getMessage() );
-					}
-				}					
-				break;
+					break;
 			}
 			$this->clearProductCache($_POST['product'], $_POST['version']);
-       		 }
-                		
+		}
 	}
 	
 	/**
@@ -230,13 +241,13 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * @param string $product 
 	 * @param string $version
 	 */
-	 private function clearProductCache( $productName, $versionName ) {
-		 //verify product has the version
-  		 $versionObj = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
-		 if ( $versionObj != FALSE ) {
+	private function clearProductCache( $productName, $versionName ) {
+		//verify product has the version
+		$versionObj = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
+		if ( $versionObj != FALSE ) {
 			PonyDocsProductVersion::clearNAVCache( $versionObj );
-		 }
-	 }
+		}
+	}
 
 	/**
 	 * Show existing versions and remove form
