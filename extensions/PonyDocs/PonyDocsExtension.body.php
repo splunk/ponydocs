@@ -1648,18 +1648,17 @@ HEREDOC;
 	 */
 	static public function onUserCan( &$title, &$user, $action, &$result ) {
 
-		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup;
+		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup, $wgPonyDocsBaseAuthorGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
 		$continueProcessing = true;
 		
 		/**
 		 * WEB-5280 Only docteam and admin users should be able to see these pages
-		 * (Documentation:Products and Documentation:productShortName:Manuals).
+		 * (Documentation:productShortName:Manuals).
 		 */
-		if ( preg_match(PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( )) ||
-			preg_match(PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString( )) ||
-			!strcmp(PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( )) ) {
+		if ( preg_match(PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( )) &&
+			!in_array($wgPonyDocsBaseAuthorGroup, $groups) ) {
 			$groups = $user->getGroups();
 			if ( !in_array( $authProductGroup, $groups ) ) {
 				$result = false;
