@@ -158,6 +158,17 @@ class SpecialBranchInherit extends SpecialPage
 		}
 		return $progress;
 	}
+
+	/**
+	* Processes a manual branch/inherit job request.
+	*
+	* @param $jobID The unique id for this job (see ajaxFetchJobID)
+	* @param $productName string product short name
+	* @param $sourceVersion string String representation of the source version
+	* @param $targetVersion string String representaiton of the target version
+	* @param $manualActions string JSON array representation of all manual data                                                              
+	* @return string Full job log of the process by printing to stdout.
+	*/
 	public static function ajaxProcessManual($jobID, $productName, $sourceVersion, $targetVersion, $manualActions) {
 		global $wgScriptPath;
 		ob_start();
