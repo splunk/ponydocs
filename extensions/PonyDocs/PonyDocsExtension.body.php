@@ -1651,18 +1651,18 @@ HEREDOC;
 		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup, $wgPonyDocsBaseAuthorGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
-		$continueProcessing = true;
+		$continueProcessing = TRUE;
 		
 		/**
 		 * WEB-5280 Only docteam and admin users should be able to see these pages
 		 * (Documentation:productShortName:Manuals).
 		 */
-		if ( preg_match(PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( )) &&
-			!in_array($wgPonyDocsBaseAuthorGroup, $groups) ) {
+		if ( preg_match(PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( )) ) {
 			$groups = $user->getGroups();
-			if ( !in_array( $authProductGroup, $groups ) ) {
-				$result = false;
-				$continueProcessing = false;
+			if ( !in_array( $authProductGroup, $groups ) &&
+			!in_array($wgPonyDocsBaseAuthorGroup, $groups) ) {
+				$result = FALSE;
+				$continueProcessing = FALSE;
 			}
 			
 		}
@@ -1673,8 +1673,8 @@ HEREDOC;
 			 */
 			$groups = $user->getGroups();
 			if( in_array( $authProductGroup, $groups ) ) {
-				$result = true;
-				$continueProcessing = false;
+				$result = TRUE;
+				$continueProcessing = FALSE;
 			}
 		}
 		
@@ -1690,8 +1690,8 @@ HEREDOC;
 				!strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( ) ) ) {
 
 				if ( in_array( $authProductGroup, $groups )) {
-					$result = true;
-					$continueProcessing = false;
+					$result = TRUE;
+					$continueProcessing = FALSE;
 				}
 			} elseif ( ( $title->getNamespace( ) == NS_PONYDOCS ) ||
 				( !strcmp( $title->__toString( ), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) ) ) {
@@ -1700,8 +1700,8 @@ HEREDOC;
 				 * Allow edits for employee or authors/docteam group only.
 				 */
 				if ( in_array( $authProductGroup, $groups ) || in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
-					$result = true;
-					$continueProcessing = false;
+					$result = TRUE;
+					$continueProcessing = FALSE;
 				}
 			}
 		}
