@@ -41,41 +41,40 @@ Failure to do so will result in frustration and keyboard tossing.
 
 ### 1) Configure Apache.
 
-1. Modify your Apache configuration for the use of friendly urls.  
-2. Modify your host to enable rewrite rules.
+* The following is an example Apache configuration that assumes MediaWiki is installed in the docroot, 
+  and that you want to use Short URLS
+	* See [Manual:Short_URL](https://www.mediawiki.org/wiki/Manual:Short_URL)
+* If MediaWiki is installed in a sub-directory of the docroot, modify the configuration accordingly.
 
-   The following is an example of the Apache configuration that assumes MediaWiki was installed at the base of your html directory.
-   If your MediaWiki instance resides in a sub-directory, modify the configuration accordingly.
+ ```
+ ################# START SAMPLE APACHE CONFIGURATION #################
+ RewriteEngine On
 
-	```
-	################# START SAMPLE APACHE CONFIGURATION #################
-	RewriteEngine On
-	# Main passthrus
-	RewriteRule ^/api.php$	  /api.php	[L,QSA]
-	RewriteRule ^/images/(.*)$	  /images/$1  [L,QSA]
-	RewriteRule ^/config/(.*)$	  /config/$1  [L,QSA]
-	RewriteRule ^/skins/(.*)$	   /skins/$1   [L,QSA]
-	RewriteRule ^/extensions/(.*)$  /extensions/$1  [L,QSA]
+ # Rewrite home page requests to Documentation
+ RewriteRule ^/$ /Documentation [R]
 
-	# Rewrite /Documentation/ to /Documentation
-	RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
+ # Rewrite /Documentation/ to /Documentation
+ RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
 
-	# Proxy /DocumentationStatic to Special:StaticDocServer
-	RewriteRule ^/DocumentationStatic	- [L]
-	ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
+ # Proxy /DocumentationStatic to Special:StaticDocServer
+ RewriteRule ^/DocumentationStatic	- [L]
+ ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
 
-	# Rewrite rule to handle passing ugly doc urls to pretty urls
-	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
-	RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
+ # Rewrite ugly doc urls to pretty urls
+ RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+ RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
-	# Get home page requests to Documentation
-	RewriteRule ^/$ /Documentation [R]
+ # Send all other requests to MediaWiki
+ # NB: If you are not using vhosts, or are using apache < 2.2, remove %{DOCUMENT_ROOT}
+ #     See discussion of REQUEST_FILENAME in http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+ RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-f
+ RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-d
+ RewriteCond %{REQUEST_URI}						!=/favicon.ico
+ RewriteRule ^/.*$	/index.php [PT,QSA]
+ ################# END SAMPLE APACHE CONFIGURATION #################
+ ```
 
-	# All other requests go through MW router
-	RewriteRule ^/.*$ /index.php [PT,QSA]
-	################# END SAMPLE APACHE CONFIGURATION #################
-	```
-3. Restart Apache so Rewrite Rules will take affect.
+Restart Apache
 
 ### 2) Modify LocalSettings.php
 
@@ -83,9 +82,9 @@ Failure to do so will result in frustration and keyboard tossing.
 2. Modify your `$wgGroupPermissions` to add PonyDoc's additional permissions to your existing groups.
 	* These permissions are named are branchtopic, branchmanual, inherit, viewall.
 	* You can also create new groups for your permissions.
-	* Review [Manual:User_rights](http://www.mediawiki.org/wiki/Manual:User_rights) for more information.  
-3. Make sure to define $wgArticlePath (some MediaWiki instances do not have this property defined.)
-	* Refer to [Manual:$wgArticlePath](http://www.mediawiki.org/wiki/Manual:$wgArticlePath) for more information.  
+	* See [Manual:User_rights](http://www.mediawiki.org/wiki/Manual:User_rights)
+3. Assuming you want Short URLs, make sure to define $wgArticlePath (some MediaWiki instances do not have this property defined.)
+	* See [Manual:$wgArticlePath](http://www.mediawiki.org/wiki/Manual:$wgArticlePath)
    For example: if MediaWiki was installed at the root of your html directory:
    `$wgArticlePath = '/$1';`
 4. Update all the PONYDOCS_ contents to fit to your installation.
@@ -101,9 +100,11 @@ Failure to do so will result in frustration and keyboard tossing.
 * An example in your LocalSettings.php file with all the settings listed above, would be:
 
 	```
+	$wgArticlePath = '/$1';
+
 	################# PONYDOCS START #################
 	// first things first, set logo
-	$wgLogo = "/extensions/PonyDocs/images/pony.png";
+	$wgLogo = "$wgScriptPath/extensions/PonyDocs/images/pony.png";
 
 	// Implicit group for all visitors, remove access beyond reading
 	$wgGroupPermissions['*']['createaccount'] = false;
@@ -151,8 +152,6 @@ Failure to do so will result in frustration and keyboard tossing.
 	$wgGroupPermissions['bot']['nominornewtalk'] = true;
 	$wgGroupPermissions['bot']['autopatrol'] = true;
 
-	$wgArticlePath = '/$1';
-
 	// Ponydocs environment configuration.  update to your
 	// specific install
 	define('PONYDOCS_PRODUCT_LOGO_URL', 'http://' . $_SERVER['SERVER_NAME'] . '/extensions/PonyDocs/images/pony.png');
@@ -195,12 +194,12 @@ Failure to do so will result in frustration and keyboard tossing.
 	#################  PONYDOCS END #################
 	```
 
-### 3) Install PonyDocs extension and Configure MediaWiki to load it.
+### 3) Install PonyDocs extension, Configure PonyDocs skin
 
 1. Move the extensions/PonyDocs/ directory into your MediaWiki instance's extensions directory.
-2. Update your MediaWiki database schema by running extensions/PonyDocs/sql/schema.sql.
+2. Apply extensions/PonyDocs/sql/schema.sql to your MediaWiki database.
 	* Remove this sql file as it's no longer needed and is publicly reachable via your PonyDocs site.
-3. Activate the PonyDocs skin
+3. Configure the PonyDocs skin
 	* There is a sample PonyDocs skin that is provided in this archive.
 	* In order to demo PonyDoc's features, you can use this skin by moving the contents of the `skin/` directory (two files and 
 	  one directory) to `MEDIAWIKIBASE/skins/`.
@@ -211,15 +210,16 @@ Failure to do so will result in frustration and keyboard tossing.
 ### 4) Review PonyDocsConfig.php
 
 * Take a look at extensions/Ponydocs/PonyDocs.config.php.
-* It will define a bunch of constants, most of which you shouldn't need to touch.
+* It defines a bunch of constants, most of which you shouldn't need to touch.
 * As of this writing, changing these values has not been tested.
 
 ### 5) Define your products in the code.
 
 1. Edit your LocalSettings.php to include a list of products.
-	* There is an empty array already in place called $ponyDocsProductsList.
-	* This array *must* be defined before the PonyDocs extension is included, as in the example in section 2.
-	* This list will be used to determine user groups.
+	* If you copied the example LocalSettings.php configuration, 
+      there is an array already in place called $ponyDocsProductsList.
+	* This array *must* be defined before the PonyDocs extension is included..
+	* This list is used to define user groups.
 	* There needs to be at least one product in the array. If you don't define one, PonyDocs will default to a "Splunk" product.
    Here is one product defined (Foo):
    `$ponyDocsProductsList = array('Foo');`
@@ -357,7 +357,6 @@ In the Ponydocs skin, there is a link to "PDF Version".
 
 * If you would like this to work, you'll need to install [HTMLDOC](http://www.htmldoc.org/)
 * Additionally, you'll need to make sure your MEDIAWIKIBASE/images directory is writable by your web server user.
-
 
 F.A.Q.
 ------
