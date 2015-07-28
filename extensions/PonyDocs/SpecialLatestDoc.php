@@ -44,7 +44,6 @@ class SpecialLatestDoc extends SpecialPage {
 		$wgOut->setPagetitle("Latest Documentation For " . $title );
 
 		$dbr = wfGetDB( DB_SLAVE );
-
 		/**
 		 * We only care about Documentation namespace for rewrites and they must contain a slash, so scan for it.
 		 * $matches[1] = product
@@ -52,14 +51,22 @@ class SpecialLatestDoc extends SpecialPage {
 		 * $matches[3] = manual
 		 * $matches[4] = topic
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS. ']*)\/(.*)\/(.*)\/(.*)$/i', $title, $matches )) {
-			?>
+		if (!isset($title) || $title == '') {
+			$logFields = "action=SpecialDoc status=failure error=\"Failed to obtain value for parameter t\"";
+			error_log('WARNING [' . __METHOD__ . "] [SpecialLastestDoc] $logFields"); ?>
 			<p>
-			Sorry, but <?php echo $sanitizedTitle;?> is not a valid Documentation url.
+				Sorry, please pass in a valid parameter <b>t</b> to get the desired documentation.
 			</p>
 			<?php
-		}
-		else {
+		} elseif (!preg_match(
+			'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS. ']*)\/(.*)\/(.*)\/(.*)$/i',
+			$title,
+			$matches)) { ?>
+			<p>
+				Sorry, but <?php echo $sanitizedTitle;?> is not a valid Documentation url.
+			</p>
+			<?php
+		} else {
 			/**
 			 * At this point $matches contains:
 			 * 	0= Full title.
@@ -115,10 +122,10 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 1) Same product, different manual, current version.
 					 */
 					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) = '" . $latestVersionSql . "'", 
-										__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
+						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":[^:]+:" .
+						$topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) = '" . $latestVersionSql .
+						"'", __METHOD__ );
 
 					if( $res->numRows( ) )
 					{
@@ -131,10 +138,10 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 2) Same product, same manual, earlier version
 					 */
 					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manualName . ":" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-										__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
+						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":" .
+						$manualName . ":" . $topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) IN" .
+						$versionSql, __METHOD__ );
 
 					if( $res->numRows( ) )
 					{
@@ -151,10 +158,10 @@ class SpecialLatestDoc extends SpecialPage {
 					 * properly evaluate not matching a string but match others. So we will filter it out of the results.
 					 */
 					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-										 "LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . 
-										 $dbr->strencode( '^' . strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'" .
-										 " AND cast(cl_to AS CHAR) IN" . $versionSql, 
-										__METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
+						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+						":[^:]+:" . $topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) IN" .
+						$versionSql, __METHOD__ );
 					if( $res->numRows( ) )
 					{
 						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
