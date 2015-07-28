@@ -33,18 +33,17 @@ It is further assumed that have 4 classes of users of your wiki:
 * Admins
 	* Folks who can add, remove, and move Employees and Editors to the different product docteam groups
 
+Finally, PonyDocs requires you to have [Short URLs](https://www.mediawiki.org/wiki/Manual:Short_URL) enabled,
+and this INSTALL document assumes that your wiki URLs match your MediaWiki docroot - which is not a MW best-practice.
+However it should be easy to modify the example configurations here to support a more standard MW URL structure.
+
 Quick Install Instructions
 --------------------------
 
-Notes: Please complete all install instructions before attempting to use your new PonyDocs installation.
-Failure to do so will result in frustration and keyboard tossing.
-
 ### 1) Configure Apache.
 
-* The following is an example Apache configuration that assumes MediaWiki is installed in the docroot, 
-  and that you want to use Short URLS
-	* See [Manual:Short_URL](https://www.mediawiki.org/wiki/Manual:Short_URL)
-* If MediaWiki is installed in a sub-directory of the docroot, modify the configuration accordingly.
+The following is an example Apache configuration that assumes MediaWiki is installed in the docroot. 
+If MediaWiki is installed in a sub-directory of the docroot, modify the configuration accordingly.
 
  ```
  ################# START SAMPLE APACHE CONFIGURATION #################
@@ -62,150 +61,136 @@ Failure to do so will result in frustration and keyboard tossing.
 
  # Rewrite ugly doc urls to pretty urls
  RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
- RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
+ RewriteRule ^/Documentation:(.*):(.*):(.*)			/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
  # Send all other requests to MediaWiki
  # NB: If you are not using vhosts, or are using apache < 2.2, remove %{DOCUMENT_ROOT}
  #     See discussion of REQUEST_FILENAME in http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-f
  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-d
- RewriteCond %{REQUEST_URI}						!=/favicon.ico
- RewriteRule ^/.*$	/index.php [PT,QSA]
+ RewriteCond %{REQUEST_URI}							!=/favicon.ico
+ RewriteRule ^/.*$	/index.php [L]
  ################# END SAMPLE APACHE CONFIGURATION #################
  ```
 
 Restart Apache
 
-### 2) Modify LocalSettings.php
+### 2) Install PonyDocs extension and PonyDocs skin
 
-1. Set `$wgLogo` to the PonyDocs logo if you like!
-2. Modify your `$wgGroupPermissions` to add PonyDoc's additional permissions to your existing groups.
-	* These permissions are named are branchtopic, branchmanual, inherit, viewall.
-	* You can also create new groups for your permissions.
-	* See [Manual:User_rights](http://www.mediawiki.org/wiki/Manual:User_rights)
-3. Assuming you want Short URLs, make sure to define $wgArticlePath (some MediaWiki instances do not have this property defined.)
-	* See [Manual:$wgArticlePath](http://www.mediawiki.org/wiki/Manual:$wgArticlePath)
-   For example: if MediaWiki was installed at the root of your html directory:
-   `$wgArticlePath = '/$1';`
-4. Update all the PONYDOCS_ contents to fit to your installation.
-	* `PONYDOCS_PRODUCT_LOGO_URL`
-	* `PONYDOCS_PDF_COPYRIGHT_MESSAGE`
-	* `PONYDOCS_PDF_TITLE_IMAGE_PATH`
-	* `PONYDOCS_DEFAULT_PRODUCT`
-	* `PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL`
-5. Add a `$ponyDocsProductsList` array. More on this in section 5.
-6. Finally, you'll need to include the extension itself:
-   `include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");`
-
-* An example in your LocalSettings.php file with all the settings listed above, would be:
-
-	```
-	$wgArticlePath = '/$1';
-
-	################# PONYDOCS START #################
-	// first things first, set logo
-	$wgLogo = "$wgScriptPath/extensions/PonyDocs/images/pony.png";
-
-	// Implicit group for all visitors, remove access beyond reading
-	$wgGroupPermissions['*']['createaccount'] = false;
-	$wgGroupPermissions['*']['edit'] = false;
-	$wgGroupPermissions['*']['createpage'] = false;
-	$wgGroupPermissions['*']['upload'] = false;
-	$wgGroupPermissions['*']['reupload'] = false;
-	$wgGroupPermissions['*']['reupload-shared'] = false;
-	$wgGroupPermissions['*']['writeapi'] = false;
-	$wgGroupPermissions['*']['createtalk'] = false;
-	$wgGroupPermissions['*']['read'] = true;
-
-	// User is logged-in. Ensure that they still can't edit.
-	$wgGroupPermissions['user']['read'] = true;
-	$wgGroupPermissions['user']['createtalk'] = false;
-	$wgGroupPermissions['user']['upload'] = false;
-	$wgGroupPermissions['user']['reupload'] = false;
-	$wgGroupPermissions['user']['reupload-shared'] = false;
-	$wgGroupPermissions['user']['edit'] = false;
-	$wgGroupPermissions['user']['move'] = false;
-	$wgGroupPermissions['user']['minoredit'] = false;
-	$wgGroupPermissions['user']['createpage'] = false;
-	$wgGroupPermissions['user']['writeapi'] = false;
-	$wgGroupPermissions['user']['move-subpages'] = false;
-	$wgGroupPermissions['user']['move-rootuserpages'] = false;
-	$wgGroupPermissions['user']['purge'] = false;
-	$wgGroupPermissions['user']['sendemail'] = false;
-	$wgGroupPermissions['user']['writeapi'] = false;
-
-	// Our "in charge" group.
-	$wgGroupPermissions['bureaucrat']['userrights'] = true;
-	// Custom permission to branch ALL topics for a version.
-	$wgGroupPermissions['bureaucrat']['branchall'] = true;
-
-	// Implicit group for accounts that pass $wgAutoConfirmAge
-	$wgGroupPermissions['autoconfirmed']['autoconfirmed'] = true;
-
-	// Implicit group for accounts with confirmed email addresses
-	// This has little use when email address confirmation is off
-	$wgGroupPermissions['emailconfirmed']['emailconfirmed'] = true;
-
-	// Users with bot privilege can have their edits hidden from various log pages by default
-	$wgGroupPermissions['bot']['bot'] = true;
-	$wgGroupPermissions['bot']['autoconfirmed']	= true;
-	$wgGroupPermissions['bot']['nominornewtalk'] = true;
-	$wgGroupPermissions['bot']['autopatrol'] = true;
-
-	// Ponydocs environment configuration.  update to your
-	// specific install
-	define('PONYDOCS_PRODUCT_LOGO_URL', 'http://' . $_SERVER['SERVER_NAME'] . '/extensions/PonyDocs/images/pony.png');
-	define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Copyright Foo, Inc. All Rights Reserved');
-	define('PONYDOCS_PDF_TITLE_IMAGE_PATH', '/extensions/PonyDocs/images/pony.png');
-	define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
-	define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
-
-        // Namespace setup
-	define( 'PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation' );
-	define( 'NS_PONYDOCS', 100 );
-	$wgExtraNamespaces[NS_PONYDOCS] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
-	// Include the PonyDocs namespace in article counts
-	$wgContentNamespaces[] = NS_PONYDOCS;
-
-	// Enable cache
-	define( 'PONYDOCS_CACHE_ENABLED', TRUE );
-
-	// Debug logging
-	define( 'PONYDOCS_AUTOCREATE_DEBUG', FALSE );
-	define( 'PONYDOCS_CACHE_DEBUG', FALSE );
-	define( 'PONYDOCS_CASE_INSENSITIVE_DEBUG', FALSE );
-	define( 'PONYDOCS_DOCLINKS_DEBUG', FALSE );
-	define( 'PONYDOCS_REDIRECT_DEBUG', FALSE );
-	define( 'PONYDOCS_SESSION_DEBUG', FALSE );
-	
-	// Temp directory
-	define( 'PONYDOCS_TEMP_DIR', '/tmp/');
-
-	// Category cache expiration in seconds
-	define( 'CATEGORY_CACHE_TTL', 300 );
-	define( 'NAVDATA_CACHE_TTL', 3600 );
-	define( 'TOC_CACHE_TTL', 3600 );
-
-	// NOTE: this *must* match what is in Documentation:Products.
-	// This will be fixed in later versions
-	$ponyDocsProductsList = array('Foo');
-
-	include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");
-	#################  PONYDOCS END #################
-	```
-
-### 3) Install PonyDocs extension, Configure PonyDocs skin
-
-1. Move the extensions/PonyDocs/ directory into your MediaWiki instance's extensions directory.
-2. Apply extensions/PonyDocs/sql/schema.sql to your MediaWiki database.
-	* Remove this sql file as it's no longer needed and is publicly reachable via your PonyDocs site.
-3. Configure the PonyDocs skin
-	* There is a sample PonyDocs skin that is provided in this archive.
-	* In order to demo PonyDoc's features, you can use this skin by moving the contents of the `skin/` directory (two files and 
-	  one directory) to `MEDIAWIKIBASE/skins/`.
+1. Move the extensions/PonyDocs/ directory to the MW extensions/ directory.
+2. Move the contents of the skins/ directory (one directory and two files) to the MW skins/ directory
 	* This skin is just a starting point. Please customize this skin to suit your needs.
-	* To activate the skin, update the `$wgDefaultSkin` value in LocalSettings.php:
-	  `$wgDefaultSkin = 'ponydocs';`
+3. Apply extensions/PonyDocs/sql/schema.sql to your MediaWiki database.
+	* Remove this sql file as it's no longer needed and is publicly reachable via your PonyDocs site.
+
+### 3) Configure PonyDocs in LocalSettings.php
+
+* $wgArticlePath is included here as it's necessary for Short URLs and is not always configured by default.
+	* See [Manual:$wgArticlePath](http://www.mediawiki.org/wiki/Manual:$wgArticlePath)
+
+The following is an example LocalSettings.php file with all the settings discussed above.
+
+```
+$wgArticlePath = $wgScriptPath . '/$1';
+
+################# PONYDOCS START #################
+
+# The settings below should be updated
+
+// Ponydocs environment configuration
+define('PONYDOCS_PRODUCT_LOGO_URL', 'http://' . $_SERVER['SERVER_NAME'] . '/extensions/PonyDocs/images/pony.png');
+define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Copyright Foo, Inc. All Rights Reserved');
+define('PONYDOCS_PDF_TITLE_IMAGE_PATH', '/extensions/PonyDocs/images/pony.png');
+define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
+define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
+
+// NOTE: this *must* match the Product list in Documentation:Products.
+$ponyDocsProductsList = array('Foo');
+
+# The settings below may be updated
+
+// Logo
+$wgLogo = "$wgScriptPath/extensions/PonyDocs/images/pony.png";
+
+// Debug logging
+define( 'PONYDOCS_AUTOCREATE_DEBUG', FALSE );
+define( 'PONYDOCS_CACHE_DEBUG', FALSE );
+define( 'PONYDOCS_CASE_INSENSITIVE_DEBUG', FALSE );
+define( 'PONYDOCS_DOCLINKS_DEBUG', FALSE );
+define( 'PONYDOCS_REDIRECT_DEBUG', FALSE );
+define( 'PONYDOCS_SESSION_DEBUG', FALSE );
+
+// Temp directory
+define( 'PONYDOCS_TEMP_DIR', '/tmp/');
+
+// Category cache expiration in seconds
+define( 'CATEGORY_CACHE_TTL', 300 );
+define( 'NAVDATA_CACHE_TTL', 3600 );
+define( 'TOC_CACHE_TTL', 3600 );
+
+// Implicit group for all visitors, remove access beyond reading
+$wgGroupPermissions['*']['createaccount'] = false;
+$wgGroupPermissions['*']['edit'] = false;
+$wgGroupPermissions['*']['createpage'] = false;
+$wgGroupPermissions['*']['upload'] = false;
+$wgGroupPermissions['*']['reupload'] = false;
+$wgGroupPermissions['*']['reupload-shared'] = false;
+$wgGroupPermissions['*']['writeapi'] = false;
+$wgGroupPermissions['*']['createtalk'] = false;
+$wgGroupPermissions['*']['read'] = true;
+
+// User is logged-in. Ensure that they still can't edit.
+$wgGroupPermissions['user']['read'] = true;
+$wgGroupPermissions['user']['createtalk'] = false;
+$wgGroupPermissions['user']['upload'] = false;
+$wgGroupPermissions['user']['reupload'] = false;
+$wgGroupPermissions['user']['reupload-shared'] = false;
+$wgGroupPermissions['user']['edit'] = false;
+$wgGroupPermissions['user']['move'] = false;
+$wgGroupPermissions['user']['minoredit'] = false;
+$wgGroupPermissions['user']['createpage'] = false;
+$wgGroupPermissions['user']['writeapi'] = false;
+$wgGroupPermissions['user']['move-subpages'] = false;
+$wgGroupPermissions['user']['move-rootuserpages'] = false;
+$wgGroupPermissions['user']['purge'] = false;
+$wgGroupPermissions['user']['sendemail'] = false;
+$wgGroupPermissions['user']['writeapi'] = false;
+
+// Our "in charge" group.
+$wgGroupPermissions['bureaucrat']['userrights'] = true;
+// Custom permission to branch ALL topics for a version.
+$wgGroupPermissions['bureaucrat']['branchall'] = true;
+
+// Implicit group for accounts that pass $wgAutoConfirmAge
+$wgGroupPermissions['autoconfirmed']['autoconfirmed'] = true;
+
+// Implicit group for accounts with confirmed email addresses
+// This has little use when email address confirmation is off
+$wgGroupPermissions['emailconfirmed']['emailconfirmed'] = true;
+
+// Users with bot privilege can have their edits hidden from various log pages by default
+$wgGroupPermissions['bot']['bot'] = true;
+$wgGroupPermissions['bot']['autoconfirmed']	= true;
+$wgGroupPermissions['bot']['nominornewtalk'] = true;
+$wgGroupPermissions['bot']['autopatrol'] = true;
+
+$wgDefaultSkin = 'ponydocs';
+
+# The settings below should not be updated
+
+// Enable cache
+define( 'PONYDOCS_CACHE_ENABLED', TRUE );
+
+// Namespace setup
+define( 'PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation' );
+define( 'NS_PONYDOCS', 100 );
+$wgExtraNamespaces[NS_PONYDOCS] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
+// Include the PonyDocs namespace in article counts
+$wgContentNamespaces[] = NS_PONYDOCS;
+
+include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");
+#################  PONYDOCS END #################
+```
 
 ### 4) Review PonyDocsConfig.php
 
@@ -215,10 +200,9 @@ Restart Apache
 
 ### 5) Define your products in the code.
 
-1. Edit your LocalSettings.php to include a list of products.
-	* If you copied the example LocalSettings.php configuration, 
-      there is an array already in place called $ponyDocsProductsList.
-	* This array *must* be defined before the PonyDocs extension is included..
+1. Edit LocalSettings.php to include a list of products.
+	* If you copied the example LocalSettings.php configuration, there is an already an array named $ponyDocsProductsList.
+	* This array *must* be defined before the PonyDocs extension is included.
 	* This list is used to define user groups.
 	* There needs to be at least one product in the array. If you don't define one, PonyDocs will default to a "Splunk" product.
    Here is one product defined (Foo):
