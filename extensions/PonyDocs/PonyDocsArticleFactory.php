@@ -41,12 +41,12 @@ class PonyDocsArticleFactory
 			// take the first match (even if more found)
 			if (count($pageMatches) > 0) {
 				if (count($pageMatches) > 1) {
-					if (PONYDOCS_CASE_INSENSITIVE_DEBUG) {error_log('DEBUG [' . __METHOD__ . ':' . __LINE__ . '] ' . $articleMeta['page_title'] . ' matched more than 1 page record.');}
+					if (PONYDOCS_DEBUG) {error_log('DEBUG [' . __METHOD__ . ':' . __LINE__ . '] ' . $articleMeta['page_title'] . ' matched more than 1 page record.');}
 				}
 				$titleToLoad = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $pageMatches[0]['page_title'];
 			} else {
 				// no matches found
-				if (PONYDOCS_CASE_INSENSITIVE_DEBUG) {error_log('DEBUG [' . __METHOD__ . ':' . __LINE__ . '] no page record matches found for ' . $articleMeta['page_title']);}
+				if (PONYDOCS_DEBUG) {error_log('DEBUG [' . __METHOD__ . ':' . __LINE__ . '] no page record matches found for ' . $articleMeta['page_title']);}
 			}
 		}
 

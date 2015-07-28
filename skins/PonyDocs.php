@@ -91,7 +91,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		$this->data['selectedVersion'] = PonyDocsProductVersion::GetSelectedVersion( $this->data['selectedProduct'] );
 		$this->data['pVersion'] =
 			PonyDocsProductVersion::GetVersionByName( $this->data['selectedProduct'], $this->data['selectedVersion'] );
-		if ( PONYDOCS_SESSION_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . "] selected product/version is set to " . $this->data['selectedProduct'] . "/"
 				. $this->data['selectedVersion'] );
 		}
