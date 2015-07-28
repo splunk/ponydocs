@@ -8,16 +8,20 @@ For any assistance, please email ponydocs@splunk.com
 Prerequisites & Assumptions
 ---------------------------
 
-1. You're a sysadmin
-2. You have a MediaWiki system at the ready.
-   Beta 2 only tested with [MW 1.16.4](http://bit.ly/KqnCbw?mediawiki-installer), PHP 5.2.16 and 5.3.3 and MySQL 5.1.52.
-3. You can update apache's conf files for the MediaWiki vhost
+1. Requirements
+	* MediaWiki 1.16.x
+	* PHP 5.2, 5.3, or 5.4
+	* MySQL 5.x
+	* Apache 2.x
+2. You've installed MediaWiki and it's working
+3. You've installed PHP 5.2, 5.3, or 5.4
+3. You can update Apache's configuration files for the MediaWiki vhost, or can drop in a .htaccess
 4. You can run SQL commands on the MediaWiki DB
 5. You know this is Beta ;)
 6. You promise to read AND follow all these steps IN ORDER
-7. You've made a backup of your MediaWiki DB in case you didn't meet the previous requirement
+7. You've made a backup of your MediaWiki DB in case anything goes wrong
 
-It is further assumed that have 4 classes of users of your wiki:
+Ponydocs assumes that you have 4 classes of users:
 
 * Anonymous and guests who are logged in
 	* These are folks who fall into the (default) or "user" group. 
@@ -33,8 +37,9 @@ It is further assumed that have 4 classes of users of your wiki:
 * Admins
 	* Folks who can add, remove, and move Employees and Editors to the different product docteam groups
 
-Finally, PonyDocs requires you to have [Short URLs](https://www.mediawiki.org/wiki/Manual:Short_URL) enabled,
-and this INSTALL document assumes that your wiki URLs match your MediaWiki docroot - which is not a MW best-practice.
+PonyDocs requires you to have [Short URLs](https://www.mediawiki.org/wiki/Manual:Short_URL) enabled.
+
+This INSTALL document assumes that your wiki URLs match your MediaWiki docroot - which is not a MW best-practice.
 However it should be easy to modify the example configurations here to support a more standard MW URL structure.
 
 Quick Install Instructions
@@ -42,8 +47,8 @@ Quick Install Instructions
 
 ### 1) Configure Apache.
 
-The following is an example Apache configuration that assumes MediaWiki is installed in the docroot. 
-If MediaWiki is installed in a sub-directory of the docroot, modify the configuration accordingly.
+The following is an example Apache configuration that assumes MediaWiki is installed in the docroot.
+If MediaWiki is installed in a subdirectory of the docroot, modify the configuration accordingly.
 
  ```
  ################# START SAMPLE APACHE CONFIGURATION #################
@@ -91,7 +96,7 @@ Restart Apache
 The following is an example LocalSettings.php file with all the settings discussed above.
 
 ```
-$wgArticlePath = $wgScriptPath . '/$1';
+$wgArticlePath = "$wgScriptPath/$1";
 
 ################# PONYDOCS START #################
 
