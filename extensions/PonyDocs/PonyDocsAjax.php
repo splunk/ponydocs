@@ -60,8 +60,8 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
 	}
 
 	$defaultTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
-	if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $title, $match )) {
-		if (PONYDOCS_REDIRECT_DEBUG) {
+	if( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $title, $match )) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 1");
 		}
 		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product, $wgArticlePath ));
@@ -71,23 +71,24 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
 		 */
 		//$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $match[3] . '/' . $match[4], $wgArticlePath ));
 		// just redirect to that product's main page, we can't carry over version and manual across products
-		if (PONYDOCS_REDIRECT_DEBUG) {	
+		if (PONYDOCS_DEBUG) {	
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 2");
 		}
 		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product, $wgArticlePath ));
-	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(Manuals|Versions)/i', $title, $match )) {
-		if (PONYDOCS_REDIRECT_DEBUG) {
+	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(Manuals|Versions)/i', $title, $match )) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 3");
 		}
-		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $match[2], $wgArticlePath ));
+		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $match[2],
+			$wgArticlePath ));
 	} else {
-		if (PONYDOCS_REDIRECT_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 4");
 		}
 		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product, $wgArticlePath ));
 	}
 
-	if (PONYDOCS_REDIRECT_DEBUG) {
+	if (PONYDOCS_DEBUG) {
 		error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect result " . print_r($response, true));
 	}
 	return $response;
@@ -127,7 +128,7 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 
 	$defaultTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
 
-	if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $title, $match ) ) {
+	if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $title, $match ) ) {
 		$res = $dbr->select(
 			'categorylinks',
 			'cl_from',
@@ -148,16 +149,17 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 		{
 			// same manual/topic doesn't exist for newly selected version, redirect to default
 			$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version, $wgArticlePath ));
-			if (PONYDOCS_REDIRECT_DEBUG) {
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 2");
 			}
 		}
-	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(Manuals|Versions)/i', $title, $match )) {
+	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(Manuals|Versions)/i', $title, $match )) {
 		// this is a manuals or versions page
-		$add_text = str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $match[2], $wgArticlePath);
+		$add_text = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $match[2],
+			$wgArticlePath);
 		/// FIXME we probably need to clear objectcache for this [product]:Manuals page, or even better, do not cache it(?)
 		$response->addText( $add_text );
-		if (PONYDOCS_REDIRECT_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 3");
 		}
 	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)/i', $title, $match )) {
@@ -166,21 +168,21 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 		 */
 		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' 
 		. $version . '/' . $match[3] . '/' . $match[4], $wgArticlePath ));
-		if (PONYDOCS_REDIRECT_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 4");
 		}
 	} elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)/i', $title, $match )) {
 		//Redirection for WEB-10264
 		$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version . '/' . $match[3] , $wgArticlePath ));
-		if (PONYDOCS_REDIRECT_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule to switch versions on a static manual");
 		}
 	} else {
 		$add_text = str_replace( '$1', $defaultTitle . '/' . $product . '/' . $version, $wgArticlePath );
 		$response->addText( $add_text );
-		if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 5");}
+		if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 5");}
 	}
-	if (PONYDOCS_REDIRECT_DEBUG) {
+	if (PONYDOCS_DEBUG) {
 		error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect result " . print_r($response, true));
 	}
 	return $response;
@@ -289,9 +291,9 @@ function efPonyDocsAjaxTopicClone( $topic, $product, $version )
 /**
  * This is used when an author wants to CLONE a title from outside the Documentation namespace into a
  * title within it.  We must be passed the title of the original/source topic and then the destination
- * title which should be a full form PONYDOCS_DOCUMENTATION_PREFIX . '<manual>:<topicName>:<version>' which it will then
- * tag with the supplied version and strip out any other Category tags (since they are invalid in the
- * Documentation namespace unless a DEFINED version).
+ * title which should be a full form PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':<manual>:<topicName>:<version>'
+ * which it will then tag with the supplied version and strip out any other Category tags (since they are
+ * invalid in the Documentation namespace unless a DEFINED version).
  *
  * This will return an AjaxResponse object which MAY contain an error in the case the version is not
  * valid or the topic already exists (destination).

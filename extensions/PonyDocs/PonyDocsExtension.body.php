@@ -45,8 +45,8 @@ class PonyDocsExtension
 		// <namespace>:<product>:<manual>:<topic>
 		// Register a hook to map this title to the latest version if no Version specified in URL
 		} elseif (
-			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX
-				. '([^:]+):([^:]+):([^:]+)$/i',
+			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+				. ':([^:]+):([^:]+):([^:]+)$/i',
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
@@ -81,7 +81,7 @@ class PonyDocsExtension
 	 * Method used to take a Title object that is ALIASED and extract the real topic it refers to.  These are of
 	 * the form:
 	 * 
-	 * '/' . PONYDOCS_DOCUMENTATION_PREFIX . 'Manual/(latest|version)/Topic'
+	 * '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':Manual/(latest|version)/Topic'
 	 * 
 	 * The 'latest' keyword will return the version of the topic tagged to the most recent version available.  If
 	 * a specific version is specified it will look for the given topic tagged wtih that version.  In any case
@@ -100,7 +100,7 @@ class PonyDocsExtension
 		/**
 		 * We only care about Documentation namespace for rewrites and they must contain a slash, so scan for it.
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
+		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
 			return false;
 
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
@@ -155,7 +155,7 @@ class PonyDocsExtension
 				 * What happened here is we requested a topic that does not exist or is not linked to any version.
 				 * Perhaps setup a default redirect, Main_Page or something?
 				 */
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -204,7 +204,7 @@ class PonyDocsExtension
 					);
 
 					if ( !$res->numRows() ) {
-						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 						header( "Location: " . $defaultRedirect );
 						exit( 0 );
 					}
@@ -217,7 +217,7 @@ class PonyDocsExtension
 			/**
 			 * Invalid redirect -- go to Main_Page or something.
 			 */
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
 		} else {
@@ -227,7 +227,7 @@ class PonyDocsExtension
 			 */
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if ( !$version ) {
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -254,7 +254,7 @@ class PonyDocsExtension
 				/**
 				 * Handle invalid redirects?
 				 */
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -317,7 +317,7 @@ class PonyDocsExtension
 		);
 
 		if( !$res->numRows() ) {
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
 		}
@@ -370,7 +370,7 @@ class PonyDocsExtension
 				);
 
 				if ( !$res->numRows() ) {
-					if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+					if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 					header( "Location: " . $defaultRedirect );
 					exit( 0 );
 				}
@@ -395,7 +395,7 @@ class PonyDocsExtension
 		/**
 		 * Invalid redirect -- go to Main_Page or something.
 		 */
-		if ( PONYDOCS_REDIRECT_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
 		}
 		header( "Location: " . $defaultRedirect );
@@ -499,7 +499,7 @@ class PonyDocsExtension
 				 * What happened here is we requested a topic that does not exist or is not linked to any version.
 				 * Perhaps setup a default redirect, Main_Page or something?
 				 */
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -537,7 +537,7 @@ class PonyDocsExtension
 				}
 			}
 			if(!$found) {
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");}
 				header("Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", true, 301);
 				exit(0);
 			}
@@ -571,7 +571,7 @@ class PonyDocsExtension
 					);
 
 					if( !$res->numRows() ) {
-						if ( PONYDOCS_REDIRECT_DEBUG ) {
+						if ( PONYDOCS_DEBUG ) {
 							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 						}
 						header( "Location: " . $defaultRedirect );
@@ -601,7 +601,7 @@ class PonyDocsExtension
 			/**
 			 * Invalid redirect -- go to Main_Page or something.
 			 */
-			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
 		}
@@ -615,7 +615,7 @@ class PonyDocsExtension
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if( !$version )
 			{
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -697,7 +697,7 @@ class PonyDocsExtension
 		$matches = array();
 
 		if ( preg_match(
-			'/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):(['
+			'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):(['
 				. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)/i',
 			$title->__toString( ),
 			$match ) ) {
@@ -733,7 +733,7 @@ class PonyDocsExtension
 
 			foreach ( $matches as $m ) {
 				$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $m[1] );
-				$wikiPath = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ':' . $wikiTopic;
+				$wikiPath = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2] . ':' . $wikiTopic;
 
 				$versionIn = array();
 				foreach ( $manVersionList as $pV ) {
@@ -756,8 +756,8 @@ class PonyDocsExtension
 					/**
 					 * No match -- so this is a "new" topic.  Set name and create.
 					 */
-					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':'
-						. $earliestVersion->getVersionName();
+					$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2].
+						':' . $wikiTopic . ':' . $earliestVersion->getVersionName();
 
 					$topicArticle = new Article( Title::newFromText( $topicName ) );
 					if ( !$topicArticle->exists() ) {
@@ -770,7 +770,7 @@ class PonyDocsExtension
 							$content,
 							'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ),
 							EDIT_NEW );
-						if ( PONYDOCS_AUTOCREATE_DEBUG ) {
+						if ( PONYDOCS_DEBUG ) {
 							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
 								. $title->__toString() );
 						}
@@ -803,7 +803,7 @@ class PonyDocsExtension
 	{
 		$title = $article->getTitle( );
 
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
+		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
 		{
 			/**
 			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
@@ -880,7 +880,7 @@ class PonyDocsExtension
 			. ($isEmployee ? 'employee' : 'nonemployee') . "\" url=\"" . $article->getTitle()->getFullURL() . "\"" );
 
 		$title = $article->getTitle();
-		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString() ) ) {
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 			return TRUE;
 		}
 
@@ -911,7 +911,7 @@ class PonyDocsExtension
 			/**
 			 * Now let's find out topic name.
 			 * From that we can look in categorylinks for all tags for this topic, regardless of topic name
-			 * (i.e. PONYDOCS_DOCUMENTATION_PREFIX . 'User:HowToFoo:%').
+			 * (i.e. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':User:HowToFoo:%').
 			 * We need to restrict this so that we do not query ourselves (our own topic name)
 			 * and we need to check for 'cl_to' to be in $categories generated above.
 			 * If we get 1 or more hits then we need to inject a form element (or something) and return FALSE.
@@ -922,7 +922,7 @@ class PonyDocsExtension
 			$q = '';
 
 			if ( preg_match(
-				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
+				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
 				$res = $dbr->select(
 					array('categorylinks', 'page'),
 					array('cl_to', 'page_title') ,
@@ -938,7 +938,7 @@ class PonyDocsExtension
 					__METHOD__
 				);
 			} elseif ( preg_match(
-				'/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/', $title->__toString(), $titleMatch ) ) {
+				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/', $title->__toString(), $titleMatch ) ) {
 				$res = $dbr->select(
 					array('categorylinks', 'page'),
 					array('cl_to', 'page_title') ,
@@ -1093,12 +1093,13 @@ HEREDOC;
 		$title = $article->getTitle( );
 
 		// We only perform this in Documentation namespace.
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( ))) return true;
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString( ))) return true;
 
 		$missingTopics = array();
 
 		// If this is not a TOC and we don't want to create on article edit, then simply return.
-		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title) && !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
+		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title) &&
+			!PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
 		{
 			return true;
 		}
@@ -1203,7 +1204,7 @@ HEREDOC;
 										$content,
 										"Auto-creation of topic $topicTitle via reference from " . $title->__toString() . '.',
 										EDIT_NEW );
-									if ( PONYDOCS_AUTOCREATE_DEBUG ) {
+									if ( PONYDOCS_DEBUG ) {
 										error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "]"
 											. " Auto-created $topicTitle using link {$match[1]} in " . $title->__toString() );
 									}
@@ -1237,7 +1238,7 @@ HEREDOC;
 									$content,
 									'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
 									EDIT_NEW );
-								if (PONYDOCS_AUTOCREATE_DEBUG) {
+								if (PONYDOCS_DEBUG) {
 									error_log(
 										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " 
 										. $match[1] . " in " . $title->__toString() );
@@ -1269,7 +1270,7 @@ HEREDOC;
 									$content,
 									'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
 									EDIT_NEW );
-								if ( PONYDOCS_AUTOCREATE_DEBUG ) {
+								if ( PONYDOCS_DEBUG ) {
 									error_log( 
 										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created " . $topicTitle . " using link "
 										. $match[1] . " in " . $title->__toString() );
@@ -1309,7 +1310,7 @@ HEREDOC;
 					);
 
 					if ( !$res->numRows() ) {
-						$topicTitle = PONYDOCS_DOCUMENTATION_PREFIX . $sqlMatch . ':' . $version;
+						$topicTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$sqlMatch:$version";
 
 						$tempArticle = new Article( Title::newFromText( $topicTitle ));
 						if( !$tempArticle->exists( ))
@@ -1329,7 +1330,7 @@ HEREDOC;
 								$content,
 								'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
 								EDIT_NEW );
-							if (PONYDOCS_AUTOCREATE_DEBUG) {
+							if (PONYDOCS_DEBUG) {
 								error_log(
 									"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1]
 									. " in " . $title->__toString() );
@@ -1352,7 +1353,7 @@ HEREDOC;
 	static public function onEdit_TOCPage( $editpage ) {
 		global $wgTitle, $wgOut;
 		
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
 			return TRUE;
 		}
 
@@ -1405,10 +1406,11 @@ EOJS;
 		$dbr = wfGetDB( DB_SLAVE );
 
 		// Ignore anything not of the form Documentation:<product>:<manual>:<topic>:<version>.
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $wgTitle->__toString( ), $match ))
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $wgTitle->__toString( ),
+			$match ))
 			return true;
 
-		$baseTopic = sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
+		$baseTopic = sprintf( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':%s:%s:%s', $match[1], $match[2], $match[3] );
 
 		/**
 		 * Select all of our topics which match this one (of any version) that is not our own.
@@ -1594,7 +1596,7 @@ HEREDOC;
 
 		// We want to do link substitution in all namespaces now.
 		$doWikiLinkSubstitution = true;
-		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/');
+		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/');
 
 		$doStripH1 = false;
 		foreach( $matches as $m )
@@ -1775,7 +1777,7 @@ HEREDOC;
 				else
 				{
 					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
-					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $wgTitle->__toString() )
+					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
 						|| !isset($pManual)) {
 						continue;
 					}
@@ -1833,10 +1835,24 @@ HEREDOC;
 	 */
 	static public function onUserCan( &$title, &$user, $action, &$result ) {
 
-		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup;
+		global $wgExtraNamespaces, $wgPonyDocsEmployeeGroup, $wgPonyDocsBaseAuthorGroup;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
-		$continueProcessing = true;
+		$continueProcessing = TRUE;
+		
+		/**
+		 * WEB-5280 Only docteam and admin users should be able to see these pages
+		 * (Documentation:productShortName:Manuals).
+		 */
+		if ( preg_match(PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( )) ) {
+			$groups = $user->getGroups();
+			if ( !in_array( $authProductGroup, $groups ) &&
+			!in_array($wgPonyDocsBaseAuthorGroup, $groups) ) {
+				$result = FALSE;
+				$continueProcessing = FALSE;
+			}
+			
+		}
 
 		if ( !strcmp( 'zipmanual', $action ) ) {
 			/**
@@ -1844,8 +1860,8 @@ HEREDOC;
 			 */
 			$groups = $user->getGroups();
 			if( in_array( $authProductGroup, $groups ) ) {
-				$result = true;
-				$continueProcessing = false;
+				$result = TRUE;
+				$continueProcessing = FALSE;
 			}
 		}
 		
@@ -1861,8 +1877,8 @@ HEREDOC;
 				!strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( ) ) ) {
 
 				if ( in_array( $authProductGroup, $groups )) {
-					$result = true;
-					$continueProcessing = false;
+					$result = TRUE;
+					$continueProcessing = FALSE;
 				}
 			} elseif ( ( $title->getNamespace( ) == NS_PONYDOCS ) ||
 				( !strcmp( $title->__toString( ), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) ) ) {
@@ -1871,8 +1887,8 @@ HEREDOC;
 				 * Allow edits for employee or authors/docteam group only.
 				 */
 				if ( in_array( $authProductGroup, $groups ) || in_array( $wgPonyDocsEmployeeGroup, $groups ) ) {
-					$result = true;
-					$continueProcessing = false;
+					$result = TRUE;
+					$continueProcessing = FALSE;
 				}
 			}
 		}
@@ -1887,14 +1903,18 @@ HEREDOC;
 	static public function onGetFullURL($title, $url, $query) {
 		global $wgScriptPath;
 		// Check to see if we're in the Documentation namespace when viewing
-		if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)$/i', $_SERVER['PATH_INFO'])) {
-			if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( )))
+		if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+			'\/(.*)$/i', $_SERVER['PATH_INFO'])) {
+			if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString( )))
 				return true;
 			// Okay, we ARE in the documentation namespace.  Let's try and rewrite 
-			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" . PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3", $url);
+			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+)$/i',
+				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" .
+				PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3",
+				$url);
 			return true;
 		}
-		else if(preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString())) {
+		else if(preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString())) {
 			$editing = false; 		// This stores if we're editing an article or not
 			if(preg_match('/&action=submit/', $_SERVER['PATH_INFO'])) {
 				// Then it looks like we are editing.
@@ -1903,7 +1923,9 @@ HEREDOC;
 			// Okay, we're not in the documentation namespace, but we ARE 
 			// looking at a documentation namespace title.  So, let's rewrite
 			if(!$editing) {
-				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$1/$4/$2/$3", $url);
+				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					"/$1/$4/$2/$3", $url);
 			}
 			else {
 				// Then we should inject the user's current version into the 
@@ -1939,7 +1961,9 @@ HEREDOC;
 						}
 					}
 				}
-				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$currentProduct/$targetVersion/$2/$3", $url);
+				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+					"/$currentProduct/$targetVersion/$2/$3", $url);
 			}
 			return true;
 		}
@@ -1958,7 +1982,7 @@ HEREDOC;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get( $key );
 		if ( $cacheEntry === null ) {
-			if ( PONYDOCS_CACHE_DEBUG ) {
+			if ( PONYDOCS_DEBUG ) {
 				error_log(
 					"DEBUG [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version" );
 			}
@@ -2006,7 +2030,7 @@ HEREDOC;
 			PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
 		}
 		else {
-			if (PONYDOCS_CACHE_DEBUG) {
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . "] Fetched navigation cache from PonyDocsCache for product $product");
 			}
 		}
@@ -2103,7 +2127,7 @@ HEREDOC;
 				$ver = PonyDocsProductVersion::GetVersionByName($targetProduct, $targetVersion);
 			}
 			if(!$ver) {
-				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
+				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
 				header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
 				die();
 			}
@@ -2113,7 +2137,7 @@ HEREDOC;
 			$manual = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
 			if ( !$manual ) {
 				// Rewrite to Main documentation
-				if (PONYDOCS_REDIRECT_DEBUG) {
+				if (PONYDOCS_DEBUG) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/"
 						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
 				}
@@ -2132,7 +2156,7 @@ HEREDOC;
 					if(isset($entry['link']) && $entry['link'] != "") {
 						// We found the first article in the manual with a link.  
 						// Redirect to it.
-						if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
+						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
 						header("Location: " . $entry['link']);
 						die();
 					}
@@ -2195,7 +2219,7 @@ HEREDOC;
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks("delete", $realArticle);
 
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString(), $matches ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return true;
 		}
 		// Okay, article is in doc namespace
@@ -2233,7 +2257,7 @@ HEREDOC;
 		// Update doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "update", $realArticle, $text );
 
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString(), $matches ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
 		// Okay, article is in doc namespace
@@ -2509,7 +2533,7 @@ HEREDOC;
 
 	static public function translateTopicTitleForDocLinks($title, $fromNamespace = NULL, $ver = NULL, $topic = NULL) {
 
-		if (PONYDOCS_DOCLINKS_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [PonyDocs] [" . __METHOD__ . "] Raw title: " . $title);
 		}
 
@@ -2581,7 +2605,7 @@ HEREDOC;
 			}
 		}
 
-		if (PONYDOCS_DOCLINKS_DEBUG) {
+		if (PONYDOCS_DEBUG) {
 			error_log("DEBUG [PonyDocs] [" . __METHOD__ . "] Final title: " . $toUrl);
 		}
 

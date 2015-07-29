@@ -183,7 +183,7 @@ function efPonyDocsSetup() {
 	// force mediawiki to start session for anonymous traffic
 	if ( session_id() == '' ) {
 		wfSetupSession();
-		if ( PONYDOCS_SESSION_DEBUG ) {
+		if ( PONYDOCS_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . "] started session" );
 		}
 	}
@@ -212,23 +212,21 @@ function efPonyDocsSetup() {
 			$match )
 		|| ( !isset( $currentVersion )
 			&& preg_match(
-				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_PREFIX . '(['
-					. PONYDOCS_PRODUCT_LEGALCHARS . ']+):[' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC(['
-					. PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)/i',
-				$_SERVER['PATH_INFO'],
-				$match ) )
+				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
+				. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
+				. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)/i',
+				$_SERVER['PATH_INFO'], $match ) )
 		|| ( !isset($currentVersion )
 			&& preg_match(
-				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_PREFIX . '(['
-					. PONYDOCS_PRODUCT_LEGALCHARS . ']+):[' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+:[^:]+:(['
-					. PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)/i',
-				$_SERVER['PATH_INFO'],
-				$match ) ) ) {
+				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
+					. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
+					. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+:[^:]+:([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS
+					. ']+)/i', $_SERVER['PATH_INFO'], $match ) ) ) {
 		$result = PonyDocsProductVersion::SetSelectedVersion( $match[3], $match[4] );
 		if ( is_null( $result ) ) {
 			// this version isn't available to this user; go away
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-			if ( PONYDOCS_REDIRECT_DEBUG ) {
+			if ( PONYDOCS_DEBUG ) {
 				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 			}
 			header( "Location: " . $defaultRedirect );
@@ -312,11 +310,10 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 			 * Link to create new TOC page -- should link to current version TOC and then add message to explain.
 			 */
 			$output = '<p><a href="'
-				. str_replace(
-					'$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . 'TOC' . $version,
-					$wgArticlePath )
-				. '" style="font-size: 1.3em;">' . $longName . "</a></p>\n"
-				. "<span style=\"padding-left: 20px;\">Click manual to create TOC for current version (" . $version . ").</span>\n";
+				. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':'
+				. $manualName . 'TOC' . $version, $wgArticlePath ) . '" style="font-size: 1.3em;">'
+				. $longName . "</a></p>\n <span style=\"padding-left: 20px;\">Click manual to create TOC for current version ("
+				. $version . ").</span>\n";
 		} else {
 			$row = $dbr->fetchObject( $res );
 			$output = '<p><a href="'
@@ -494,7 +491,8 @@ function efGetTitleFromMarkup( $markup = '' ) {
 	/**
 	 * We ignore this parser function if not in a TOC management page.
 	 */
-	if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $matches ) ) {
+	if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(),
+		$matches ) ) {
 		return FALSE;
 	}
 
@@ -531,7 +529,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 	 * consistent.
 	 */
 	$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars()) . '])/', '', $param1 );
-	$wikiPath = PONYDOCS_DOCUMENTATION_PREFIX . $productShortName . ':' . $manualShortName . ':' . $wikiTopic;
+	$wikiPath = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' . $wikiTopic;
 
 	$dbr = wfGetDB( DB_SLAVE );
 
@@ -574,7 +572,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 		/**
 		 * No match -- so this is a "new" topic. Set name.
 		 */
-		$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $productShortName . ':' . $manualShortName . ':' . $wikiTopic . ':'
+		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' . $wikiTopic . ':'
 			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
@@ -605,7 +603,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 	/**
 	 * We ignore this parser function if not in a TOC management page.
 	 */
-	if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $matches ) ) {
+	if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $matches ) ) {
 		return FALSE;
 	}
 
@@ -646,7 +644,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 	 * consistent.
 	 */
 	$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $param1 );
-	$wikiPath = PONYDOCS_DOCUMENTATION_PREFIX . $productShortName . ':' . $manualShortName . ':' . $wikiTopic;
+	$wikiPath = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' . $wikiTopic;
 
 	$dbr = wfGetDB( DB_SLAVE );
 
@@ -690,8 +688,8 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 		/**
 		 * No match -- so this is a "new" topic. Set name.
 		 */
-		$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $productShortName . ':' . $manualShortName . ':' . $wikiTopic . ':'
-			. $earliestVersion->getVersionName();
+		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' .
+			$wikiTopic . ':' . $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
 		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
@@ -720,7 +718,7 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' ) {
 	 * We ignore this parser function if not in a TOC management page.
 	 */
 	if ( !preg_match(
-		'/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS.']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS
+		'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS.']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS
 			. ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS.']*)/i',
 		$wgTitle->__toString(),
 		$matches) )	{

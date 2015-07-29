@@ -59,7 +59,7 @@ class PonyDocsTopic {
 	public function __construct( Article &$article ) {
 		$this->pArticle = $article;
 		$this->pTitle = $article->getTitle();
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString() ) ) {
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $this->pTitle->__toString() ) ) {
 			$this->mIsDocumentationTopic = TRUE;
 		}
 	}
@@ -199,28 +199,44 @@ class PonyDocsTopic {
 	 */
 	public function getSubContents() {
 		$sections = array();
-		
-		if ( preg_match( '/__NOTOC__/', $this->pArticle->getContent() ) ) {
+
+		if ( preg_match('/__NOTOC__/', $this->pArticle->getContent() ) ) {
 			return $sections;
 		}
-		
+
 		$matches = $this->parseSections();
 		$h2 = FALSE;
+		$headReference = array();
+		$headCount = 0;
 		foreach ( $matches as $match ) {
-			$level = strlen( $match[1] );		
+			$level = strlen( $match[1] );
+			if ( !isset($headReference[$match[2]]) ) {
+				$headReference[$match[2]] = 1;
+			} else {
+				$headReference[$match[2]] ++;
+			}
+
 			// We don't want to include any H3s that don't have an H2 parent
-			if ( $level == 2 || ( $level == 3 && $h2 ) )  {
+			if ( $level == 2 || ( $level == 3 && $h2 ) ) {
 				if ( $level == 2 ) {
 					$h2 = TRUE;
 				}
+				$headCount = $headReference[$match[2]];
+				if ( $headCount > 1 ) {
+					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial') . '_' . $headCount;
+				} else {
+					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial');
+				}
+
 				$sections[] = array(
 					'level' => $level,
-					'link' => '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match[2] ), 'noninitial' ),
+					'link' => $link,
 					'text' => $match[2],
-					'class' => 'toclevel-' . round( $level - 1, 0 )
+					'class' => 'toclevel-' . round($level - 1, 0)
 				);
 			}
 		}
+
 		return $sections;
 	}
 
@@ -346,8 +362,9 @@ class PonyDocsTopic {
 	 * @return string
 	 */
 	public function getBaseTopicName() {
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(), $match ) ) {
-			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i',
+			$this->pTitle->__toString(), $match ) ) {
+			return sprintf( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
 
 		return '';

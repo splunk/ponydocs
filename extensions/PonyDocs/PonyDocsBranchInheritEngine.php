@@ -28,7 +28,7 @@ class PonyDocsBranchInheritEngine {
 		// Clear any hooks so no weirdness gets called after we create the 
 		// branch
 		$wgHooks['ArticleSave'] = array();
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Branch From" );
 		}
 
@@ -75,7 +75,7 @@ class PonyDocsBranchInheritEngine {
 			// No such title exists in the system
 			throw new Exception( "Invalid Title to Branch From. Target Article does not exist:" . $topicTitle );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
 			. $version->getVersionName();
 
 		$newArticle = PonyDocsArticleFactory::getArticleByTitle( $title );
@@ -149,7 +149,7 @@ class PonyDocsBranchInheritEngine {
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the inherit
 		$wgHooks['ArticleSave'] = array();
-		if ( !preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Inherit From: " . $topicTitle );
 		}
 
@@ -286,7 +286,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception(
 				"TOC Already exists for " . $manual->getShortName() . " with version: " . $targetVersion->getVersionName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
 			. $targetVersion->getVersionName();
 		$newTitle = Title::newFromText( $title );
 		$wgTitle = $newTitle;
@@ -334,7 +334,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception(
 				"TOC Already exists for " . $manual->getShortName() . " with version: " . $version->getVersionName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
 			. $version->getVersionName();
 
 		$newTitle = Title::newFromText( $title );
@@ -473,13 +473,13 @@ class PonyDocsBranchInheritEngine {
 	 * Determine if there is an existing topic that may interfere with a target topic and version.
 	 * If conflict(s) exist, return the topic names.
 	 *
-	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*' format
+	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*' format
 	 * @param $targetVersion PonyDocsVersion the version to search for
 	 * @return Array of conflicting topic names, otherwise false if no conflict exists.
 	 */
 	static function getConflicts( $product, $topicTitle, $targetVersion ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to get conflicts for" );
 		}
 		$productName = $match[1];
@@ -516,7 +516,7 @@ class PonyDocsBranchInheritEngine {
 		// Determine if any page exists that doesn't have a category link association
 		// or when its base version is not in its categories.
 		$destinationTitle =
-			PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionName();
+			PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionName();
 		$destinationArticle = PonyDocsArticleFactory::getArticleByTitle( $destinationTitle );
 		if ( $destinationArticle->exists() ) {
 			return array( $destinationArticle->metadata['title'] );
