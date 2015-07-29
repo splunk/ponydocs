@@ -28,6 +28,7 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsProduct.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsProductManual.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsProductVersion.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsRenameVersionEngine.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTOC.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
@@ -163,6 +164,17 @@ $wgHooks['LanguageGetMagic'][] = 'efManualDescriptionParserFunction_Magic';
 $wgPonyDocs = new PonyDocsExtension();
 
 /**
+ * Register a module for our scripts and css
+ */
+$wgResourceModules['ext.PonyDocs'] = array(
+	'scripts' => 'js/docs.js',
+	'dependencies' => 'jquery.json',
+	'localBasePath' => __DIR__,
+	'remoteExtPath' => 'PonyDocs',
+	'position' => 'top',
+);
+
+/**
  * Our primary setup function simply handles URL rewrites for aliasing (per spec) and calls our PonyDocsWiki singleton instance
  * to ensure it runs the data retrieval functions for versions and manuals and the like. 
  */
@@ -280,15 +292,20 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 		//       or maybe actually get the manual object and query it
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select(
-			'categorylinks',
-			array( 'cl_sortkey', 'cl_to' ),
+			array('categorylinks', 'page'),
+			'page_title',
 			array(
-				"LOWER( cast( cl_sortkey AS CHAR ) ) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName ) ) . ':'
-					. $dbr->strencode( strtolower( $manualName ) ) . "toc%'",
-				"cl_to = 'V:" . $productName . ':' . $version . "'" ),
-			__METHOD__ );
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:$productName:$version'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" .
+					$dbr->strencode( strtoupper( $productName ) ) . ':' . $dbr->strencode( strtoupper( $manualName ) ) . "TOC%'"
+			),
+			__METHOD__
+		);
 
-		if (!$res->numRows() )	{
+		if ( !$res->numRows() )	{
 			/**
 			 * Link to create new TOC page -- should link to current version TOC and then add message to explain.
 			 */
@@ -299,8 +316,9 @@ function efManualParserFunction_Render( &$parser, $shortName = '', $longName = '
 				. $version . ").</span>\n";
 		} else {
 			$row = $dbr->fetchObject( $res );
-			$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">'
-				. $longName . "</a></p>\n";
+			$output = '<p><a href="'
+				. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath )
+				. '" style="font-size: 1.3em;">' . $longName . "</a></p>\n";
 		}
 	}
 	
@@ -537,13 +555,17 @@ function efGetTitleFromMarkup( $markup = '' ) {
 	}
 
 	$res = $dbr->select(
-		'categorylinks',
-		'cl_sortkey',
+		array('categorylinks', 'page'),
+		'page_title',
 		array(
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:"
-				. $dbr->strencode( strtolower( $manualShortName . ':' . $wikiTopic ) ) . ":%'",
-			"cl_to IN ('V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')" ),
-			__METHOD__ );
+			'cl_from = page_id',
+			'page_namespace = "' . NS_PONYDOCS . '"',
+			"cl_to IN ( 'V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')",
+			'cl_type = "page"',
+			"cl_sortkey LIKE '"	. $dbr->strencode( strtoupper( $manualShortName . ':' . $wikiTopic ) ) . ":%'"
+		),
+		__METHOD__
+	);
 
 	$topicName = '';
 	if ( !$res->numRows() ) {
@@ -554,7 +576,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
-		$topicName = $row->cl_sortkey;
+		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 	}
 
 	return $topicName;
@@ -648,13 +670,18 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 	}
 
 	$res = $dbr->select(
-		'categorylinks',
-		'cl_sortkey',		
+		array('categorylinks', 'page'),
+		'page_title',
 		array(
-			"LOWER(cl_sortkey) LIKE 'documentation:"
-				. $dbr->strencode( strtolower( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) ) . ":%'",
-			"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
-		__METHOD__ );
+			'cl_from = page_id',
+			'page_namespace = "' . NS_PONYDOCS . '"',
+			"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')",
+			'cl_type = "page"',
+			"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) )
+				. ":%'",
+		),
+		__METHOD__
+	);
 
 	$topicName = '';
 	if ( !$res->numRows() ) {
@@ -665,7 +692,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 			$wikiTopic . ':' . $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
-		$topicName = $row->cl_sortkey;
+		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 	}
 
 	$output = '<a href="' . wfUrlencode( str_replace( '$1', $topicName, $wgArticlePath ) ) . '">' . $param1 . '</a>'; 
@@ -726,22 +753,22 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' ) {
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
  */
 
-$wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
-$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
-$wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
-$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave_AutoLinks';
-$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
-$wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
-$wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
-$wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
-$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit';
-$wgHooks['userCan'][] = 'PonyDocsExtension::onUserCan';
-$wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
+$wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
 $wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitleStatic';
 $wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitleQuickLookup';
-$wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
-$wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
+$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
+$wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave_AutoLinks';
+$wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
+$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
+$wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit';
+$wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
+$wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
+$wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
+$wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
+$wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
+$wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
+$wgHooks['userCan'][] = 'PonyDocsExtension::onUserCan';
 
 // Add version field to edit form
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';

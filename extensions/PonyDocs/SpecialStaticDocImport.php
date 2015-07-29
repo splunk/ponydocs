@@ -3,12 +3,12 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php");
+require_once( "$IP/includes/specialpage/SpecialPage.php" );
 
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
  */
-require_once( $IP . '/includes/SpecialPage.php' );
+require_once( $IP . '/includes/specialpage/SpecialPage.php' );
 
 /**
  * Register our 'Special' page so it is listed and accessible.

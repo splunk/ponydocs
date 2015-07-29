@@ -59,3 +59,9 @@ Software Documentation-specific Features
   This helps visitors who have found your documentation via a search result know they're not viewing the latest docs.
 * **Helpful redirects** - Given how dynamic the MediaWiki system is, Ponydocs goes out of its way to redirect you
   from a generic manual URL to the first topic on the manual.
+
+Gotchas
+-------
+
+* Ponydocs only supports MediaWiki 1.24. Please file an issue if you need support for an older supported version of MW
+* Ponydocs expects $wgCategoryCollation to be set to 'uppercase', the default. We are working on fixing this.

@@ -217,15 +217,27 @@ class PonyDocsBranchInheritEngine {
 	 */
 	static public function TOCExists( $product, $manual, $version ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $version->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:"
-			. $dbr->strencode(strtolower($product->getShortName()) . ':' . strtolower($manual->getShortName())) . "toc%'";
-		$res = $dbr->query( $query, __METHOD__ );
-
+		
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title' ,
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $version->getVersionName() ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '"
+					. $dbr->strencode( strtoupper( $product->getShortName() ) ) . ':' . strtoupper( $manual->getShortName() )
+					. "TOC%'",
+			),
+			__METHOD__
+		);
+		
 		if ( $res->numRows() ) {
 			$row = $dbr->fetchObject( $res );
-			return $row->cl_sortkey;
+			return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 		}
+
 		return false;
 	}
 
@@ -473,12 +485,20 @@ class PonyDocsBranchInheritEngine {
 		$productName = $match[1];
 		$manual = $match[2];
 		$title = $match[3];
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $targetVersion->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE '"
-			. $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":" . $manual . ":" . $title ) )
-			. ":%'";
-		$res = $dbr->query( $query, __METHOD__ );
-
+		
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title',
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $targetVersion->getVersionName() ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productName:$manual:$title" ) ) . ":%'",
+			),
+			__METHOD__
+		);
+		
 		if ( $res->numRows() ) {
 			/**
 			 * Technically we should only EVER get one result back. But who knows with past doc wiki consistency issues.
@@ -487,7 +507,7 @@ class PonyDocsBranchInheritEngine {
 
 			// Then let's return the topics that conflict.
 			while ( $row = $dbr->fetchObject( $res ) ) {
-				$conflicts[] = $row->cl_sortkey;
+				$conflicts[] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 			}
 			return $conflicts;
 		}

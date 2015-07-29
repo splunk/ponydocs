@@ -342,16 +342,13 @@ class PonyDocsProductVersion {
 
 		self::$sVersionList[$productName] = array();
 		
-		$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
-			PONYDOCS_PRODUCTVERSION_SUFFIX );
-
 		$article = new Article(
 			Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
 			PONYDOCS_PRODUCTVERSION_SUFFIX ), 0 );
 
 		$content = $article->getContent();
-
-		if ( -1 == $article->mCounter ) {
+			
+		if ( !$content ) {
 			/**
 			 * There is no versions file found -- just return.
 			 */

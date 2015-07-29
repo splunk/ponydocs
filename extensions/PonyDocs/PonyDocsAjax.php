@@ -128,21 +128,25 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 
 	$defaultTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
 
-	if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $title, $match )) {
-		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower(
-			PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $match[2] . ':' . $match[3] )) . ":%'",
-			"cl_to = 'V:" . $dbr->strencode($product . ":" . $version) . "'" ), __METHOD__ );
+	if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $title, $match ) ) {
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_from',
+			array( 
+				"cl_to = 'V:" . $dbr->strencode( $product . ":" . $version ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $product . ':' . $match[2] . ':' . $match[3] ) ) . ":%'",
+			),
+			__METHOD__
+		);
 
-		if ( $res->numRows( )) {
-			$row = $dbr->fetchObject( $res );
-			//$response->addText( str_replace( '$1', $row->cl_sortkey, $wgArticlePath ));
-			$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' 
-			. $version . '/' . $match[2] . '/' . $match[3], $wgArticlePath ));
-			if (PONYDOCS_DEBUG) {
-				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 1");
-			}
-		} else { 
+		if( $res->numRows( ))
+		{
+			$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version . '/' . $match[2] . '/' . $match[3], $wgArticlePath ));
+			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] ajax redirect rule 1");}
+		}
+		else
+		{
 			// same manual/topic doesn't exist for newly selected version, redirect to default
 			$response->addText( str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $product . '/' . $version, $wgArticlePath ));
 			if (PONYDOCS_DEBUG) {
@@ -206,7 +210,8 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
 	 */
 	$versions = explode( ':', $versionList );
 
-	$article = new Article( Title::newFromText( $title ));
+	$title = Title::newFromText( $title );
+	$article = new Article( $title );
 	$content = $article->getContent( );
 
 	$findArray = $repArray = array( );
@@ -221,9 +226,10 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
 	 * Now update the categorylinks table as well -- might not be needed, doEdit() might take care
 	 * of this when saving the article.
 	 */
-	$q =	"DELETE FROM categorylinks " 
-		. "WHERE LOWER(cast(cl_sortkey AS CHAR)) = '" . $dbr->strencode( strtolower( $title )) . "' " 
- 		. "AND cl_to IN ('V:" . implode( "','V:", $versions ) . "')";
+	$q = "DELETE FROM categorylinks"
+		. " WHERE cl_sortkey = '" . $dbr->strencode( strtoupper( $title->getText() ) ) . "'"
+		. " AND cl_to IN ('V:" . implode( "','V:", $versions ) . "')"
+		. " AND cl_type = 'page'";
 
 	$res = $dbr->query( $q, __METHOD__ );
 
@@ -243,6 +249,7 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
  * into the edit window, making our edits, and saving.
  *
  * @FIXME:  Maybe some encoding checking/handling?
+ * @TODO: Is this ever used?
  *
  * @param string $topic Topic/title w/o version field.
  * @param string $version Name of version.
@@ -253,18 +260,24 @@ function efPonyDocsAjaxTopicClone( $topic, $product, $version )
 	global $wgParser;
 	$dbr = wfGetDB( DB_SLAVE );
 
-	$res = $dbr->select( 'categorylinks', 'cl_sortkey', array(
+	$res = $dbr->select(
+		'categorylinks',
+		'cl_from',
+		array(
+			"cl_to = 'V:" . $product . ':' . $version . "'",
+			'cl_type = "page"',
 			"cl_sortkey LIKE '" . $topic . ":%'",
-			"cl_to = 'V:" . $product . ':' . $version . "'" ), __METHOD__ );
+		),
+		__METHOD__ );
 
-	if ( !$res->numRows( )) {
+	if ( !$res->numRows() ) {
 		return '';
 	}
 
 	$row = $dbr->fetchObject( $res );
 
-	$article = new Article( Title::newFromText( $row->cl_sortkey ));
-	$content = $article->getContent( );
+	$article = new Article( Title::newFromID( $row->cl_from ) );
+	$content = $article->getContent();
 
 	$content = preg_replace( "/\[\[Category:V:([" . PONYDOCS_PRODUCT_LEGALCHARS . "]+):([" . PONYDOCS_PRODUCTVERSION_LEGALCHARS . "]+)\]\]/i", '', $content );
 

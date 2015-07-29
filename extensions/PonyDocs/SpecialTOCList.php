@@ -5,7 +5,7 @@ if( !defined( 'MEDIAWIKI' ))
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
  */
-require_once( $IP . '/includes/SpecialPage.php' );
+require_once( "$IP/includes/specialpage/SpecialPage.php" );
 
 /**
  * Register our 'Special' page so it is listed and accessible.
@@ -61,25 +61,46 @@ class SpecialTOCList extends SpecialPage
 		
 		foreach (PonyDocsProductVersion::GetVersions($product) as $v) $allowed_versions[] = $v->getVersionName();
 		
-		foreach( $manuals as $pMan )
-		{
-			$qry = "SELECT DISTINCT(cl_sortkey) 
-					FROM categorylinks 
-					WHERE LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $product ) ) . ':' . $dbr->strencode( strtolower( $pMan->getShortName( ))) . "toc%'";
+		foreach( $manuals as $pMan ) {
+			
+			$res = $dbr->select(
+				array('categorylinks', 'page'),
+				array('cl_sortkey', 'page_title') ,
+				array(
+					'cl_from = page_id',
+					'page_namespace = "' . NS_PONYDOCS . '"',
+					'cl_to LIKE "V:%:%"',
+					'cl_type = "page"',
+					"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$product:" . $pMan->getShortName() ) ) . "TOC%'",
+				),
+				__METHOD__,
+				'DISTINCT'
+			);
+			
+			while ( $row = $dbr->fetchObject( $res ) ) {
+				$subres = $dbr->select(
+					'categorylinks',
+					'cl_to',
+					'cl_to LIKE "V:%:%"',
+					'cl_type = "page"',
+					"cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'",
+					__METHOD__
+				);
+				$versions = array();
 
-			$res = $dbr->query( $qry );
-
-			while( $row = $dbr->fetchObject( $res ))
-			{
-				$subres = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'", __METHOD__ );
-				$versions = array( );
-
-				while( $subrow = $dbr->fetchObject( $subres ))
-				{
-					if (preg_match( '/^V:' . $product . ':(.*)/i', $subrow->cl_to, $vmatch) && in_array($vmatch[1], $allowed_versions)) $versions[] = $vmatch[1];
+				while( $subrow = $dbr->fetchObject( $subres ) ) {
+					if ( preg_match( '/^V:' . $product . ':(.*)/i', $subrow->cl_to, $vmatch )
+						&& in_array( $vmatch[1], $allowed_versions ) ) {
+						$versions[] = $vmatch[1];
+					}
 				}
 
-				if (sizeof($versions)) $wgOut->addHTML( '<a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '">' . $row->cl_sortkey . '</a> - Versions: ' . implode( ' | ', $versions ) . '<br />' );
+				if ( sizeof( $versions ) ) {
+					$wgOut->addHTML( '<a href="' 
+						. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath ) . '">'
+						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" . '</a> - Versions: ' 
+						. implode( ' | ', $versions ) . '<br />' );
+				}
 			}
 		}
 
@@ -95,8 +116,3 @@ class SpecialTOCList extends SpecialPage
 		$wgOut->addHTML( $html );
 	}
 }
-
-/**
- * End of file.
- */
-?>

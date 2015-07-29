@@ -104,13 +104,12 @@ class SpecialLatestDoc extends SpecialPage {
 					$versionNameList = array( );
 					$versionSql = array();
 					$latestVersionSql = null;
-					foreach($versionList as $pV ) {
-						if( $latestVersionSql == null ) 
-						{
-							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName( );
+					foreach ( $versionList as $pV ) {
+						if ( $latestVersionSql == null ) {
+							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName();
 						}
-						$versionNameList[] = $pV->getVersionName( );
-						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName( ) . '\'';
+						$versionNameList[] = $pV->getVersionName();
+						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName() . '\'';
 					}
 					$versionSql = '(' . implode( ",",$versionSql ) . ')';
 
@@ -121,30 +120,47 @@ class SpecialLatestDoc extends SpecialPage {
 					 * Now build a list of suggestions in priority.
 					 * 1) Same product, different manual, current version.
 					 */
-					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
-						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":[^:]+:" .
-						$topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) = '" . $latestVersionSql .
-						"'", __METHOD__ );
+					$res = $dbr->select(
+						array('categorylinks', 'page'),
+						array('cl_to', 'page_title') ,
+						array(
+							'cl_from = page_id',
+							'page_namespace = "' . NS_PONYDOCS . '"',
+							'cl_to LIKE "V:%:%"',
+							"cl_to = '" . $latestVersionSql . "'",
+							'cl_type = "page"',						
+							"cl_sortkey REGEXP '"
+								. $dbr->strencode( '^' . strtoupper( $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'",
+						),
+						__METHOD__
+					);
 
-					if( $res->numRows( ) )
-					{
+					if ( $res->numRows() ) {
 						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
 						// Take the top 5 and put them in primary suggestions
 						$primarySuggestions = array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
 						$suggestions = $suggestions + $tempSuggestions;
 					}
+					
 					/*
 					 * 2) Same product, same manual, earlier version
 					 */
-					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
-						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ":" .
-						$manualName . ":" . $topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) IN" .
-						$versionSql, __METHOD__ );
+					$res = $dbr->select(
+						array('categorylinks', 'page'),
+						array('cl_to', 'page_title') ,
+						array(
+							'cl_from = page_id',
+							'page_namespace = "' . NS_PONYDOCS . '"',
+							'cl_to LIKE "V:%:%"',
+							"cl_to IN " . $versionSql,
+							'cl_type = "page"',						
+							"cl_sortkey REGEXP '"
+								. $dbr->strencode( '^' . strtoupper( "$productName:$manualName:$topicName:[^:]+" ) ) . "\$'",
+						),
+						__METHOD__
+					);
 
-					if( $res->numRows( ) )
-					{
+					if ( $res->numRows() ) {
 						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
 						// Take the top 5 and put them in primary suggestions
 						$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
@@ -157,20 +173,29 @@ class SpecialLatestDoc extends SpecialPage {
 					 * Note: The regular expression will match ALL manuals, including the passed manual. There is no good regex way to 
 					 * properly evaluate not matching a string but match others. So we will filter it out of the results.
 					 */
-					$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ),
-						"LOWER(cast(cl_sortkey AS CHAR)) REGEXP '" . $dbr->strencode( '^' .
-						strtolower( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
-						":[^:]+:" . $topicName .":[^:]+$" ) ) . "' AND cast(cl_to AS CHAR) IN" .
-						$versionSql, __METHOD__ );
-					if( $res->numRows( ) )
-					{
+					$res = $dbr->select(
+						array('categorylinks', 'page'),
+						array('cl_to', 'page_title') ,
+						array(
+							'cl_from = page_id',
+							'page_namespace = "' . NS_PONYDOCS . '"',
+							'cl_to LIKE "V:%:%"',
+							"cl_to IN " . $versionSql,
+							'cl_type = "page"',						
+							"cl_sortkey REGEXP '"
+								. $dbr->strencode( '^' . strtoupper( "$productName:[^:]+:$topicName:[^:]+" ) ) . "\$'",
+						),
+						__METHOD__
+					);
+					
+					if ( $res->numRows() ) {
 						$tempSuggestions = $this->buildSuggestionsFromResults( $res );
 						// Take the top 5 and put them in primary suggestions
 						$primarySuggestions = $primarySuggestions + array_splice( $tempSuggestions, 0, count( $tempSuggestions ) > 5 ? 5 : count( $tempSuggestions ) );
 						$suggestions = $suggestions + $tempSuggestions;
 					}
-					ob_start();
-					?>
+
+					ob_start(); ?>
 					<p>
 					Hi! Just wanted to let you know:
 					</p>
@@ -181,9 +206,7 @@ class SpecialLatestDoc extends SpecialPage {
 					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
 					</p>
 					<?php
-					if( count( $primarySuggestions ) )
-					{
-						?>
+					if ( count( $primarySuggestions ) ) { ?>
 						<h2>Suggestions</h2>
 						<p>
 						The following suggestions for the topic you requested were found:
@@ -253,7 +276,7 @@ class SpecialLatestDoc extends SpecialPage {
 			$productName = $tags[1];
 			$versionName = $tags[2];
 
-			$article = PonyDocsArticleFactory::getArticleByTitle( $row->cl_sortkey );
+			$article = PonyDocsArticleFactory::getArticleByTitle( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
 			if( !$article )
 			{
 				continue;
@@ -264,11 +287,13 @@ class SpecialLatestDoc extends SpecialPage {
 			{
 				continue;
 			}
-			$meta = PonyDocsArticleFactory::getArticleMetadataFromTitle( $row->cl_sortkey );
-			$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $meta['product'] . '/' . $versionName . '/' . $meta['manual'] . '/' . $meta['topic'];
+			$meta = PonyDocsArticleFactory::getArticleMetadataFromTitle(
+				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
+			$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $meta['product'] . '/' . $versionName . '/' . $meta['manual']
+				. '/' . $meta['topic'];
 			$suggestions[$url] = array(
 				'url' => $url,
-				'title' => $topic->FindH1ForTitle( $row->cl_sortkey ),
+				'title' => $topic->FindH1ForTitle( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" ),
 				'manual' => $meta['manual'],
 				'product' => $meta['product'],
 				'version' => $versionName

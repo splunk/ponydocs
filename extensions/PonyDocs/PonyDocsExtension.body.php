@@ -33,19 +33,19 @@ class PonyDocsExtension
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
 
 		$this->setPathInfo();
-
-		// If we have a title which is an ALIAS of the form Documentation/<product>/<latest|version>/<manual>/<topic>
-		// Then we need to register a hook to do the translation of this to a real topic name.
-		if ( preg_match( 
+		
+		// <namespace>/<product>/<version>/<manual>/<topic>
+		// Register a hook to map the URL to a page
+		if ( preg_match(
 			'/^' . str_replace( "/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 				. '\/(.*)\/(.*)\/(.*)\/(.*)$/i',
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
-		// If we have a title which is an ALIAS of the form: PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':<product>:<manual>:<topic>'
-		// With no version. Use the latest RELEASED version of the topic.
-		} elseif( preg_match(
-			'/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		// <namespace>:<product>:<manual>:<topic>
+		// Register a hook to map this title to the latest version if no Version specified in URL
+		} elseif (
+			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 				. ':([^:]+):([^:]+):([^:]+)$/i',
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
@@ -93,7 +93,7 @@ class PonyDocsExtension
 	 */
 	static public function RewriteTitle( Title & $reTitle )
 	{ 
-		global $wgArticlePath, $wgTitle, $wgArticle;
+		global $wgArticlePath, $wgTitle;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -137,9 +137,17 @@ class PonyDocsExtension
 			 * DB can't do descending order here, it depends on the order defined in versions page!  So we have to
 			 * do some magic sorting below.
 			 */
-			$res = $dbr->select( 'categorylinks', 'cl_to', 
-								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
-								 __METHOD__ );
+			$res = $dbr->select(
+				'categorylinks',
+				'cl_to',
+				array(
+					'cl_to LIKE "V:%:%"',
+					'cl_type = "page"',
+					"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) 
+						. ":%'",
+				),
+				__METHOD__
+			);
 
 			if( !$res->numRows( ))
 			{
@@ -176,27 +184,33 @@ class PonyDocsExtension
 			 * our resulting $existingVersions and see if each is in_array( $versionNameList );  if its NOT, continue looping.
 			 * Once we hit one, redirect.  if we exhaust our list, go to the main page or something.
 			 */
-			foreach( $existingVersions as $pV )
-			{
-				if( in_array( $pV->getVersionName( ), $versionNameList ))
-				{
+			foreach( $existingVersions as $pV ) {
+				if ( in_array( $pV->getVersionName( ), $versionNameList ) ) {
 					/**
 					 * Look up topic name and redirect to URL.
 					 */
+					$res = $dbr->select(
+						array('categorylinks', 'page'),
+						'page_title' ,
+						array(
+							'cl_from = page_id',
+							'page_namespace = "' . NS_PONYDOCS . '"',
+							"cl_to = 'V:{$matches[1]}:" . $pV->getVersionName() . "'",
+							'cl_type = "page"',
+							"cl_sortkey LIKE '"
+								. $dbr->strencode( strtoupper( $matches[1] . ':' . $matches[2] . ':' . $matches[3] ) ) . ":%'",
+						 ),
+						__METHOD__
+					);
 
-					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
-												"cl_to = 'V:" . $matches[1] . ':' . $pV->getVersionName( ) . "'" ), __METHOD__ );
-
-					if( !$res->numRows( ))
-					{
+					if ( !$res->numRows() ) {
 						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 						header( "Location: " . $defaultRedirect );
 						exit( 0 );
 					}
 
 					$row = $dbr->fetchObject( $res );
-					return $row->cl_sortkey;
+					return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 				}
 			}
 
@@ -206,16 +220,13 @@ class PonyDocsExtension
 			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
-		}
-		else
-		{
+		} else {
 			/**
 			 * Ensure version specified in aliased URL is a valid version -- if it is not we just need to do our default
 			 * redirect here.
 			 */
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
-			if( !$version )
-			{
+			if ( !$version ) {
 				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
@@ -225,12 +236,21 @@ class PonyDocsExtension
 			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied.  This
 			 * is the URL to redirect to.  
 			 */
-			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . strtolower( $matches[1] ) . ':' . strtolower( $matches[2] ) . ':' . strtolower( $matches[3] ) . ":%'",
-							"cl_to = 'V:" . $productName . ':' . $version->getVersionName( ) . "'" ), __METHOD__ );
+			$res = $dbr->select(
+				array('categorylinks', 'page'),
+				'page_title' ,
+				array(
+					'cl_from = page_id',
+					'page_namespace = "' . NS_PONYDOCS . '"',
+					"cl_to = 'V:$productName:" . $version->getVersionName() . "'",
+					'cl_type = "page"',
+					"cl_sortkey LIKE '" . strtoupper( $matches[1] ) . ':' . strtoupper( $matches[2] ) . ':'
+						. strtoupper( $matches[3] ) . ":%'",
+				),
+				__METHOD__
+			);
 
-			if( !$res->numRows( ))
-			{
+			if ( !$res->numRows() ) {
 				/**
 				 * Handle invalid redirects?
 				 */
@@ -240,9 +260,9 @@ class PonyDocsExtension
 			}
 
 			$row = $dbr->fetchObject( $res );
-			return $row->cl_sortkey;
+			return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 		}
-		return false;
+		return FALSE;
 	}
 
 	/**
@@ -271,8 +291,7 @@ class PonyDocsExtension
 		return true;
 	}
 
-	static public function onArticleFromTitle_NoVersion( &$title, &$article )
-	{
+	static public function onArticleFromTitle_NoVersion( &$title, &$article ) {
 		global $wgArticlePath;
 
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
@@ -286,11 +305,18 @@ class PonyDocsExtension
 
 		$dbr = wfGetDB( DB_SLAVE );
 
-		$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ), 
-				"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $title->__toString( ))) . ":%'", __METHOD__ );
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_to', 
+			array(
+				'cl_to LIKE "V:%:%"',
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title->getText() ) ) . ":%'",
+			),
+			__METHOD__
+		);
 
-		if( !$res->numRows( ))
-		{
+		if( !$res->numRows() ) {
 			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
@@ -301,8 +327,9 @@ class PonyDocsExtension
 		 */
 		$versionList = array_reverse( PonyDocsVersion::GetVersions( true ));
 		$versionNameList = array( );
-		foreach( $versionList as $pV )
-			$versionNameList[] = $pV->getName( );
+		foreach ( $versionList as $pV ) {
+			$versionNameList[] = $pV->getName();
+		}
 
 		/**
 		 * Create a list of existing versions for this topic.  The list contains PonyDocsVersion instances.  Only store
@@ -310,13 +337,12 @@ class PonyDocsExtension
 		 * the list (index 0).
 		 */
 		$existingVersions = array( );
-		while( $row = $dbr->fetchObject( $res ))
-		{
-			if( preg_match( '/^V:(.*)/i', $row->cl_to, $vmatch ))
-			{
+		while ( $row = $dbr->fetchObject( $res ) ) {
+			if ( preg_match( '/^V:(.*)/i', $row->cl_to, $vmatch ) ) {
 				$pVersion = PonyDocsVersion::GetVersionByName( $vmatch[1] );
-				if( $pVersion && !in_array( $pVersion, $existingVersions ))
+				if ( $pVersion && !in_array( $pVersion, $existingVersions ) ) {
 					$existingVersions[] = $pVersion;
+				}
 			}
 		}
 
@@ -327,41 +353,51 @@ class PonyDocsExtension
 		 * Now filter out versions the user does not have access to from the top;  once we find the version for this topic
 		 * to which the user has access, create our Article object and replace our title (to not redirect) and return true.
 		 */
-		foreach( $existingVersions as $pV )
-		{
-			if( in_array( $pV->getName( ), $versionNameList ))
-			{
+		foreach( $existingVersions as $pV ) {
+			if ( in_array( $pV->getName(), $versionNameList ) ) {
 				/**
 				 * Look up topic name and redirect to URL.
 				 */
-				$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-									array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $title->__toString( ))) . ":%'",
-											"cl_to = 'V:" . $pV->getName( ) . "'" ), __METHOD__ );
+				$res = $dbr->select(
+					array('categorylinks'),
+					'cl_from' ,
+					array(
+						"cl_to = 'V:" . $pV->getName() . "'",
+						'cl_type = "page"',
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title->getText() ) ) . ":%'",
+					),
+					__METHOD__
+				);
 
-				if( !$res->numRows( ))
-				{
+				if ( !$res->numRows() ) {
 					if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 					header( "Location: " . $defaultRedirect );
 					exit( 0 );
 				}
 
 				$row = $dbr->fetchObject( $res );
-				$title = Title::newFromText( $row->cl_sortkey );
-				
+				$title = Title::newFromId( $row->cl_from );
 				$article = new PonyDocsAliasArticle( $title );
 				$article->loadContent( );
 
-				if( !$article->exists( ))
-					$article = null;
-
-				return true;
+				if ( !$article->exists() ) {
+					$article = NULL;
+				} else {
+					// Without this we lose SplunkComments and version switcher.
+					// Probably we can replace with a RequestContext in the future...
+					$wgTitle = $title;
+				}
+					
+				return TRUE;
 			}
 		}
 
 		/**
 		 * Invalid redirect -- go to Main_Page or something.
 		 */
-		if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+		if ( PONYDOCS_DEBUG ) {
+			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
+		}
 		header( "Location: " . $defaultRedirect );
 		exit( 0 );
 	}
@@ -369,7 +405,7 @@ class PonyDocsExtension
 	static public function onArticleFromTitle_New( &$title, &$article )
 	{
 		global $wgScriptPath;
-		global $wgArticlePath, $wgTitle, $wgArticle, $wgOut, $wgHooks;
+		global $wgArticlePath, $wgTitle, $wgOut, $wgHooks;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -445,10 +481,17 @@ class PonyDocsExtension
 			 * do some magic sorting below.	
 			 */
 
-			$res = $dbr->select( 'categorylinks', 'cl_to',
-				"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( 
-				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':' . $manualName . ':' .
-				$topicName )) . ":%'", __METHOD__ );
+			$res = $dbr->select(
+				'categorylinks',
+				'cl_to',
+				array(
+					'cl_to LIKE "V:%:%"',
+					'cl_type = "page"',
+					"cl_sortkey LIKE '" 
+						. $dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+				),
+				__METHOD__
+			);
 
 			if( !$res->numRows( ))
 			{
@@ -512,31 +555,46 @@ class PonyDocsExtension
 					 * Look up topic name and redirect to URL.
 					 */
 
-					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
-												"cl_to = 'V:" . $dbr->strencode($pV->getProductName( ) . ':' . $pV->getVersionName( )) . "'" ), __METHOD__ );
+					$res = $dbr->select(
+						
+						array('categorylinks', 'page'),
+						'page_title' ,
+						array(
+							'cl_from = page_id',
+							'page_namespace = "' . NS_PONYDOCS . '"',
+							"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $pV->getVersionName() ) . "'",
+							'cl_type = "page"',
+							"cl_sortkey LIKE '" . 
+								$dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+						),
+						__METHOD__
+					);
 
-					if( !$res->numRows( ))
-					{
-						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+					if( !$res->numRows() ) {
+						if ( PONYDOCS_DEBUG ) {
+							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+						}
 						header( "Location: " . $defaultRedirect );
 						exit( 0 );
 					}
 
 					$row = $dbr->fetchObject( $res );
-					$title = Title::newFromText( $row->cl_sortkey );
+					$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
 
 					$article = new PonyDocsAliasArticle( $title );
-					$article->loadContent( );
+					$article->loadContent();
 
-					//die( $pV->getName( ));
+					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionName() );
 
-					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName( ), $pV->getVersionName( ));
+					if ( !$article->exists() ) {
+						$article = NULL;
+					} else {
+						// Without this we lose SplunkComments and version switcher.
+						// Probably we can replace with a RequestContext in the future...
+						$wgTitle = $title;
+					}
 
-					if( !$article->exists( ))
-						$article = null;
-
-					return true;
+					return TRUE;
 				}
 			}
 
@@ -566,9 +624,19 @@ class PonyDocsExtension
 			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied.  This
 			 * is the URL to redirect to.  
 			 */
-			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productName ) . ':' . strtolower( $manualName ) . ':' . strtolower( $topicName )) . ":%'",
-							"cl_to = 'V:" . $dbr->strencode($productName . ':' . $versionSelectedName) . "'" ), __METHOD__ );
+			$res = $dbr->select(
+				array('categorylinks', 'page'),
+				'page_title' ,
+				array(
+					'cl_from = page_id',
+					'page_namespace = "' . NS_PONYDOCS . '"',
+					"cl_to = 'V:" . $dbr->strencode( $productName . ':' . $versionSelectedName ) . "'",
+					'cl_type = "page"',
+					"cl_sortkey LIKE '" . $dbr->strencode(
+						strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+				),
+				__METHOD__
+			);
 
 			if( !$res->numRows( ))
 			{
@@ -580,35 +648,40 @@ class PonyDocsExtension
 			}
 
 			$row = $dbr->fetchObject( $res );
-			$title = Title::newFromText( $row->cl_sortkey );
+			$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
 			/// FIXME this shouldn't be necessary because selected version already comes from here
 			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionSelectedName );
 
 			$article = new PonyDocsAliasArticle( $title );
 			$article->loadContent( );
 
-			if( !$article->exists( ))
-				$article = null;
+			if ( !$article->exists() ) {
+				$article = NULL;
+			} else {
+				// Without this we lose SplunkComments and version switcher.
+				// Probably we can replace with a RequestContext in the future...
+				$wgTitle = $title;
+			}
 
-			return true;
-
+			return TRUE;
 		}
 
-		return false;
+		return FALSE;
 	}
 
 	/**
-	 * This is an ArticleSave hook that creates topics which don't exist yet when saving a TOC.
-	 * We should then regenerate the TOC cache (PonyDocsTOC) for this TOC, either here or on an AFTER ArticleSave sort of hook.
+	 * This is an ArticleSaveComplete hook that creates topics which don't exist yet when saving a TOC.
 	 * 
-	 * @param Article $article
+	 * @param WikiPage $article
 	 * @param User $user
 	 * @param string $text
 	 * @param string $summary
-	 * @param bool $minor
-	 * @param unknown_type $watch
-	 * @param unknown_type $sectionanchor
-	 * @param unknown_type $flags
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * 
+	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
 	static public function onArticleSave_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
 
@@ -619,6 +692,7 @@ class PonyDocsExtension
 		}
 
 		$title = $article->getTitle();
+		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		$matches = array();
 
@@ -640,7 +714,7 @@ class PonyDocsExtension
 			 */
 			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
 			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2] );
-			$pManualTopic = new PonyDocsTopic( $article );
+			$pManualTopic = new PonyDocsTopic( $realArticle );
 
 			$manVersionList = $pManualTopic->getProductVersions();
 			if ( !sizeof( $manVersionList ) ) {
@@ -667,14 +741,15 @@ class PonyDocsExtension
 				}
 
 				$res = $dbr->select(
-					'categorylinks',
-					'cl_sortkey',
+					array('categorylinks'),
+					'cl_from',
 					array(
-						"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower(
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2] . ":" .
-						$wikiTopic )) . ":%'", "cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ),
-						__METHOD__
-					);
+						"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')",
+						'cl_type = "page"',
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$match[1]}:{$match[2]}:$wikiTopic" ) ) . ":%'",
+					),
+					__METHOD__
+				);
 
 				$topicName = '';
 				if ( !$res->numRows() ) {
@@ -710,15 +785,19 @@ class PonyDocsExtension
 	 * Hook called AFTER an article was SUCCESSFULLY saved (meaning a new revision was created).  This specific hook is used
 	 * to regenerate the manual TOC cache for this manual.
 	 *
-	 * @param Article $article
+	 * TODO: AFAICT no one calls this. Let's confirm and then delete it.
+	 * 
+	 * @param WikiPage $article
 	 * @param User $user
 	 * @param string $text
 	 * @param string $summary
-	 * @param bool $minor
-	 * @param unknown_type $watch NOT USED AS OF 1.8
-	 * @param unknown_type $sectionanchor NOT USED AS OF 1.8
-	 * @param unknown_type $flags Bitfield.
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
 	 * @param Revision $revision
+	 * 
+	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
 	static public function onArticleSaveComplete_UpdateTOCCache( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags, $revision )
 	{
@@ -769,10 +848,12 @@ class PonyDocsExtension
 	 * @param User $user
 	 * @param string $text
 	 * @param string $summary
-	 * @param bool $minor
-	 * @param unknown_type $watch
-	 * @param unknown_type $sectionanchor
-	 * @param unknown_type $flags
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * 
+	 * @deprecated Use PageContentSave hook instead
 	 */
 	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath, $wgHooks, $wgPonyDocsEmployeeGroup;
@@ -840,27 +921,40 @@ class PonyDocsExtension
 
 			$q = '';
 
-			if ( preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/',
-				$title->__toString( ), $titleMatch ) ) {
-				$q = "SELECT cl_to, cl_sortkey FROM categorylinks " .
-					"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
-						. $titleMatch[3] )) . ":%' " .
-					"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':'
-						. $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
-					"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
-			} elseif ( preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/',
-				$title->__toString(), $titleMatch ) ) {
-				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
-						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' ))
-							. "%' " .
-						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC'
-							. $titleMatch[3] )) . "' " .
-						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories )
-							. "')";
+			if ( preg_match(
+				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
+				$res = $dbr->select(
+					array('categorylinks', 'page'),
+					array('cl_to', 'page_title') ,
+					array(
+						'cl_from = page_id',
+						'page_namespace = "' . NS_PONYDOCS . '"',
+						"cl_to IN ('V:{$titleMatch[1]}:" . implode( "','V:{$titleMatch[1]}:", $categories ) . "')",
+						'cl_type = "page"',
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$titleMatch[2]}:{$titleMatch[3]}" ) ) . ":%'",
+						"cl_sortkey <> '"
+							. $dbr->strencode( strtoupper( "{$titleMatch[2]}:{$titleMatch[3]}:{$titleMatch[4]}" ) ) . "'",
+					),
+					__METHOD__
+				);
+			} elseif ( preg_match(
+				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/', $title->__toString(), $titleMatch ) ) {
+				$res = $dbr->select(
+					array('categorylinks', 'page'),
+					array('cl_to', 'page_title') ,
+					array(
+						'cl_from = page_id',
+						'page_namespace = "' . NS_PONYDOCS . '"',
+						"cl_to IN ('V:{$titleMatch[1]}:" . implode( "','V:{$titleMatch[1]}:", $categories ) . "')",
+						'cl_type = "page"',
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$titleMatch[2]}TOC" ) ) . "%'",
+						"cl_sortkey <> '" . $dbr->strencode( strtoupper( "{$titleMatch[2]}TOC{$titleMatch[3]}" ) ) . "'",
+					),
+					__METHOD__
+				);
 			} else {
 				return TRUE;
 			}
-			$res = $dbr->query( $q, __METHOD__ );
 			if ( !$res->numRows() ) {
 				return TRUE;
 			}
@@ -870,7 +964,7 @@ class PonyDocsExtension
 
 			while( $row = $dbr->fetchObject( $res ) ) {
 				if ( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*)/i', $row->cl_to, $vmatch ) ) {
-					$topic = $row->cl_sortkey;
+					$topic = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 					$duplicateVersions[] = $vmatch[1];
 				}
 			}
@@ -970,6 +1064,17 @@ HEREDOC;
 				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 	 *
 	 * When creating the link in Documentation namespace, it uses the CURRENT MANUAL being viewed.. and the selected version?
+	 * 
+	 * @param Article $article
+	 * @param User $user
+	 * @param string $text
+	 * @param string $summary
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * 
+	 * @deprecated Use PageContentSave hook instead
 	 */
 	static public function onArticleSave_AutoLinks( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags )
 	{
@@ -1066,41 +1171,50 @@ HEREDOC;
 							 * Does this topic exist?  Look for a topic with this name tagged for the current version and current product.
 							 * If nothing is found, we create a new article.
 							 */
-							$sqlMatch = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $manual . ':' . $topic;
-							$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
-													"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
-													"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
+							$sqlMatch = $product . ':' . $manual . ':' . $topic;
+							$res = $dbr->select(
+								'categorylinks',
+								'cl_from',
+								array(
+									"cl_to = 'V:" . $dbr->strencode( "$product:$version" ) . "'",
+									'cl_type = "page"',
+									"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $sqlMatch ) ) . ":%'",
+								),
+								__METHOD__
+							);
 
-							if( !$res->numRows( )) 
-							{
-								$topicTitle = $sqlMatch . ':' . $version;
-								$tempArticle = new Article( Title::newFromText( $topicTitle ));
-								if( !$tempArticle->exists( ))
-								{
+							if ( !$res->numRows() ) {
+								$topicTitle = PONYDOCS_DOCUMENTATION_PREFIX . $sqlMatch . ':' . $version;
+								$tempArticle = new Article( Title::newFromText( $topicTitle ) );
+								if ( !$tempArticle->exists() ) {
 									/**
 									* Create the new article in the system;  if we have alternate text then set our H1 to this.
 									* Tag it with the currently selected version only.
 									*/
 									$content = '';
-									if( strlen( $match[3] ))
+									if ( strlen( $match[3] ) ) {
 										$content = '= ' . $match[3] . " =\n";
-									else
+									} else {
 										$content = '= ' . $topicTitle . " =\n";
+									}
 
-									$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
+									$content .= "\n[[Category:V:$product:$version]]";
 
-									$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-									if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
+									$tempArticle->doEdit(
+										$content,
+										"Auto-creation of topic $topicTitle via reference from " . $title->__toString() . '.',
+										EDIT_NEW );
+									if ( PONYDOCS_DEBUG ) {
+										error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "]"
+											. " Auto-created $topicTitle using link {$match[1]} in " . $title->__toString() );
+									}
 								}
 							}
-						}
-
 						/**
 						 * Explicit link of the form:
 						 * [[Documentation:Product:Manual:Topic:Version|Some Alternate Text]]
 						 */
-						else if( sizeof( $pieces ) == 5 )
-						{
+						} else if( sizeof( $pieces ) == 5 ) {
 							$product = $pieces[1];
 							$version = PonyDocsProductVersion::GetSelectedVersion( $product );
 							$version = $pieces[4];
@@ -1120,18 +1234,22 @@ HEREDOC;
 
 								$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
-								$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-								if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
+								$tempArticle->doEdit(
+									$content,
+									'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
+									EDIT_NEW );
+								if (PONYDOCS_DEBUG) {
+									error_log(
+										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " 
+										. $match[1] . " in " . $title->__toString() );
+								}
 							} 
 						}
-					}
-
 					/**
 					 * Handle non-Documentation NS references, such as 'Dev:SomeTopic'.  This is much simpler -- if it doesn't exist,
 					 * create it and add the H1.  Nothing else.
 					 */
-					else
-					{
+					} else {
 						$topicTitle = $match[1];
 						$tempTitleForArticle = Title::newFromText( $topicTitle );
 						if (is_object($tempTitleForArticle))
@@ -1148,40 +1266,51 @@ HEREDOC;
 								else
 									$content = '= ' . $match[1] . " =\n";
 
-								$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-								if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created " . $topicTitle . " using link " . $match[1] . " in " . $title->__toString( ));}
+								$tempArticle->doEdit(
+									$content,
+									'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
+									EDIT_NEW );
+								if ( PONYDOCS_DEBUG ) {
+									error_log( 
+										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created " . $topicTitle . " using link "
+										. $match[1] . " in " . $title->__toString() );
+								}
 							}
 						}
 					}
-
-				}
 				/**
 				 * Here we handle simple topic links:
 				 * [[SomeTopic|Some Display Title]]
 				 * Which assumes CURRENT manual in Documentation namespace.  It finds the topic which must share a version tag
 				 * with the currently displayed title.
 				 */
-				else
-				{
+				} else {
 					$product = PonyDocsProduct::GetSelectedProduct( );
 					$pManual = PonyDocsProductManual::GetCurrentManual( $product );
 					$version = PonyDocsProductVersion::GetSelectedVersion( $product );
-					if(!$pManual) {
+					if (!$pManual) {
 						// Cancel out.
 						return true;
 					}
+					
 					/**
 					 * Does this topic exist?  Look for a topic with this name tagged for the current version.
 					 * If nothing is found, we create a new article.
 					 */
-					$sqlMatch = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product . ':' . $pManual->getShortName( ) . ':' . $match[1];
-					$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
-											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
-											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
+					$sqlMatch = $product . ':' . $pManual->getShortName() . ':' . $match[1];
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_from',
+						array(
+							"cl_to = 'V:" . $dbr->strencode( "$product:$version" ) . "'",
+							'cl_type = "page"',
+							"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $sqlMatch ) ) . ":%'",
+						),
+						__METHOD__
+					);
 
-					if( !$res->numRows( ))
-					{
-						$topicTitle = $sqlMatch . ':' . $version;
+					if ( !$res->numRows() ) {
+						$topicTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$sqlMatch:$version";
 
 						$tempArticle = new Article( Title::newFromText( $topicTitle ));
 						if( !$tempArticle->exists( ))
@@ -1197,44 +1326,49 @@ HEREDOC;
 
 							$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
-							$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
-							if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
+							$tempArticle->doEdit(
+								$content,
+								'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
+								EDIT_NEW );
+							if (PONYDOCS_DEBUG) {
+								error_log(
+									"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1]
+									. " in " . $title->__toString() );
+							}
 						}
 					}
 				}
 			}
 		}
-		return true;
+
+		return TRUE;
 	}
 
 	/**
-	 * This hook is called when 'edit' is selected for a title.  In this case we intercept it for TOC management pages which are
-	 * NEW (do not yet exist and have content).  When this occurs we need to take the currently selected version and then populate
-	 * the edit box with a version tag for it.  For some reason there is no way I can find to do this via the supplied EditPage
-	 * object, nor does simply adding an inline script to set the content work.  So instead, the template sets a body_onload param
-	 * telling it to call the 'ponydocsOnLoad' function.  We define it here to set the edit box.
+	 * When a new TOC is being edited for the first time, use a JS document.ready() function to add a version category.
 	 *
 	 * @param EditPage $editpage
-	 * @return mixed 
+	 * @return boolean
 	 */
-	static public function onEdit_TOCPage( $editpage )
-	{
+	static public function onEdit_TOCPage( $editpage ) {
 		global $wgTitle, $wgOut;
 		
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString( ), $match ))
-			return true;
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
+			return TRUE;
+		}
 
-		if( !$wgTitle->exists( ))
-		{
+		if ( !$wgTitle->exists() ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
-			$script = 	"function ponydocsOnLoad() {
-							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . "]]\");
-						};";
+			$script = <<<EOJS
+$(function() {
+	$('#wpTextbox1').val('\\n\\n[[Category:V:$productName:$versionName]]');
+});
+EOJS;
 			$wgOut->addInLineScript( $script );
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -1253,7 +1387,7 @@ HEREDOC;
 	 */
 	static public function onEdit( $editpage )
 	{
-		global $wgOut, $wgArticle, $wgTitle;
+		global $wgOut, $wgTitle;
 
 		/**
 		 * Only offer cloning to NEW articles?
@@ -1281,32 +1415,45 @@ HEREDOC;
 		/**
 		 * Select all of our topics which match this one (of any version) that is not our own.
 		 */
-		$qry =	"SELECT DISTINCT(cl_sortkey) " .
-				"FROM categorylinks " .
-				"WHERE LOWER(cl_sortkey) LIKE '" . strtolower( $baseTopic ) . ":%' " .
-				"AND LOWER(cl_sortkey) NOT LIKE '" . $wgTitle->__toString( ) . "' " .
-				"ORDER BY cl_sortkey ASC";
-
-		$res = $dbr->query( $qry, __METHOD__ );
-		if( !$res->numRows( ))
-			return true;
+		
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_sortkey',
+			array(
+				"cl_to = 'V:%:%'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . strtoupper( $baseTopic ) . ":%'",
+				"cl_sortkey NOT LIKE '" . $wgTitle->getText() . "'",
+			),
+			__METHOD__,
+			array('DISTINCT', 'ORDER BY cl_sortkey ASC')
+		);		
+		if ( !$res->numRows() ) {
+			return TRUE;
+		}
 
 		$out = '';
  
 		/**
-		 * Now select all the versions for each topic match we found.  We then append a link to our Ajax function for each version to our output
-		 * passing the base topic and the version.  When done $output should be a series of version anchors calling the same Ajax function. 
+		 * Now select all the versions for each topic match we found. 
+		 * We then append a link to our Ajax function for each version to our output passing the base topic and the version.
+		 * When done $output should be a series of version anchors calling the same Ajax function. 
 		 */
-		while( $row = $dbr->fetchObject( $res ))
-		{
-			$vRes = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'", __METHOD__ );
-			if( !$vRes->numRows( ))
+		while( $row = $dbr->fetchObject( $res ) ) {
+			// TODO: This is dumb, we can just add cl_to to the query above
+			$vRes = $dbr->select(
+				'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'", __METHOD__ );
+			if (!$vRes->numRows() ) {
 				continue;
+			}
 
-			while( $vRow = $dbr->fetchObject( $vRes ))
-			{
-				if( preg_match( '/^V:(.*):(.*)/i', $vRow->cl_to, $vmatch ))
-					$out .= '<a "#" onClick="AjaxCloneTopic(\'' . $baseTopic . '\', \'' . $vmatch[1] . '\', \'' . $vmatch[2] . '\');">' . $vmatch[2] . '</a> ';
+			while ( $vRow = $dbr->fetchObject( $vRes ) ) {
+				if ( preg_match( '/^V:(.*):(.*)/i', $vRow->cl_to, $vmatch ) ) {
+					$out .= 
+						'<a "#"'
+						. ' onClick="AjaxCloneTopic(\'' . $baseTopic . '\', \'' . $vmatch[1] . '\', \'' . $vmatch[2] . '\');">'
+						. $vmatch[2] . '</a> ';
+				}
 			}
 		}
 
@@ -1366,9 +1513,10 @@ HEREDOC;
 			/**
 			 * First open the title and strip the [[Category]] tags from the content and save.
 			 */
-			$versions = explode( ',', $wgRequest->getVal( 'versions' ));
+			$versions = explode( ',', $wgRequest->getVal( 'versions' ) );
 			$product = $wgRequest->getVal('product');
-			$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' )));
+			$title = Title::newFromText( $wgRequest->getVal( 'title' ) );
+			$article = new Article( $title );
 			$content = $article->getContent( );
 
 			$findArray = $repArray = array( );
@@ -1384,9 +1532,10 @@ HEREDOC;
 			/**
 			 * Now update the categorylinks (is this needed?).
 			 */
-			$q =	"DELETE FROM categorylinks " .
-					"WHERE LOWER(cl_sortkey) = '" . $dbr->strencode( strtolower( $wgRequest->getVal( 'title' ))) . "' " .
-					"AND cl_to IN ('V:$product:" . implode( "','V:$product:", $versions ) . "')";
+			$q = "DELETE FROM categorylinks"
+				. " WHERE cl_sortkey = '" . $dbr->strencode( strtoupper( $title->getText() ) ) . "'"
+				. " AND cl_to IN ('V:$product:" . implode( "','V:$product:", $versions ) . "')"
+				. " AND cl_type = 'page'";
 
 			$res = $dbr->query( $q, __METHOD__ );
 
@@ -1438,7 +1587,7 @@ HEREDOC;
 	 */
 	static public function onParserBeforeStrip( &$parser, &$text )
 	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgArticle, $wgPonyDocs, $action;
+		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgPonyDocs, $action;
 
 		$dbr = wfGetDB( DB_SLAVE );
 		if(empty($wgTitle)) {
@@ -1489,8 +1638,12 @@ HEREDOC;
 		 */
 
 		//if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:.'_!@\"()#$ -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		{
+		if( $doWikiLinkSubstitution 
+			&& preg_match_all(
+				"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/",
+				$text,
+				$matches,
+				PREG_SET_ORDER ) ) {
 			//echo '<pre>'; print_r( $matches ); die();
 			/**
 			 * For each, find the topic in categorylinks which is tagged with currently selected version then produce
@@ -1502,27 +1655,28 @@ HEREDOC;
 			// No longer bail on $pManual not being set.  We should only need it 
 			// for [[Namespace:Topic]]
 
-			foreach( $matches as $match )
-			{
+			foreach ( $matches as $match ) {
 				/**
 				 * Namespace used.  If NOT Documentation, just output the link.
 				 */
-				if( strpos( $match[1], ':' ) !== false && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) === 0 )
-				{
+				if ( strpos( $match[1], ':' ) !== false && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
 					$pieces = explode( ':', $match[1] );
 					/**
 					 * [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
 					 */
-					if( 3 == sizeof( $pieces ))
-					{
-						$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-							array( 	"LOWER(cl_sortkey) LIKE '" . $dbr->strencode( strtolower( $match[1] )) . ":%'",
-									"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ), __METHOD__ );
+					if ( 3 == sizeof( $pieces ) ) {
+						$res = $dbr->select(
+							'categorylinks',
+							'cl_from', 
+							array(
+								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
+								'cl_type = "page"',
+								'cl_sortkey LIKE "' . $dbr->strencode( strtoupper( "{$pieces[1]}:{$pieces[2]}" ) ) . ':%"',
+							),
+							__METHOD__
+						);
 
-						if( $res->numRows( ))
-						{
-							$row = $dbr->fetchObject( $res );
-
+						if ( $res->numRows() ) {
 							global $title;
 							// Our title is our url.  We should check to see if 
 							// latest is our version.  If so, we want to FORCE 
@@ -1539,20 +1693,28 @@ HEREDOC;
 							if($selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct)) {
 								$latest = true;
 							}
-							$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . ($latest ? "latest" : $selectedVersion) . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
+							$href = str_replace( 
+								'$1',
+								//TODO: There is no $pieces[3] per the if clause we're in, so???
+								PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' 
+									. ( $latest ? "latest" : $selectedVersion ) . '/' . $pieces[2] . '/'  
+									. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '',
+										$pieces[3] ),
+								$wgArticlePath );
 							$href .= $match[2];
-							if(isset($_SERVER['SERVER_NAME'])) {
-								$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
+							if ( isset( $_SERVER['SERVER_NAME'] ) ) {
+								$text =	str_replace(
+									$match[0],
+									"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] )
+										. ']',
+									$text );
 							}
 						}
-					}
-
 					/**
 					 * [[Documentation:Product:Manual:Topic]] => Documentation/Product/<latest_or_selected>/Manual/Topic
 					 * If linking within same product, stay on selected version; otherwise use "latest" for cross-product link
 					 */
-					else if( 4 == sizeof( $pieces ))
-					{
+					} else if ( 4 == sizeof( $pieces ) ) {
 						$linkProduct = $pieces[1]; // set product in link for legibility
 						
 						// If this is a link to the current project, use the selected version. Otherwise set version to latest.
@@ -1562,8 +1724,6 @@ HEREDOC;
 							$version = 'latest';
 						}
 						
-						// Set up for database call
-						$fullTitle = $dbr->strencode(strtolower(implode(":", $pieces)));
 						// If the version is "latest", translate that to a real version number. Use product that was in the link.
 						if ($version == 'latest') {
 							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
@@ -1574,19 +1734,33 @@ HEREDOC;
 						}
 						
 						// Database call to see if this topic exists in the product/version specified in the link
-						$res = $dbr->select( 'categorylinks', 'cl_sortkey',
-											 array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $fullTitle . ":%'",
-														"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'"), __METHOD__ );
+						$res = $dbr->select(
+							'categorylinks',
+							'cl_from',
+							array(
+								"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'",
+								'cl_type = "page"',
+								"cl_sortkey LIKE '"
+									. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
+							 ),
+							__METHOD__
+						);
 
-						if(!$res->numRows())
-						{
+						if ( !$res->numRows() ) {
 							// This article is not found.
 							continue;
 						}
 						
-						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
+						$href = str_replace(
+							'$1',
+							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
+								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
+							$wgArticlePath );
 						$href .= $match[2];
-						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
+						$text = str_replace(
+							$match[0], 
+							"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
+							$text );
 					}
 
 					/**
@@ -1603,31 +1777,44 @@ HEREDOC;
 				else
 				{
 					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
-					if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i',
-						$wgTitle->__toString( )) || !isset($pManual))
+					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
+						|| !isset($pManual)) {
 						continue;
-					$page = 'documentation:' . strtolower( $selectedProduct . ':' . $pManual->getShortName( )) . ':' . strtolower( $match[1] );
-
-					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-						array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" .  $dbr->strencode( $page )  . ":%'",
-								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ), __METHOD__ );
+					}
+					
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_from', 
+						array(
+							"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
+							'cl_type = "page"',
+							"cl_sortkey LIKE '" . $dbr->strencode(
+								strtoupper( $selectedProduct . ':' . $pManual->getShortName() . ':' . $match[1] ) ) . ":%'",
+						),
+						__METHOD__
+					);
 
 					/**
 					 * We might need to make it a "non-link" at this point instead of skipping it.
 					 */
-					if( !$res->numRows( ))
+					if ( !$res->numRows() ) {
 						continue;
+					}
 
-					/**
-					 * Replace it with a proper [[]] link to the actual article.
-					 */
-					$row = $dbr->fetchObject( $res );
-
-					$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/' . $pManual->getShortName( ) . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $match[1] ), $wgArticlePath );
+					$href = str_replace(
+						'$1',
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
+							. $pManual->getShortName() . '/' 
+							. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] ),
+						$wgArticlePath
+					);
 					$href .= $match[2];
 
-					$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
-
+					$text = str_replace( 
+						$match[0],
+						"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']',
+						$text
+					);
 				}
 			}
 		}
@@ -2022,19 +2209,22 @@ HEREDOC;
 	/**
 	 * Called when an article is deleted, we want to purge any doclinks entries 
 	 * that refer to that article if it's in the documentation namespace.
+	 *
+	 * NB $article is a WikiPage and not an article
 	 */
-	static public function onArticleDelete(&$article, &$user, &$user, $error) {
+	static public function onArticleDelete( &$article, &$user, &$user, $error ) {
 		$title = $article->getTitle();
+		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		// Delete doc links
-		PonyDocsExtension::updateOrDeleteDocLinks("delete", $article);
+		PonyDocsExtension::updateOrDeleteDocLinks("delete", $realArticle);
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString( ), $matches )) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return true;
 		}
 		// Okay, article is in doc namespace
 		
-		PonyDocsExtension::clearArticleCategoryCache($article);
+		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 		return true;
 	}
 
@@ -2042,18 +2232,33 @@ HEREDOC;
 	 * When an article is fully saved, we want to update the doclinks for that 
 	 * article in our doclinks table.  Only if it's in the documentation 
 	 * namepsace, however.
+	 * 
+	 * @param WikiPage $article
+	 * @param User $user
+	 * @param string $text
+	 * @param string $summary
+	 * @param boolean $minor
+	 * @param boolean $watch
+	 * @param $sectionanchor
+	 * @param integer $flags
+	 * @param Revision $revision
+	 * @param Status $status
+	 * @param integer $baseRevId
+	 * 
+	 * @deprecated Replace with PageContentSaveComplete hook
 	 *
 	 */
-	static public function onArticleSaveComplete(&$article, &$user, $text, $summary, $minoredit, $watchthis,
-												 $sectionanchor, &$flags, $revision, &$status, $baseRevId) {
+	static public function onArticleSaveComplete(
+		&$article, &$user, $text, $summary, $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
 
 		$title = $article->getTitle();
+		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		// Update doc links
-		PonyDocsExtension::updateOrDeleteDocLinks("update", $article, $text);
+		PonyDocsExtension::updateOrDeleteDocLinks( "update", $realArticle, $text );
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString( ), $matches )) {
-			return true;
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
+			return TRUE;
 		}
 		// Okay, article is in doc namespace
 
@@ -2074,7 +2279,7 @@ HEREDOC;
 		}
 
 		// Clear any TOC cache entries this article may be related to.
-		$topic = new PonyDocsTopic($article);
+		$topic = new PonyDocsTopic( $realArticle );
 		$manVersionList = $topic->getProductVersions( );
 		// Clear all TOC cache entries for each version.
 		if($manual) {
@@ -2083,7 +2288,7 @@ HEREDOC;
 				PonyDocsProductVersion::clearNAVCache($version);
 			}
 		}
-		PonyDocsExtension::clearArticleCategoryCache($article);
+		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
 		// if this is product versions or manuals page, clear navigation cache
 		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString(), $matches ) ||
@@ -2267,12 +2472,8 @@ HEREDOC;
 	}
 
 	static public function onBeforePageDisplay(&$out, &$sk) {
-		global $wgScriptPath;
-		// Add our js files
-		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery-1.4.2.min.js");
-		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery.json-2.2.min.js");
-		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/docs.js");
-		return true;
+		$out->addModules( 'ext.PonyDocs' );
+		return TRUE;
 	}
 
 	/**
