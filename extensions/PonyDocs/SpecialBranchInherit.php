@@ -5,7 +5,7 @@ if( !defined( 'MEDIAWIKI' ))
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
  */
-require_once( $IP . '/includes/SpecialPage.php' );
+require_once( "$IP/includes/specialpage/SpecialPage.php" );
 
 /**
  * Register our 'Special' page so it is listed and accessible.
@@ -459,7 +459,8 @@ class SpecialBranchInherit extends SpecialPage
 
 		// if title is set we have our product and manual, else take selected product
 		if(isset($_GET['titleName'])) {
-			if(!preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $_GET['titleName'], $match)) {
+			if(!preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/',
+				$_GET['titleName'], $match)) {
 				throw new Exception("Invalid Title to Branch From");
 			}
 			$forceProduct = $match[1];

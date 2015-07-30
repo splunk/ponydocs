@@ -58,11 +58,10 @@ class PonyDocsTopic {
 	 */
 	public function __construct( Article &$article ) {
 		$this->pArticle = $article;
-		//$this->pArticle->loadContent( );
-		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle();
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString() ) )
-			$this->mIsDocumentationTopic = true;
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $this->pTitle->__toString() ) ) {
+			$this->mIsDocumentationTopic = TRUE;
+		}
 	}
 
 	/**
@@ -91,17 +90,24 @@ class PonyDocsTopic {
 	 * @param boolean $reload If true, force reload from database; else used cache copy (if found).
 	 * @return array
 	 */
-	public function getProductVersions( $reload = false ) {
-		if( sizeof( $this->versions ) && !$reload ) {
+	public function getProductVersions( $reload = FALSE ) {
+		if ( sizeof( $this->versions ) && !$reload ) {
 			return $this->versions;
 		}
 		
 		$dbr = wfGetDB( DB_SLAVE );
 		$revision = $this->pArticle->mRevision;
 
-		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
 		$res = $dbr->select(
-			'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
+			'categorylinks',
+			'cl_to',
+			array(
+				'cl_to LIKE "V:%:%"',
+				'cl_type = "page"',
+				"cl_sortkey = '" . $dbr->strencode( strtoupper( $this->pTitle->getText() ) ) . "'",
+			),
+			__METHOD__ 
+		);
 
 		$this->versions = array();
 		
@@ -116,7 +122,6 @@ class PonyDocsTopic {
 
 		// Sort by the order on the versions admin page
 		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
-
 		return $this->versions;
 	}
 
@@ -130,10 +135,20 @@ class PonyDocsTopic {
 	 */
 	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product ) {
 		$dbr = wfGetDB( DB_SLAVE );
+		$noPrefixText = preg_replace('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', '', $baseTopic);
 
-		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array(
-			"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%'",
-			"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title' ,
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $noPrefixText ) ) . ":%'",
+			),
+			__METHOD__ 
+		);
 
 		if ( !$res->numRows() ) {
 			return false;
@@ -141,7 +156,7 @@ class PonyDocsTopic {
 
 		$row = $dbr->fetchObject( $res );
 
-		return $row->cl_sortkey;
+		return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 	}
 
 	/**
@@ -184,28 +199,44 @@ class PonyDocsTopic {
 	 */
 	public function getSubContents() {
 		$sections = array();
-		
-		if ( preg_match( '/__NOTOC__/', $this->pArticle->getContent() ) ) {
+
+		if ( preg_match('/__NOTOC__/', $this->pArticle->getContent() ) ) {
 			return $sections;
 		}
-		
+
 		$matches = $this->parseSections();
 		$h2 = FALSE;
+		$headReference = array();
+		$headCount = 0;
 		foreach ( $matches as $match ) {
-			$level = strlen( $match[1] );		
+			$level = strlen( $match[1] );
+			if ( !isset($headReference[$match[2]]) ) {
+				$headReference[$match[2]] = 1;
+			} else {
+				$headReference[$match[2]] ++;
+			}
+
 			// We don't want to include any H3s that don't have an H2 parent
-			if ( $level == 2 || ( $level == 3 && $h2 ) )  {
+			if ( $level == 2 || ( $level == 3 && $h2 ) ) {
 				if ( $level == 2 ) {
 					$h2 = TRUE;
 				}
+				$headCount = $headReference[$match[2]];
+				if ( $headCount > 1 ) {
+					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial') . '_' . $headCount;
+				} else {
+					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial');
+				}
+
 				$sections[] = array(
 					'level' => $level,
-					'link' => '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match[2] ), 'noninitial' ),
+					'link' => $link,
 					'text' => $match[2],
-					'class' => 'toclevel-' . round( $level - 1, 0 )
+					'class' => 'toclevel-' . round($level - 1, 0)
 				);
 			}
 		}
+
 		return $sections;
 	}
 
@@ -223,7 +254,8 @@ class PonyDocsTopic {
 	 */
 	private function parseWikiLinks() {
 		$re = "/\\[\\[([" . Title::legalChars() . "]+)(?:\\|?(.*?))\]\]/sD";
-		if ( preg_match_all( $re, $this->pArticle->mContent, $matches, PREG_SET_ORDER ) ) {
+		$content = $this->pArticle->getContent();
+		if ( preg_match_all( $re, $content, $matches, PREG_SET_ORDER ) ) {
 			return $matches;
 		}
 		return array();
@@ -242,7 +274,8 @@ class PonyDocsTopic {
 	 * @return array
 	 */
 	public function parseSections() {
-		$content = str_replace("<nowiki>", "", $this->pArticle->mContent);
+		$content = $this->pArticle->getContent();
+		$content = str_replace("<nowiki>", "", $content);
 		$content = str_replace("</nowiki>", "", $content);
 		$content = strip_tags($content, '<h1><h2><h3><h4><h5>');	
 		$headings = array();
@@ -329,8 +362,9 @@ class PonyDocsTopic {
 	 * @return string
 	 */
 	public function getBaseTopicName() {
-		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(), $match ) ) {
-			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i',
+			$this->pTitle->__toString(), $match ) ) {
+			return sprintf( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
 
 		return '';

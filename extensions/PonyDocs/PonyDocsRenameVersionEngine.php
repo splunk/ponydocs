@@ -70,7 +70,8 @@ class PonyDocsRenameVersionEngine {
 		// Clear any hooks so no weirdness gets called after we save the change
 		$wgHooks['ArticleSave'] = array();
 
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle,
+			$match ) ) {
 			throw new Exception( "Invalid Title to Rename Version: $topicTitle" );
 		}
 

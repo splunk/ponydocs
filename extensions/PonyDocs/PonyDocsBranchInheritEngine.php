@@ -28,7 +28,7 @@ class PonyDocsBranchInheritEngine {
 		// Clear any hooks so no weirdness gets called after we create the 
 		// branch
 		$wgHooks['ArticleSave'] = array();
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Branch From" );
 		}
 
@@ -75,7 +75,7 @@ class PonyDocsBranchInheritEngine {
 			// No such title exists in the system
 			throw new Exception( "Invalid Title to Branch From. Target Article does not exist:" . $topicTitle );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
 			. $version->getVersionName();
 
 		$newArticle = PonyDocsArticleFactory::getArticleByTitle( $title );
@@ -149,7 +149,7 @@ class PonyDocsBranchInheritEngine {
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the inherit
 		$wgHooks['ArticleSave'] = array();
-		if ( !preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Inherit From: " . $topicTitle );
 		}
 
@@ -217,15 +217,27 @@ class PonyDocsBranchInheritEngine {
 	 */
 	static public function TOCExists( $product, $manual, $version ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $version->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:"
-			. $dbr->strencode(strtolower($product->getShortName()) . ':' . strtolower($manual->getShortName())) . "toc%'";
-		$res = $dbr->query( $query, __METHOD__ );
-
+		
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title' ,
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $version->getVersionName() ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '"
+					. $dbr->strencode( strtoupper( $product->getShortName() ) ) . ':' . strtoupper( $manual->getShortName() )
+					. "TOC%'",
+			),
+			__METHOD__
+		);
+		
 		if ( $res->numRows() ) {
 			$row = $dbr->fetchObject( $res );
-			return $row->cl_sortkey;
+			return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 		}
+
 		return false;
 	}
 
@@ -274,7 +286,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception(
 				"TOC Already exists for " . $manual->getShortName() . " with version: " . $targetVersion->getVersionName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
 			. $targetVersion->getVersionName();
 		$newTitle = Title::newFromText( $title );
 		$wgTitle = $newTitle;
@@ -322,7 +334,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception(
 				"TOC Already exists for " . $manual->getShortName() . " with version: " . $version->getVersionName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
 			. $version->getVersionName();
 
 		$newTitle = Title::newFromText( $title );
@@ -461,24 +473,32 @@ class PonyDocsBranchInheritEngine {
 	 * Determine if there is an existing topic that may interfere with a target topic and version.
 	 * If conflict(s) exist, return the topic names.
 	 *
-	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*' format
+	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*' format
 	 * @param $targetVersion PonyDocsVersion the version to search for
 	 * @return Array of conflicting topic names, otherwise false if no conflict exists.
 	 */
 	static function getConflicts( $product, $topicTitle, $targetVersion ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to get conflicts for" );
 		}
 		$productName = $match[1];
 		$manual = $match[2];
 		$title = $match[3];
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $targetVersion->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE '"
-			. $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manual . ":" . $title ) )
-			. ":%'";
-		$res = $dbr->query( $query, __METHOD__ );
-
+		
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title',
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $targetVersion->getVersionName() ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productName:$manual:$title" ) ) . ":%'",
+			),
+			__METHOD__
+		);
+		
 		if ( $res->numRows() ) {
 			/**
 			 * Technically we should only EVER get one result back. But who knows with past doc wiki consistency issues.
@@ -487,7 +507,7 @@ class PonyDocsBranchInheritEngine {
 
 			// Then let's return the topics that conflict.
 			while ( $row = $dbr->fetchObject( $res ) ) {
-				$conflicts[] = $row->cl_sortkey;
+				$conflicts[] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 			}
 			return $conflicts;
 		}
@@ -496,7 +516,7 @@ class PonyDocsBranchInheritEngine {
 		// Determine if any page exists that doesn't have a category link association
 		// or when its base version is not in its categories.
 		$destinationTitle =
-			PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionName();
+			PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionName();
 		$destinationArticle = PonyDocsArticleFactory::getArticleByTitle( $destinationTitle );
 		if ( $destinationArticle->exists() ) {
 			return array( $destinationArticle->metadata['title'] );
