@@ -78,9 +78,9 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		if (strpos($pieces[2], "TOC") && count($pieces) == 3) {
 			$pieces[2] = substr($pieces[2], 0, strpos($pieces[2], "TOC"));
 		} else if (count($pieces) != 5) {
-			// something is wrong, let's get out of here
-			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
-			if (PONYDOCS_REDIRECT_DEBUG) {
+			// something is wrong, let's get out of here			
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
 			}
 			header( "Location: " . $defaultRedirect );

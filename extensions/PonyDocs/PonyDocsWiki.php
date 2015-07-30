@@ -53,7 +53,6 @@ class PonyDocsWiki
 	 * @return array  array of product arrays, keyed by shortname
 	 */
 	public function getProductsForTemplate() {
-		$dbr = wfGetDB(DB_SLAVE);
 		$product = PonyDocsProduct::GetProducts();
 		$productAry = array();
 
@@ -94,18 +93,21 @@ class PonyDocsWiki
 	 * @param PonyDocsTopic $pTopic Topic to obtain versions for.
 	 * @return array
 	 */
-	public function getVersionsForTopic( PonyDocsTopic &$pTopic )
-	{
+	public function getVersionsForTopic( PonyDocsTopic &$pTopic ) {
 		global $wgArticlePath;
-		$versions = $pTopic->getProductVersions( );
 
-		$out = array( );
-		foreach( $versions as $v )
-		{
-			$out[] = array( 'name' => $v->getVersionName( ), 'href' => str_replace( '$1', 'Category:V:' . $v->getProductName() . ':' . $v->getVersionName( ), $wgArticlePath ));
+		$versions = array();
+		foreach ( $pTopic->getProductVersions() as $productVersion ) {
+			$versions[] = array(
+				'name' => $productVersion->getVersionName(),
+				'href' => str_replace(
+					'$1', 
+					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionName(),
+					$wgArticlePath )
+			);
 		}
 
-		return $out;
+		return $versions;
 	}
 
 	/**

@@ -4,7 +4,7 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once( $IP . '/includes/SpecialPage.php' );
+require_once( "$IP/includes/specialpage/SpecialPage.php" );
 
 /**
  * Register our 'Special' page so it is listed and accessible.
@@ -40,11 +40,11 @@ class SpecialStaticDocServer extends SpecialPage {
 		#TODO: switch to $this->getOuput() and $this->getRequest() when we upgrade MW
 		global $wgOut, $wgRequest;
 		$wgOut->disable();
-		
+
 		$found = FALSE;
 		list( $productName, $versionName, $path ) = explode( '/', $par, 3 );
-		if ( !$path ) {
-			$par .= '/index.html';
+		if ( substr( $par, -1, 1 ) == '/') {
+			$par .= 'index.html';
 		}
 		
 		// Validate parameters are set
