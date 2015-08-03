@@ -100,50 +100,53 @@ SplunkBranchInherit = function() {
 	var manuals = [];
 	var defaultAction = 'ignore';
 	var topicActions = {};
+	var topicData = {};
+	var topicCount = 0;
 	var jobID = '';
 	var progressTimer = null;
 	var completed = false;
 	var forceTitle = null;
 	var forceManual = null;
+	var ajaxUri = wgServer + ((wgScript == null) ? (wgScriptPath + "/index.php") : wgScript) + "?action=ajax";
 
 	return {
 		init: function() {
-			$('#versionselect_submit').click(function() {
-				sourceProduct = $('#force_product').val();
-				if($('#force_sourceVersion').length != 0) {
-					sourceVersion = $('#force_sourceVersion').val();
-					forceTitle = $('#force_titleName').val();
-					forceManual = $('#force_manual').val();
+			$('#versionselect_submit').click( function() {
+				sourceProduct = $( '#force_product' ).val();
+				if ( $( '#force_sourceVersion' ).length != 0 ) {
+					sourceVersion = $( '#force_sourceVersion' ).val();
+					forceTitle = $( '#force_titleName' ).val();
+					forceManual = $( '#force_manual' ).val();
 				}
 				else {
-					sourceVersion = $('#versionselect_sourceversion').val();
+					sourceVersion = $( '#versionselect_sourceversion' ).val();
 				}
-				targetVersion = $('#versionselect_targetversion').val();
-				if(sourceVersion == targetVersion) {
-					alert('Target version can not be the same as source version.');
+				targetVersion = $( '#versionselect_targetversion' ).val();
+				if( sourceVersion == targetVersion ) {
+					alert( 'Target version can not be the same as source version.' );
 				}
 				else {
-					$('#docbranchinherit .sourceversion').html(sourceVersion);
-					$('#docbranchinherit .targetversion').html(targetVersion);
-					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
-					if(forceTitle == null) {
-						sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
-							var manuals = eval(res.responseText);
-							var container = $('#manualselect_manuals');
-							container.html('');
-							for(index in manuals) {
+					$( '#docbranchinherit .sourceversion' ).html( sourceVersion );
+					$( '#docbranchinherit .targetversion' ).html( targetVersion );
+					$( '#versionselect_submit' ).attr( "disabled", "disabled" ).attr( "value", "Fetching Data..." );
+					if( forceTitle == null ) {
+						sajax_do_call( 'SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
+							var manuals = eval( res.responseText );
+							var container = $( '#manualselect_manuals' );
+							container.html( '' );
+							for( index in manuals ) {
 								var html = "<input id=\"manual_" + manuals[index]['shortname'] + "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname'] + "\" /><label for=\"manual_" + manuals[index]['shortname'] + "\">" + manuals[index]['longname'] + "</label><br />";
-								container.prepend(html);
+								container.prepend( html );
 							}
-							$('#docbranchinherit .versionselect').fadeOut(function () {
-								$('#versionselect_submit').attr("value", "Continue to Manuals").removeAttr("disabled");
-								$('#docbranchinherit .manualselect').fadeIn();
+							$( '#docbranchinherit .versionselect' ).fadeOut(function( ) {
+								$( '#versionselect_submit' ).attr( "value", "Continue to Manuals" ).removeAttr( "disabled" );
+								$( '#docbranchinherit .manualselect' ).fadeIn();
 							});
 						});
 					}
 					else {
 						// Force handling a title.
-						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
+						sajax_do_call( 'SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions );
 					}
 				}
 			});
@@ -151,103 +154,184 @@ SplunkBranchInherit = function() {
 			$(document).on( 'change', '.sectiondefault', null, function() {
 				var val = $(this).val();
 				$(this).siblings("table").find("option[value='" + val + "']").attr("selected", "selected");
-				if(val == "inherit") {
+				if (val == "inherit") {
 					$(this).siblings("table").find("option[value='inheritpurge']").attr("selected", "selected");
 				}
-				if(val == "branch") {
+				if (val == "branch") {
 					$(this).siblings("table").find("option[value='branchsplit']").attr("selected", "selected");
 				}
 			});
-
-			$('#manualselect_submit').click(function() {
+			$( '#manualselect_submit' ).click(function( ) {
 				manuals = [];
-				if($('#manualselect_manuals input:checked').length == 0) {
-					alert("You must select at least one manual.");
+				if( $( '#manualselect_manuals input:checked' ).length == 0 ) {
+					alert( "You must select at least one manual." );
 					return;
 				}
-				if($('input[name=\'manualselect_action\']:checked').length == 0) {
-					alert("You must select a default action.");
+				if ( $( 'input[name=\'manualselect_action\']:checked' ).length == 0 ) {
+					alert( "You must select a default action." );
 					return;
 				}
-				defaultAction = $('input[name=\'manualselect_action\']:checked').val();
-				$('#manualselect_manuals input:checked').each(function() {
-					manuals[manuals.length] = $(this).val();
+				defaultAction = $( 'input[name=\'manualselect_action\']:checked' ).val();
+				$( '#manualselect_manuals input:checked' ).each(function( ) {
+					manuals[manuals.length] = $( this ).val();
 				});
-				$("#manualselect_submit").attr("disabled", "disabled").attr("value", "Fetching Data...");
+				$( "#manualselect_submit" ).attr( "disabled", "disabled" ).attr( "value", "Fetching Data..." );
 				// Okay, let's fetch our tocs.
-				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
+				sajax_do_call( 'SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions );
 			});
-
-			$('#topicactions_submit').click(function() {
-					if(!confirm("Are you sure you want to process this job?  Be sure to review all topics because there is no stopping it once it begins.  Please note this will take some time, so please be patient.")) {
-						return false;
+			$( '#topicactions_submit' ).click(function( ) {
+				if ( !confirm( "Are you sure you want to process this job?  Be sure to review all topics because there is no stopping it once it begins.  Please note this will take some time, so please be patient." ) ) {
+					return false;
+				}
+				$( '#topicactions_submit' ).attr( "value", "Processing..." ).attr( "disabled", "disabled" );
+				// Time to build topic actions
+				$( '#docbranchinherit .topicactions .container .manual' ).each(function( ) {
+					var manualName = $( this ).find( '.manual_shortname' ).val();
+					var tocAction = $( this ).find( '.manualtocaction' ).val();
+					topicActions[manualName] = {};
+					// Determine if we need to create new toc or branch.
+					if ($( this ).find( 'option[value=\'ignore\']:selected' ).length > 0 ) {
+						topicActions[manualName].tocInherit = false;
 					}
-					$('#topicactions_submit').attr("value", "Processing...").attr("disabled", "disabled");
-					// Time to build topic actions
-					$('#docbranchinherit .topicactions .container .manual').each(function() {
-						var manualName = $(this).find('.manual_shortname').val();
-						var tocAction = $(this).find('.manualtocaction').val();
-						topicActions[manualName] = {};
-						// Determine if we need to create new toc or branch.
-						if($(this).find('option[value=\'ignore\']:selected').length > 0) {
-							topicActions[manualName].tocInherit = false;
-						}
-						else {
-							topicActions[manualName].tocInherit = true;
-						}
-						topicActions[manualName].tocAction = tocAction;
-						topicActions[manualName].sections = {};
-						$(this).find('.section').each(function() {
-							var sectionName = $(this).find('h3').html();
-							topicActions[manualName].sections[sectionName] = [];
-							$(this).find('tr').each(function() {
-								var topic = {};
-								topic.title = $(this).find('.topicname em').html();
-								topic.text = $(this).find('.topicname strong').html();
-								topic.toctitle = $(this).find('.action input').val();
-								topic.action = $(this).find('.action select').val();
+					else {
+						topicActions[manualName].tocInherit = true;
+					}
+					topicActions[manualName].tocAction = tocAction;
+					topicActions[manualName].sections = {};
+					$( this ).find( '.section' ).each( function() {
+						var sectionName = $( this ).find( 'h3' ).html();
+						topicActions[manualName].sections[sectionName] = [];
+						$( this ).find( 'tr' ).each( function( ) {
+							var topic = {};
+							topic.title = $( this ).find( '.topicname em' ).html();
+							topic.text = $( this ).find( '.topicname strong' ).html();
+							topic.toctitle = $( this ).find( '.action input' ).val();
+							topic.action = $( this ).find( '.action select' ).val();
+							//added this data to process topic
+							topic.manualName = manualName;
+							topic.sectionName = sectionName;
+							topic.tocAction = tocAction;
+							topic.tocInherit = topicActions[manualName].tocInherit;
+							//checking for empty objects
+							if( topic.title ) {
 								topicActions[manualName].sections[sectionName][topicActions[manualName].sections[sectionName].length] = topic;
-							});
+								topicCount++;
+							}
+
 						});
 					});
-					// Okay, time to submit.
-					// First grab the job ID.
-					sajax_do_call('SpecialBranchInherit::ajaxFetchJobID', [], function(res) {
-						SplunkBranchInherit.jobID = res.responseText;
-						sajax_request_type = 'POST';
-						SplunkBranchInherit.fetchProgress();
-						sajax_do_call('SpecialBranchInherit::ajaxProcessRequest', [SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetVersion, $.toJSON(topicActions)], function(res) {
-							completed = true;
-							clearTimeout(progressTimer);
-							progressTimer = null;
-							$("#docbranchinherit .completed .logconsole").html(res.responseText);
-							$("#docbranchinherit .topicactions").fadeOut(function() {
-								$("#docbranchinherit .completed").fadeIn();
+				});
+				// Okay, time to submit.
+				// First grab the job ID.
+				sajax_do_call( 'SpecialBranchInherit::ajaxFetchJobID', [], function( res ) {
+					SplunkBranchInherit.jobID = res.responseText;
+					sajax_request_type = 'POST';
+					SplunkBranchInherit.fetchProgress();
+
+					if( SplunkBranchInherit.jobID != '' ) {
+						var topicsCompleted = 0;
+						for( manual in topicActions ) {
+							var manualData = {};
+							var postData = {};
+							postData.rs = 'SpecialBranchInherit::ajaxProcessManual';
+							postData.rsargs = [];
+							postData.rsargs.push( SplunkBranchInherit.jobID );
+							postData.rsargs.push( sourceProduct );
+							postData.rsargs.push( sourceVersion );
+							postData.rsargs.push( targetVersion );
+							manualData[manual] = {};
+							manualData[manual] = topicActions[manual];
+							postData.rsargs.push( $.toJSON( manualData ) );
+							$.ajax({
+								url: ajaxUri,
+								type: 'POST',
+								data: postData,
+								async: false,
+								success: function( html ) {
+									$( "#docbranchinherit .completed .logconsole" ).append( '<br/>' + html );
+								},
+								error: function() {
+
+								}
 							});
+							for( section in topicActions[manual].sections ) {								
+								$( "#docbranchinherit .completed .logconsole" ).append( '<br/><div  class="normal">Processing section ' + section + '</div>');
+								for( topic in topicActions[manual].sections[section] ) {
+
+									topicActions[manual].sections[section][topic].numOfTopics = topicCount;
+									topicActions[manual].sections[section][topic].numOfTopicsCompleted = topicsCompleted;
+									//Iterate over topics here
+									var postData = {};
+									postData.rs = 'SpecialBranchInherit::ajaxProcessTopic';
+									postData.rsargs = [];
+									postData.rsargs.push( SplunkBranchInherit.jobID );
+									postData.rsargs.push( sourceProduct );
+									postData.rsargs.push( sourceVersion );
+									postData.rsargs.push( targetVersion );
+									postData.rsargs.push( $.toJSON( topicActions[manual].sections[section][topic]) );
+									$.ajax({
+										url: ajaxUri,
+										type: 'POST',
+										data: postData,
+										async: false,
+										success: function( html ) {
+											$( "#docbranchinherit .completed .logconsole" ).append( '<br/>' + html );
+										},
+										error: function() {
+
+										}
+									});
+									topicsCompleted++;
+
+								}
+							}
+						}
+						//after complete
+						completed = true;
+						clearTimeout( progressTimer );
+						progressTimer = null;
+						var postData = {};
+						postData.rs = 'SpecialBranchInherit::unlinkJobFile';
+						postData.rsargs = [];
+						postData.rsargs.push( SplunkBranchInherit.jobID );
+						$.ajax({
+							url: ajaxUri,
+							type: 'POST',
+							data: postData,
+							async: false,
+							success: function( ) {
+								
+							},
+							error: function() {
+
+							}
 						});
-					});
+						$( "#docbranchinherit .topicactions" ).fadeOut(function() {
+							$( "#docbranchinherit .completed" ).fadeIn();
+						});
+					}
+				});
 			});
 		},
-			
-		setupTopicActions: function(res) {
-			var container = $('.topicactions .container');
-			var topicData = eval('(' + res.responseText + ')');
+		setupTopicActions: function( res ) {
+			var container = $( '.topicactions .container' );
+			var topicData = eval( '(' + res.responseText + ')' );
 			var html = '';
-			for(manual in topicData) {
+			for( manual in topicData ) {
 				html += '<div class="manual"><h2>' + topicData[manual].meta.text + '</h2>';
 				html += '<input type="hidden" class="manual_shortname" value="' + manual + '" />';
-				if(topicData[manual].meta.toc_exists != false && topicData[manual].meta.toc_exists != '') {
+				if( topicData[manual].meta.toc_exists != false && topicData[manual].meta.toc_exists != '' ) {
 					html += '<p>A Table Of Contents already exists for this manual.  Topics processed below will be added only if they do not exist in the TOC.</p><input class="manualtocaction" type="hidden" value="default"/>';
 
 				} else {
 					html += '<p>A Table Of Contents does not exist for this manual.  Choose creation behavior: <select class="manualtocaction">';
 
-					if(defaultAction == 'inherit') {
+					if( defaultAction == 'inherit' ) {
 						html += '<option value="forceinherit" selected="selected">Force Inherit</option>';
 					} else {
 						html += '<option value="forceinherit">Force Inherit</option>';
 					}
-					if(defaultAction == 'branch') {
+					if( defaultAction == 'branch' ) {
 						html += '<option value="forcebranch" selected="selected">Force Branch</option>';
 					} else {
 						html += '<option value="forcebranch">Force Branch</option>';
@@ -255,45 +339,45 @@ SplunkBranchInherit = function() {
 
 					html += '</select></p>';
 				}
-				for(section in topicData[manual].sections) {
+				for( section in topicData[manual].sections ) {
 					html += '<div class="section"><h3>' + section + '</h3>Set Action For All Topics In This Section: <select class="sectiondefault">';
-							if(defaultAction == 'ignore') {
-								html += '<option value="ignore" selected="selected">Ignore</option>';
-							}
-							else {
-								html += '<option value="ignore">Ignore</option>';
-							}
-							if(defaultAction == 'branch') {
-								html += '<option value="branch" selected="selected">Branch</option>';
-							}
-							else {
-								html += '<option value="branch">Branch</option>';
-							}
-							if(defaultAction == 'inherit') {
-								html += '<option value="inherit" selected="selected">Inherit</option>';
-							}
-							else {
-								html += '<option value="inherit">Inherit</option>';
-							}
+					if( defaultAction == 'ignore' ) {
+						html += '<option value="ignore" selected="selected">Ignore</option>';
+					}
+					else {
+						html += '<option value="ignore">Ignore</option>';
+					}
+					if( defaultAction == 'branch' ) {
+						html += '<option value="branch" selected="selected">Branch</option>';
+					}
+					else {
+						html += '<option value="branch">Branch</option>';
+					}
+					if( defaultAction == 'inherit' ) {
+						html += '<option value="inherit" selected="selected">Inherit</option>';
+					}
+					else {
+						html += '<option value="inherit">Inherit</option>';
+					}
 
 					html += '</select><table class="topiclist"><thead><td class="title"><strong>Title</strong></td><td class="conflicts"><strong>Conflicts</strong></td><td class="actions"><strong>Action</strong></td></thead>';
-					for(topic in topicData[manual].sections[section].topics) {
+					for( topic in topicData[manual].sections[section].topics ) {
 						var el = topicData[manual].sections[section].topics[topic];
 						html += '<tr><td class="topicname"><strong>' + el['text'] + '</strong><br /><em>' + el['title'] + '</em></td><td class="conflicts">' + el['conflicts'] + '</td><td class="action"><select name="action">';
-						if(el['conflicts'] == '') {
-							if(defaultAction == 'ignore') {
+						if( el['conflicts'] == '' ) {
+							if( defaultAction == 'ignore' ) {
 								html += '<option value="ignore" selected="selected">Ignore</option>';
 							}
 							else {
 								html += '<option value="ignore">Ignore</option>';
 							}
-							if(defaultAction == 'branch') {
+							if( defaultAction == 'branch' ) {
 								html += '<option value="branch" selected="selected">Branch</option>';
 							}
 							else {
 								html += '<option value="branch">Branch</option>';
 							}
-							if(defaultAction == 'inherit') {
+							if( defaultAction == 'inherit' ) {
 								html += '<option value="inherit" selected="selected">Inherit</option>';
 							}
 							else {
@@ -301,13 +385,13 @@ SplunkBranchInherit = function() {
 							}
 						}
 						else {
-							if(defaultAction == 'ignore') {
+							if( defaultAction == 'ignore' ) {
 								html += '<option value="ignore" selected="selected">Ignore</option>';
 							}
 							else {
 								html += '<option value="ignore">Ignore</option>';
 							}
-							if(defaultAction == 'branch') {
+							if( defaultAction == 'branch' ) {
 								html += '<option value="branchpurge" selected="selected">Branch - Purge Existing</option>';
 								html += '<option value="branchsplit">Branch - Split</option>';
 							}
@@ -315,7 +399,7 @@ SplunkBranchInherit = function() {
 								html += '<option value="branchpurge">Branch - Purge Existing</option>';
 								html += '<option value="branchsplit">Branch - Split</option>';
 							}
-							if(defaultAction == 'inherit') {
+							if( defaultAction == 'inherit' ) {
 								html += '<option value="inheritpurge" selected="selected">Inherit - Purge Existing</option>';
 							}
 							else {
@@ -328,17 +412,17 @@ SplunkBranchInherit = function() {
 				}
 				html += '</div>';
 			}
-			container.html(html);
-			$('#docbranchinherit .manualselect, #docbranchinherit .versionselect').fadeOut(function() {
-				$('#manualselect_submit').attr("value", "Continue to Topics").removeAttr("disabled");
-				$('#docbranchinherit .topicactions').fadeIn();
+			container.html( html );
+			$( '#docbranchinherit .manualselect, #docbranchinherit .versionselect' ).fadeOut(function() {
+				$( '#manualselect_submit' ).attr( "value", "Continue to Topics" ).removeAttr( "disabled" );
+				$( '#docbranchinherit .topicactions' ).fadeIn();
 			});
 		},
 		fetchProgress: function() {
-			sajax_do_call('SpecialBranchInherit::ajaxFetchJobProgress', [SplunkBranchInherit.jobID], function(res) {
-				$('#progressconsole').html(res.responseText);
-				if(!completed) {
-						progressTimer = setTimeout("SplunkBranchInherit.fetchProgress();", 3000);
+			sajax_do_call( 'SpecialBranchInherit::ajaxFetchJobProgress', [SplunkBranchInherit.jobID], function( res ) {
+				$( '#progressconsole' ).html( res.responseText );
+				if (!completed) {
+					progressTimer = setTimeout( "SplunkBranchInherit.fetchProgress();" , 3000 );
 				}
 			});
 		}
