@@ -1872,15 +1872,13 @@ HEREDOC;
 			/**
 			 *WEB-5278 - Documentation:Products should be editable by docteam
 			*/
-			if ( !strcmp(PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( )) &&
-				$action == 'edit'){	
+			if ( !strcmp(PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( )) ){	
 				if ( !in_array($wgPonyDocsBaseAuthorGroup, $groups) ) {
 					$result = FALSE;
 					$continueProcessing = FALSE;
 				}
 			} elseif ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString( ) ) ||
-				preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString( ) ) ||
-				!strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( ) ) ) {
+				preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString( ) ) ) {
 
 				if ( in_array( $authProductGroup, $groups )) {
 					$result = TRUE;
