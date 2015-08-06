@@ -27,13 +27,6 @@ PonyDocsEventHandlers = function() {
 			var returnValue = true;
 			var content = $( "#wpTextbox1" ).val();
 
-			if ( ! PonyDocsValidators.search( content ) ) {
-				alertString += "You have a mismatched number of opened/closed search elements in the edit text.\n"
-				alertString	+= "Please note, we only accept '<search>' and not '<search   >' (note spaces).\n";
-				alertString += "Correct and re-submit.\n\n";
-				returnValue = false;
-			}
-
 			badTopics = PonyDocsValidators.topicTitle( content );
 			if ( badTopics.length > 0 ) {
 				returnValue = false;
@@ -56,21 +49,6 @@ PonyDocsEventHandlers = function() {
 
 PonyDocsValidators = function() {
 	return {
-		/**
-		 * Look for any un-closed search tags
-		 * @param string content
-		 * @return boolean
-		 */
-		search: function( content ) {
-			var returnValue = false;
-			var opened = content.match( /<search>/gi );
-			var closed = content.match( /<\/search>/gi );
-			if ( ( opened == null && closed == null )
-				|| ( opened != null && closed != null && opened.length == closed.length ) ) {
-				returnValue = true;
-			}
-			return returnValue;
-		},
 		/**
 		 * Ensure no invalid characters in topic titles
 		 * @param string content
