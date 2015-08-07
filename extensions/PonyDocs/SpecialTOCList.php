@@ -65,34 +65,27 @@ class SpecialTOCList extends SpecialPage
 			
 			$res = $dbr->select(
 				array('categorylinks', 'page'),
-				array('cl_sortkey', 'page_title') ,
+				array('page_title', 'GROUP_CONCAT(cl_to) categories'),
 				array(
 					'cl_from = page_id',
 					'page_namespace = "' . NS_PONYDOCS . '"',
+					"page_title LIKE '" . $dbr->strencode( "$product:" . $pMan->getShortName() ) . "TOC%'",
 					'cl_to LIKE "V:%:%"',
 					'cl_type = "page"',
-					"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$product:" . $pMan->getShortName() ) ) . "TOC%'",
 				),
 				__METHOD__,
-				'DISTINCT'
+				array('GROUP BY' => 'page_title')
 			);
 			
 			while ( $row = $dbr->fetchObject( $res ) ) {
-				$subres = $dbr->select(
-					'categorylinks',
-					'cl_to',
-					'cl_to LIKE "V:%:%"',
-					'cl_type = "page"',
-					"cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'",
-					__METHOD__
-				);
 				$versions = array();
-
-				while( $subrow = $dbr->fetchObject( $subres ) ) {
-					if ( preg_match( '/^V:' . $product . ':(.*)/i', $subrow->cl_to, $vmatch )
-						&& in_array( $vmatch[1], $allowed_versions ) ) {
-						$versions[] = $vmatch[1];
+				$categories = explode(',', $row->categories);
+				foreach ($categories as $category) {
+					$categoryParts = explode(':', $category);
+					if ( in_array( $categoryParts[2], $allowed_versions ) ) {
+						$versions[] = $categoryParts[2];
 					}
+					
 				}
 
 				if ( sizeof( $versions ) ) {
