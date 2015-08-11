@@ -127,13 +127,16 @@ SplunkBranchInherit = function() {
 			});
 
 			$(document).on( 'change', '.sectiondefault', null, function() {
-				var val = $(this).val();
-				$(this).siblings("table").find("option[value='" + val + "']").attr("selected", "selected");
-				if(val == "inherit") {
-					$(this).siblings("table").find("option[value='inheritpurge']").attr("selected", "selected");
-				}
-				if(val == "branch") {
-					$(this).siblings("table").find("option[value='branchsplit']").attr("selected", "selected");
+				switch ($(this).val()) {
+					case 'ignore':
+						$(this).siblings("table").find("select").val('ignore');
+						break;
+					case 'branch':
+						$(this).siblings("table").find("select").val('branchsplit');
+						break;
+					case 'inherit':
+						$(this).siblings("table").find("select").val('inheritpurge');
+						break;
 				}
 			});
 
