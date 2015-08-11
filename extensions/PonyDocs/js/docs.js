@@ -103,7 +103,7 @@ SplunkBranchInherit = function() {
 				else {
 					$('#docbranchinherit .sourceversion').html(sourceVersion);
 					$('#docbranchinherit .targetversion').html(targetVersion);
-					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
+					$('#versionselect_submit').attr("disabled", "disabled").val("Fetching Data...");
 					if(forceTitle == null) {
 						sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
 							var manuals = eval(res.responseText);
@@ -114,7 +114,7 @@ SplunkBranchInherit = function() {
 								container.prepend(html);
 							}
 							$('#docbranchinherit .versionselect').fadeOut(function () {
-								$('#versionselect_submit').attr("value", "Continue to Manuals").removeAttr("disabled");
+								$('#versionselect_submit').val("Continue to Manuals").removeAttr("disabled");
 								$('#docbranchinherit .manualselect').fadeIn();
 							});
 						});
@@ -154,7 +154,7 @@ SplunkBranchInherit = function() {
 				$('#manualselect_manuals input:checked').each(function() {
 					manuals[manuals.length] = $(this).val();
 				});
-				$("#manualselect_submit").attr("disabled", "disabled").attr("value", "Fetching Data...");
+				$("#manualselect_submit").attr("disabled", "disabled").val("Fetching Data...");
 				// Okay, let's fetch our tocs.
 				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
 			});
@@ -163,7 +163,7 @@ SplunkBranchInherit = function() {
 					if(!confirm("Are you sure you want to process this job?  Be sure to review all topics because there is no stopping it once it begins.  Please note this will take some time, so please be patient.")) {
 						return false;
 					}
-					$('#topicactions_submit').attr("value", "Processing...").attr("disabled", "disabled");
+					$('#topicactions_submit').val("Processing...").attr("disabled", "disabled");
 					// Time to build topic actions
 					$('#docbranchinherit .topicactions .container .manual').each(function() {
 						var manualName = $(this).find('.manual_shortname').val();
@@ -311,7 +311,7 @@ SplunkBranchInherit = function() {
 			}
 			container.html(html);
 			$('#docbranchinherit .manualselect, #docbranchinherit .versionselect').fadeOut(function() {
-				$('#manualselect_submit').attr("value", "Continue to Topics").removeAttr("disabled");
+				$('#manualselect_submit').val("Continue to Topics").removeAttr("disabled");
 				$('#docbranchinherit .topicactions').fadeIn();
 			});
 		},
