@@ -203,6 +203,8 @@ class SpecialStaticDocImport extends SpecialPage {
 								}
 							} catch (Exception $e) {
 								$wgOut->addHTML( 'Error: ' . $e->getMessage() );
+								error_log('WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="add" status="error"'
+									. ' message="' . addcslashes($e->getMessage(), '"') . '"');
 							}
 						}
 					}
@@ -222,11 +224,13 @@ class SpecialStaticDocImport extends SpecialPage {
 							}
 						} catch (Exception $e) {
 							$wgOut->addHTML('Error: ' . $e->getMessage() );
+							error_log('WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
+								. ' message="' . addcslashes($e->getMessage(), '"') . '"');
 						}
 					} else {
 						$wgOut->addHTML( "Error: Version {$_POST['version']} does not exist, or is not accessible" );
 						error_log( 'WARNING [ponydocs] [staticdocs] [' . __METHOD__ . '] action="remove" status="error"'
-							. ' message="version ' . $_POST['version'] . 'does not exist, or is not accessible"'
+							. ' message="version ' . $_POST['version'] . ' does not exist, or is not accessible"'
 							. ' username="' . $wgUser->getName() . '"'
 							. ' ip="' . IP::sanitizeIP( wfGetIP() ) . '"');
 					}
