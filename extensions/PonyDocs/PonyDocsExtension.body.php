@@ -2014,11 +2014,13 @@ HEREDOC;
 					foreach($items as $entry) {
 						if(isset($entry['link']) && $entry['link'] != '') {
 							// Found first article.
-							$cacheEntry[] = array('shortName' => $manual->getShortName(),
-												  'longName' => $manual->getLongName(),
-												  'description' => $toc->getManualDescription(),
-												  'firstTitle' => $entry['title'],
-												  'firstUrl' => $entry['link']);
+							$cacheEntry[] = array(
+								'shortName' => $manual->getShortName(),
+								'longName' => $manual->getLongName(),
+								'categories' => implode(',', $manual->getCategories()),
+								'description' => $toc->getManualDescription(),
+								'firstTitle' => $entry['title'],
+								'firstUrl' => $entry['link']);
 							break;
 						}
 					}

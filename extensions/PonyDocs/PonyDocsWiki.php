@@ -80,6 +80,7 @@ class PonyDocsWiki
 					'label' => $p->getLongName(),
 					'description' => $p->getDescription(),
 					'parent' => $p->getParent(),
+					'categories' => $p->getCategories(),
 				);
 			}
 		}

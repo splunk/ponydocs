@@ -190,6 +190,10 @@ a one-line change.
 	define( 'NAVDATA_CACHE_TTL', 3600 );
 	define( 'TOC_CACHE_TTL', 3600 );
 
+	// Key in the Category map for Products and Manuals w/o categories.
+	// Change to some string that you will not use as a category name
+	define( 'PONYDOCS_NO_CATEGORY', 'UNCATEGORIZED' );
+
 	// NOTE: this *must* match what is in Documentation:Products.
 	// This will be fixed in later versions
 	$ponyDocsProductsList = array('Foo');

@@ -10,64 +10,68 @@ if( !defined( 'MEDIAWIKI' ) ) {
 class PonyDocsProduct
 {
 	/**
-	 * Short/abbreviated name for the product used in page paths;
-	 * It is always lowercase and should be alphabetic but is not required.
-	 *
-	 * @var string
+	 * @access protected
+	 * @var string Short/abbreviated name for the Product used in URLs
 	 */
 	protected $mShortName;
 
 	/**
-	 * Long name for the product which functions as the 'display' name in the list of products and so forth.
-	 *
-	 * @var string
+	 * @access protected
+	 * @var string Long name for the Product which functions as the 'display' name in the list of Product and so forth.
 	 */
 	protected $mLongName;
 
 	/**
-	 * Long name for the product which functions as the 'display' name in the list of products and so forth.
-	 *
 	 * @access protected
-	 * @var string
-	 */
-	protected $mParent;
-
-	/**
-	 * Long name for the product which functions as the 'display' name in the list of products and so forth.
-	 * 
-	 * @access protected
-	 * @var string
+	 * @var string Description of the Product, displayed on the landing page/product list
 	 */
 	protected $mDescription;
 
 	/**
-	 * Stores whether product instance is defined as static
-	 *
-	 * @var boolean
+	 * @access protected
+	 * @var string Parent Product short name
+	 */
+	protected $mParent;
+
+	/**
+	 * @access protected
+	 * @var array Categories that this Product is in
+	 */
+	protected $mCategories;
+	
+	/**
+	 * @access protected
+	 * @var boolean Is the Product static?
 	 */
 	protected $static;
 
 	/**
-	 * Our list of products loaded from the special page, stored statically.
-	 * This only contains the products which have a TOC defined and tagged to the currently selected version.
-	 *
-	 * @var array
+	 * @access protected
+	 * @static
+	 * @var array Products which have a TOC defined for the currently selected version.
 	 */
 	static protected $sProductList = array();
 
 	/**
-	 * Our COMPLETE list of products.
-	 *
-	 * @var array
+	 * @access protected
+	 * @static
+	 * @var array Complete list of Products
 	 */
 	static protected $sDefinedProductList = array();
 	
 	/**
 	 * @access protected
-	 * 
-	 * @var array $sParentChildMap An array mapping parents to child products
+	 * @static
+	 * @var array An array mapping parents to child Products
 	 */
 	static protected $sParentChildMap = array();
+	
+	/**
+	 * @access protected
+	 * @static
+	 * @var array An array mapping Categories to Products which have a TOC defined for the currently selected version
+	 */
+	static protected $sCategoryMap = array();
 	
 	/**
 	 * Constructor is simply passed the short and long (display) name.  We convert the short name to lowercase
@@ -77,33 +81,66 @@ class PonyDocsProduct
 	 * @param string $longName Display name for product.
 	 * @param string $status   Status for product. One of: hidden
 	 */
-	public function __construct( $shortName, $longName = '', $description = '', $parent = '' ) {
+	public function __construct( $shortName, $longName = '', $description = '', $parent = '', $categories = '' ) {
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . '])/', '', $shortName );
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
 		$this->mDescription = $description;
 		$this->mParent = $parent;
+		$this->mCategories = $categories && $categories != '' ? explode( ',', $categories ) : array();
 	}
 
+	/**
+	 * Getter for short name
+	 * @return string
+	 */
 	public function getShortName() {
 		return $this->mShortName;
 	}
 
+	/**
+	 * Getter for long name
+	 * @return string
+	 */
 	public function getLongName() {
 		return $this->mLongName;
 	}
 
-	public function getParent() {
-		return $this->mParent;
-	}
-
+	/**
+	 * Getter for description
+	 * @return string
+	 */
 	public function getDescription() {
 		return $this->mDescription;
 	}
 	
+	/**
+	 * Getter for parent name
+	 * @return string
+	 */
+	public function getParent() {
+		return $this->mParent;
+	}
+	
+	/**
+	 * Getter for categories
+	 * @return array
+	 */
+	public function getCategories() {
+		return $this->mCategories;
+	}
+
+	/**
+	 * Setter for static
+	 * @param boolean $static
+	 */
 	public function setStatic( $static ) {
 		$this->static = $static;
 	}
 
+	/**
+	 * Is method for static
+	 * @return string
+	 */
 	public function isStatic() {
 		return $this->static;
 	}
@@ -116,7 +153,6 @@ class PonyDocsProduct
 	 * 
 	 * @return array
 	 */
-
 	static public function LoadProducts( $reload = FALSE ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -160,6 +196,8 @@ class PonyDocsProduct
 				$product = str_replace( '{{#product:', '', $tag ); 
 				$parameters = explode( '|', $product );
 				$parameters = array_map( 'trim', $parameters );
+				// Pad out array to avoid notices
+				$parameters = array_pad( $parameters, 5, '');
 
 				// Set static flag if defined as static
 				$static = FALSE;
@@ -177,13 +215,23 @@ class PonyDocsProduct
 				
 				// Avoid wedging the product page with a fatal error if shortName is omitted by some crazy nihilist
 				if ( isset( $parameters[0] ) && $parameters[0] != '' ) {
-					$pProduct = new PonyDocsProduct( $parameters[0], $parameters[1], $parameters[2], $parameters[3] );
+					$pProduct = new PonyDocsProduct(
+						$parameters[0], $parameters[1], $parameters[2], $parameters[3], $parameters[4] );
 					$pProduct->setStatic( $static );
 					self::$sDefinedProductList[$pProduct->getShortName()] = $pProduct;
 					self::$sProductList[$parameters[0]] = $pProduct;
-					if (isset( $parameters[3]) && $parameters[3] != '' ) {
-						// key is parent, value is array of children
+					// Handle child products
+					if ( isset( $parameters[3]) && $parameters[3] != '' ) {
 						self::$sParentChildMap[$parameters[3]][] = $parameters[0];
+					}
+					// Handle product categories
+					if ( isset( $parameters[4] ) && $parameters[4] != '' ) {
+						$categories = explode( ',', $parameters[4] );
+						foreach ( $categories as $category ) {
+							self::$sCategoryMap[$category][] = $pProduct;
+						}
+					} else {
+						self::$sCategoryMap[PONYDOCS_NO_CATEGORY][] = $pProduct;
 					}
 				}
 			}
