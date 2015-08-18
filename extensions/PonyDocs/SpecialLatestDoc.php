@@ -35,7 +35,6 @@ class SpecialLatestDoc extends SpecialPage {
 	 * the page with $wgOut
 	 */
 	public function execute($params) {
-		error_log(__METHOD__);
 		global $wgOut, $wgArticlePath, $wgScriptPath, $wgUser;
 		global $wgRequest;
 
