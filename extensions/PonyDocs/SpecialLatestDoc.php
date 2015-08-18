@@ -86,6 +86,7 @@ class SpecialLatestDoc extends SpecialPage {
 				</p>
 				<?php
 			} else { // version is 'latest'
+				PonyDocsProductVersion::LoadVersionsForProduct( $productName );
 				$versionList = PonyDocsProductVersion::GetReleasedVersions( $productName, true );
 				if (!is_array($versionList)) { // product is bunk or didn't return any released versions
 					?>
