@@ -14,11 +14,11 @@ class PonyDocsCrawlerPassthrough {
 	static function isAllowedCrawler() {
 		global $wgRequest;
 		if ( $wgRequest->getIP() 
-			&& isset( $splunkMediaWiki['CrawlerAddress'] )
-			&& $wgRequest->getIP() == $splunkMediaWiki['CrawlerAddress']
+			&& defined( 'PONYDOCS_CRAWLER_ADDRESS' )
+			&& $wgRequest->getIP() == PONYDOCS_CRAWLER_ADDRESS
 			&& isset( $_SERVER['HTTP_USER_AGENT'] )
-			&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
-			&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) ) {
+			&& defined( 'PONYDOCS_CRAWLER_USERAGENT_REGEX' )
+			&& preg_match( PONYDOCS_CRAWLER_USERAGENT_REGEX, $_SERVER['HTTP_USER_AGENT'] ) ) {
 			return TRUE;
 		} else {
 			return FALSE;
