@@ -11,7 +11,7 @@ class PonyDocsCrawlerPassthrough {
 	 * @global type $wgRequest
 	 * @return boolean
 	 */
-	static function isAllowedCrawler() {
+	static public function isAllowedCrawler() {
 		global $wgRequest;
 		if ( $wgRequest->getIP() 
 			&& defined( 'PONYDOCS_CRAWLER_ADDRESS' )
