@@ -198,6 +198,10 @@ a one-line change.
 	// This will be fixed in later versions
 	$ponyDocsProductsList = array('Foo');
 
+	// Crawler Passthrough (optional) allow a crawler at a specific IP to index older and unreleased Versions
+	define( 'PONYDOCS_CRAWLER_ADDRESS', "192.168.1.1" );
+	define( 'PONYDOCS_CRAWLER_USERAGENT_REGEX', "/foo-spider/" );
+
 	require_once("$IP/extensions/PonyDocs/PonyDocsExtension.php");
 	require_once("$IP/skins/PonyDocs/PonyDocs.php");
 	#################  PONYDOCS END #################

@@ -23,6 +23,7 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCache.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryLinks.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCategoryPageHandler.php");
+require_once( "$IP/extensions/PonyDocs/PonyDocsCrawlerPassthrough.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsPdfBook.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsProduct.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsProductManual.php" );
