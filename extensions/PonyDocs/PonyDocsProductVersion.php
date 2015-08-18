@@ -326,10 +326,9 @@ class PonyDocsProductVersion {
 	 * @return array LIST of all versions (not map!).
 	 * 
 	 * TODO: Cache this?
-	 * TODO: Replace $splunkMediaWiki with a PONYDOCS configuration constant.
 	 */
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
-		global $splunkMediaWiki, $wgPonyDocsEmployeeGroup, $wgRequest, $wgUser;
+		global $wgPonyDocsEmployeeGroup, $wgUser;
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
@@ -580,7 +579,7 @@ class PonyDocsProductVersion {
 	 * @return array Map of PonyDocsProductVersion instances (name => object).
 	 */
 	static public function GetVersionsForUser( $productName ) {
-		global $wgPonyDocsEmployeeGroup, $wgRequest, $wgUser;
+		global $wgPonyDocsEmployeeGroup, $wgUser;
 		$groups = $wgUser->getGroups( );
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
