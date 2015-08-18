@@ -35,6 +35,7 @@ class SpecialLatestDoc extends SpecialPage {
 	 * the page with $wgOut
 	 */
 	public function execute($params) {
+		error_log(__METHOD__);
 		global $wgOut, $wgArticlePath, $wgScriptPath, $wgUser;
 		global $wgRequest;
 
@@ -86,6 +87,7 @@ class SpecialLatestDoc extends SpecialPage {
 				</p>
 				<?php
 			} else { // version is 'latest'
+				PonyDocsProductVersion::LoadVersionsForProduct( $productName );
 				$versionList = PonyDocsProductVersion::GetReleasedVersions( $productName, true );
 				if (!is_array($versionList)) { // product is bunk or didn't return any released versions
 					?>
