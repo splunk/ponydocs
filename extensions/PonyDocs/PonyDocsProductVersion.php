@@ -326,11 +326,9 @@ class PonyDocsProductVersion {
 	 * @return array LIST of all versions (not map!).
 	 * 
 	 * TODO: Cache this?
-	 * TODO: Replace $splunkMediaWiki with a PONYDOCS configuration constant.
 	 */
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
-		global $wgUser;
-		global $splunkMediaWiki, $wgIP, $wgPonyDocsEmployeeGroup;
+		global $wgPonyDocsEmployeeGroup, $wgUser;
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
@@ -400,11 +398,7 @@ class PonyDocsProductVersion {
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
-						// Allow crawler to view unreleased versions
-						|| ( wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
-							&& wfGetIP() == $splunkMediaWiki['CrawlerAddress']
-							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
-							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
+						|| PonyDocsCrawlerPassthrough::isAllowedCrawler()
 						|| $ignorePermissions) {
 							self::$sVersionList[$productName][]
 								= self::$sVersionListUnreleased[$productName][]
@@ -422,11 +416,7 @@ class PonyDocsProductVersion {
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| in_array( $authPreviewGroup, $groups )
-						// Allow crawler to view preview versions
-						|| ( wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
-							&& wfGetIP() == $splunkMediaWiki['CrawlerAddress']
-							&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
-							&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) )
+						|| PonyDocsCrawlerPassthrough::isAllowedCrawler()
 						|| $ignorePermissions ) {
 							self::$sVersionList[$productName][]
 								= self::$sVersionListPreview[$productName][]
@@ -589,18 +579,14 @@ class PonyDocsProductVersion {
 	 * @return array Map of PonyDocsProductVersion instances (name => object).
 	 */
 	static public function GetVersionsForUser( $productName ) {
-		global $wgIP, $wgPonyDocsEmployeeGroup, $wgUser;
+		global $wgPonyDocsEmployeeGroup, $wgUser;
 		$groups = $wgUser->getGroups( );
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$authPreviewGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_VERSION, $productName );
 
 		if ( in_array( $authProductGroup, $groups )
 			|| in_array( $wgPonyDocsEmployeeGroup, $groups )
-			// Allow crawler to view all versions
-			|| ( wfGetIP() && isset( $splunkMediaWiki['CrawlerAddress'] )
-				&& wfGetIP() == $splunkMediaWiki['CrawlerAddress']
-				&& isset( $_SERVER['HTTP_USER_AGENT'] )	&& isset( $splunkMediaWiki['CrawlerUserAgentRegex'] )
-				&& preg_match( $splunkMediaWiki['CrawlerUserAgentRegex'], $_SERVER['HTTP_USER_AGENT'] ) ) ) {
+			|| PonyDocsCrawlerPassthrough::isAllowedCrawler() ) {
 			return self::$sVersionMap[$productName];
 		} elseif ( in_array( $authPreviewGroup, $groups ) ) {
 			$retList = array();
