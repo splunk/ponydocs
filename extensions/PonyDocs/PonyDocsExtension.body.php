@@ -801,6 +801,12 @@ class PonyDocsExtension
 	 */
 	static public function onArticleSaveComplete_UpdateTOCCache( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags, $revision )
 	{
+		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
+		// Currently used for branch/inherit.
+		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
+			return TRUE;
+		}
+
 		$title = $article->getTitle( );
 
 		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))

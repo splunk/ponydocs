@@ -426,6 +426,9 @@ class SpecialBranchInherit extends SpecialPage
 					$numOfTopicsCompleted++;
 				}
 			}
+			//WEB-10792, Clear TOCCACHE for the target version only, each Manual at a time
+			PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);
+			
 		}
 		list ($msec, $sec) = explode(' ', microtime()); 
 		$endTime = (float)$msec + (float)$sec; 
