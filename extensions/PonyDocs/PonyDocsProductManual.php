@@ -227,7 +227,7 @@ class PonyDocsProductManual
 	 * @return array
 	 */
 	static public function GetManuals( $productName ) {
-		return self::LoadManualsForProduct( $productName );
+		return self::LoadManualsForProduct( $productName, true );
 	}
 
 	/**
