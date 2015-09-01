@@ -194,16 +194,6 @@ class PonyDocsProductManual
 
 				self::$sDefinedManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
 				
-				// Handle Manual Categories
-				if ( isset( $parameters[2] ) && $parameters[2] != '' ) {
-					$categories = explode( ',', $parameters[2] );
-					foreach ( $categories as $category ) {
-						self::$sCategoryMap[$category][] = $pManual;
-					}
-				} else {
-					self::$sCategoryMap[PONYDOCS_NO_CATEGORY][] = $pManual;
-				}
-
 				// If the Manual is static or there is a TOC for this Product/Manual/Version, add to sManualList
 				if (!$static) {
 					$res = PonyDocsCategoryLinks::getTOCByProductManualVersion(
@@ -211,6 +201,16 @@ class PonyDocsProductManual
 					if ( !$res->numRows() ) {
 						continue;
 					}
+				}
+
+				// Handle Manual Categories
+				if ( isset( $parameters[2] ) && $parameters[2] != '' ) {
+					$categories = explode( ',', $parameters[2] );
+					foreach ( $categories as $category ) {
+						self::$sCategoryMap[$productName][$category][$pManual->getShortName()] = $pManual;
+					}
+				} else {
+					self::$sCategoryMap[$productName][PONYDOCS_NO_CATEGORY][$pManual->getShortName()] = $pManual;
 				}
 
 				self::$sManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
@@ -241,6 +241,16 @@ class PonyDocsProductManual
 		return self::$sDefinedManualList[$productName];
 	}
 
+	/**
+	 * Return manuals by category
+	 * @static
+	 * @return array
+	 */
+	static public function getManualsByCategory( $productName ) {
+		self::LoadManualsForProduct( $productName );
+		return self::$sCategoryMap[$productName];
+	}
+	
 	/**
 	 * Our manual list is a map of 'short' name to the PonyDocsManual object.  Returns it, or null if not found.
 	 *

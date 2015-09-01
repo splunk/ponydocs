@@ -2018,7 +2018,7 @@ HEREDOC;
 					foreach($items as $entry) {
 						if(isset($entry['link']) && $entry['link'] != '') {
 							// Found first article.
-							$cacheEntry[] = array(
+							$cacheEntry[$manual->getShortName()] = array(
 								'shortName' => $manual->getShortName(),
 								'longName' => $manual->getLongName(),
 								'categories' => implode(',', $manual->getCategories()),
