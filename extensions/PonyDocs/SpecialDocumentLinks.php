@@ -32,7 +32,6 @@ class SpecialDocumentLinks extends SpecialPage {
 	/**
 	 * Return the colon-separated link with actual version (not base version) for the link to SpecialDocumentLinks
 	 */
-	
 	public static function getDocumentLinksArticle() {
 		
 		global $wgTitle;
@@ -41,9 +40,8 @@ class SpecialDocumentLinks extends SpecialPage {
 		$currentVersion = PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct(), false);
 		$partialUrl = htmlspecialchars($wgTitle->getPartialURL());
 		$partialUrlParts = explode(':', $partialUrl);
-		$version = $partialUrlParts[3];
-		if (isset($version) && isset($currentVersion)) {
-			$partialUrl = str_replace($version, $currentVersion, $partialUrl);
+		if (isset($partialUrlParts[3]) && isset($currentVersion)) {
+			$partialUrl = str_replace($partialUrlParts[3], $currentVersion, $partialUrl);
 		}
 		
 		return $partialUrl;
