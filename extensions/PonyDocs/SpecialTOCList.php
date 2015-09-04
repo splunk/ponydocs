@@ -65,7 +65,7 @@ class SpecialTOCList extends SpecialPage
 			
 			$res = $dbr->select(
 				array('categorylinks', 'page'),
-				array('page_title', 'GROUP_CONCAT(cl_to) categories'),
+				array('page_title', 'GROUP_CONCAT(cl_to separator "|") categories'),
 				array(
 					'cl_from = page_id',
 					'page_namespace = "' . NS_PONYDOCS . '"',
@@ -79,7 +79,7 @@ class SpecialTOCList extends SpecialPage
 			
 			while ( $row = $dbr->fetchObject( $res ) ) {
 				$versions = array();
-				$categories = explode(',', $row->categories);
+				$categories = explode('|', $row->categories);
 				foreach ($categories as $category) {
 					$categoryParts = explode(':', $category);
 					if ( in_array( $categoryParts[2], $allowed_versions ) ) {
