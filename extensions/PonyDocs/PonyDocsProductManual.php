@@ -147,6 +147,7 @@ class PonyDocsProductManual
 		}
 
 		self::$sManualList[$productName] = array();
+		self::$sCategoryMap[$productName] = array();
 
 		// Use 0 as the last parameter to enforce getting latest revision of this article.
 		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
