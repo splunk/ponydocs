@@ -2005,7 +2005,7 @@ HEREDOC;
 				if ( $manual->isStatic() ) {
 					$staticVersions = $manual->getStaticVersionNames();
 					if (in_array($version, $staticVersions)) {
-						$cacheEntry[] = array(
+						$cacheEntry[$manual->getShortName()] = array(
 							'shortName' => $manual->getShortName(),
 							'longName' => $manual->getLongName(),
 							'firstUrl' => '/' . implode(
