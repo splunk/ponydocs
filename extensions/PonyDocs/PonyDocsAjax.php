@@ -14,7 +14,6 @@ if( !defined( 'MEDIAWIKI' ))
 
 $wgExtensionFunctions[] = 'efPonyDocsAjaxInit';
 $wgAjaxExportList[] = 'efPonyDocsAjaxRemoveVersions';
-$wgAjaxExportList[] = 'efPonyDocsAjaxTopicClone';
 $wgAjaxExportList[] = 'efPonyDocsAjaxChangeVersion';
 $wgAjaxExportList[] = 'efPonyDocsAjaxChangeProduct';
 
@@ -240,53 +239,6 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
 	return $response;
 }
 
-/**
- * This call is used to retrieve the content UNPARSED of a specific topic in the Documentation namespace
- * tagged with a supplied version.  It also strips out all Category tags inside the content.  The idea
- * is this link could be clicked to retrieve content to clone and then populated into the 'edit' box when
- * creating a new topic.  For instance, if we have HowToFoo:2.0 tagged for 2.0, 2.1, and 2.2, but then
- * there are changes for 3.0, so we create HowToFoo:3.0 then clone it from 2.2 by retrieving the content
- * into the edit window, making our edits, and saving.
- *
- * @FIXME:  Maybe some encoding checking/handling?
- * @TODO: Is this ever used?
- *
- * @param string $topic Topic/title w/o version field.
- * @param string $version Name of version.
- * @return AjaxResponse
- */
-function efPonyDocsAjaxTopicClone( $topic, $product, $version )
-{
-	global $wgParser;
-	$dbr = wfGetDB( DB_SLAVE );
-
-	$res = $dbr->select(
-		'categorylinks',
-		'cl_from',
-		array(
-			"cl_to = 'V:" . $product . ':' . $version . "'",
-			'cl_type = "page"',
-			"cl_sortkey LIKE '" . $topic . ":%'",
-		),
-		__METHOD__ );
-
-	if ( !$res->numRows() ) {
-		return '';
-	}
-
-	$row = $dbr->fetchObject( $res );
-
-	$article = new Article( Title::newFromID( $row->cl_from ) );
-	$content = $article->getContent();
-
-	$content = preg_replace( "/\[\[Category:V:([" . PONYDOCS_PRODUCT_LEGALCHARS . "]+):([" . PONYDOCS_PRODUCTVERSION_LEGALCHARS . "]+)\]\]/i", '', $content );
-
-	$response = new AjaxResponse( );
-	$response->addText( $content );
-	$response->setCacheDuration( false );
-
-	return $response;
-}
 
 /**
  * This is used when an author wants to CLONE a title from outside the Documentation namespace into a

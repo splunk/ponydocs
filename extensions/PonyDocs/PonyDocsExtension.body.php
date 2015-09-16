@@ -1450,32 +1450,13 @@ EOJS;
 			while ( $vRow = $dbr->fetchObject( $vRes ) ) {
 				if ( preg_match( '/^V:(.*):(.*)/i', $vRow->cl_to, $vmatch ) ) {
 					$out .= 
-						'<a "#"'
-						. ' onClick="AjaxCloneTopic(\'' . $baseTopic . '\', \'' . $vmatch[1] . '\', \'' . $vmatch[2] . '\');">'
+						'<a "#">'
 						. $vmatch[2] . '</a> ';
 				}
 			}
 		}
 
 		$out = '<div><h3>Clone content from one of the following versions: ' . $out . '</h3></div>';
-
-		/**
-		 * This is our actual JavaScript to handle the Ajax call.  For some reason if I try to pass the textarea element directly to the
-		 * sajax_do_call, we lose all of our newlines in IE and in Firefox it only populates one time (additional clicks won't repopulate).
-		 * So I had to create a callback that converts it to a String object then set it manually and it seems to work. 
-		 */
-		$ajax =  <<<HEREDOC
- 
-		function AjaxCloneTopic_callback( o ) {
-			var s = new String( o.responseText );
-			document.getElementById( 'wpTextbox1' ).value = s;
-		}
-
-		function AjaxCloneTopic( topic, product, version ) {
-			sajax_do_call( 'efPonyDocsAjaxTopicClone', [topic, product, version], AjaxCloneTopic_callback );
-		}
-
-HEREDOC;
 
 		$wgOut->addInLineScript( $ajax );
 		$wgOut->addHTML( $out );
