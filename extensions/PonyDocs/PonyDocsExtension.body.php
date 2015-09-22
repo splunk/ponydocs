@@ -1864,6 +1864,19 @@ HEREDOC;
 				$continueProcessing = FALSE;
 			}
 		}
+
+		/**
+		 * WEB-6031 - Block access to history/diff page for non-employee
+		**/
+		if ((isset($_REQUEST['action']) && $_REQUEST['action'] == 'history')
+			|| (isset($_REQUEST['diff']))) {
+
+			$groups = $user->getGroups();
+			if ( !in_array($wgPonyDocsEmployeeGroup, $groups) ) {
+				$result = FALSE;
+				$continueProcessing = FALSE;
+			}
+		}
 		
 		if ( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ) ) {
 
