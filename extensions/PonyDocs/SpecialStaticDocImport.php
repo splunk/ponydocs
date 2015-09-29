@@ -211,6 +211,8 @@ class SpecialStaticDocImport extends SpecialPage {
 					break;
 
 				case "remove":
+					//Loading product versions for WEB-10732
+					PonyDocsProductVersion::LoadVersionsForProduct($_POST['product']);
 					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
 						$wgOut->addHTML( '<h3>Results of Deletion</h3>' );
 						try {
