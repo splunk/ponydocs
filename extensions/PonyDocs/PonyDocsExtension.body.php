@@ -1864,6 +1864,19 @@ HEREDOC;
 				$continueProcessing = FALSE;
 			}
 		}
+
+		/**
+		 * WEB-6031 - Block access to history/diff page for non-employee
+		**/
+		if ((isset($_REQUEST['action']) && $_REQUEST['action'] == 'history')
+			|| (isset($_REQUEST['diff']))) {
+
+			$groups = $user->getGroups();
+			if ( !in_array($wgPonyDocsEmployeeGroup, $groups) ) {
+				$result = FALSE;
+				$continueProcessing = FALSE;
+			}
+		}
 		
 		if ( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ) ) {
 
@@ -2005,7 +2018,7 @@ HEREDOC;
 				if ( $manual->isStatic() ) {
 					$staticVersions = $manual->getStaticVersionNames();
 					if (in_array($version, $staticVersions)) {
-						$cacheEntry[] = array(
+						$cacheEntry[$manual->getShortName()] = array(
 							'shortName' => $manual->getShortName(),
 							'longName' => $manual->getLongName(),
 							'firstUrl' => '/' . implode(
@@ -2018,7 +2031,7 @@ HEREDOC;
 					foreach($items as $entry) {
 						if(isset($entry['link']) && $entry['link'] != '') {
 							// Found first article.
-							$cacheEntry[] = array(
+							$cacheEntry[$manual->getShortName()] = array(
 								'shortName' => $manual->getShortName(),
 								'longName' => $manual->getLongName(),
 								'categories' => implode(',', $manual->getCategories()),

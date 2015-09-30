@@ -48,7 +48,8 @@ class PonyDocsProduct
 	/**
 	 * @access protected
 	 * @static
-	 * @var array Products which have a TOC defined for the currently selected version.
+	 * @var array Products which have a TOC defined for the currently selected version as productName -> PonyDocsProduct
+	 * TODO: AFAICT, the above line is a lie, and this is identical to sDefinedProductList
 	 */
 	static protected $sProductList = array();
 
@@ -146,8 +147,7 @@ class PonyDocsProduct
 	}
 
 	/**
-	 * This loads the list of products BASED ON whether each product defined has a TOC defined for the currently selected version
-	 * or not.
+	 * This loads the list of products.
 	 *
 	 * @param boolean $reload
 	 * 
@@ -177,13 +177,6 @@ class PonyDocsProduct
 		/**
 		 * The content of this topic should be of this form:
 		 * {{#product:shortName|Long Product Name|description|parent}}{{#product:anotherProduct|...
-		 * 
-		 * There is a user defined parser hook which converts this into useful output when viewing as well.
-		 * 
-		 * Then query categorylinks to only add the product if it has a tagged TOC file with the selected version.
-		 * Otherwise, skip it!
-		 * 
-		 * NOTE product is the top entity, we need to verify better it has at least one version defined
 		 */
 
 		// explode on the closing tag to get an array of products
@@ -228,10 +221,10 @@ class PonyDocsProduct
 					if ( isset( $parameters[4] ) && $parameters[4] != '' ) {
 						$categories = explode( ',', $parameters[4] );
 						foreach ( $categories as $category ) {
-							self::$sCategoryMap[$category][] = $pProduct;
+							self::$sCategoryMap[$category][$parameters[0]] = $pProduct;
 						}
 					} else {
-						self::$sCategoryMap[PONYDOCS_NO_CATEGORY][] = $pProduct;
+						self::$sCategoryMap[PONYDOCS_NO_CATEGORY][$parameters[0]] = $pProduct;
 					}
 				}
 			}
@@ -260,7 +253,17 @@ class PonyDocsProduct
 		self::LoadProducts();
 		return self::$sDefinedProductList;
 	}
-
+	
+	/**
+	 * Return products by category
+	 * @static
+	 * @return array
+	 */
+	static public function getProductsByCategory() {
+		self::LoadProducts();
+		return self::$sCategoryMap;
+	}
+	
 	/**
 	 * Our product list is a map of 'short' name to the PonyDocsProduct object.  Returns it, or null if not found.
 	 *
