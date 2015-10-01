@@ -35,7 +35,6 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
-require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocumentLinks.php");
 require_once( "$IP/extensions/PonyDocs/SpecialLatestDoc.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
