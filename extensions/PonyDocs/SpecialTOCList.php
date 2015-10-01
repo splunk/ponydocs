@@ -34,8 +34,9 @@ class SpecialTOCList extends SpecialPage
 
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
+	 * @param string $par the URL path following the special page name
 	 */
-	public function execute( )
+	public function execute( $par )
 	{
 		global $wgOut, $wgArticlePath;
 
@@ -51,7 +52,11 @@ class SpecialTOCList extends SpecialPage
 		 * must run this query for each manual type, which involes getting the list of manuals defined.
 		 */
 		$out			  = array( );
-		$product		  = PonyDocsProduct::GetSelectedProduct( );
+
+		// Added for WEB-10802, looking for product name passed in
+		// e.g. /Special:TOCList/Splunk
+		$parts = explode( '/', $par );
+		$product		  = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct( );
 		$manuals		  = PonyDocsProductManual::GetDefinedManuals( $product );
 		$allowed_versions = array();
 
