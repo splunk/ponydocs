@@ -43,3 +43,15 @@ if ( !isset( $wgPonyDocsBaseAuthorGroup ) ) {
 if ( !isset( $wgPonyDocsBasePreviewGroup ) ) {
 	$wgPonyDocsBasePreviewGroup = 'preview';
 }
+
+// Put all PonyDocs special pages into the same group
+$wgSpecialPageGroups['BranchInherit'] = 'ponydocs';
+$wgSpecialPageGroups['DocListing'] = 'ponydocs';
+$wgSpecialPageGroups['DocumentLinks'] = 'ponydocs';
+$wgSpecialPageGroups['LatestDoc'] = 'ponydocs';
+$wgSpecialPageGroups['RecentProductChanges'] = 'ponydocs';
+$wgSpecialPageGroups['RenameVersion'] = 'ponydocs';
+$wgSpecialPageGroups['StaticDocImport'] = 'ponydocs';
+$wgSpecialPageGroups['StaticDocServer'] = 'ponydocs';
+$wgSpecialPageGroups['TOCList'] = 'ponydocs';
+$wgSpecialPageGroups['TopicList'] = 'ponydocs';
