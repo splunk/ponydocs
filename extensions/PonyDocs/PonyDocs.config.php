@@ -47,8 +47,8 @@ if ( !isset( $wgPonyDocsBasePreviewGroup ) ) {
 // Put all PonyDocs special pages into the same group
 $wgSpecialPageGroups['BranchInherit'] = 'ponydocs';
 $wgSpecialPageGroups['DocListing'] = 'ponydocs';
-$wgSpecialPageGroups['DocumentLinks'] = 'ponydocs';
-$wgSpecialPageGroups['LatestDoc'] = 'ponydocs';
+$wgSpecialPageGroups['SpecialDocumentLinks'] = 'ponydocs';
+$wgSpecialPageGroups['SpecialLatestDoc'] = 'ponydocs';
 $wgSpecialPageGroups['RecentProductChanges'] = 'ponydocs';
 $wgSpecialPageGroups['RenameVersion'] = 'ponydocs';
 $wgSpecialPageGroups['StaticDocImport'] = 'ponydocs';
