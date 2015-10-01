@@ -465,11 +465,13 @@ function efProductParserFunction_Render(
 	if ( $static ) {
 		$output .= "<p><a href=\"" . str_replace( '$1', "Special:StaticDocImport/$shortName" , $wgArticlePath )
 			. "\">Click to manage static documentation</a></p>\n";
+	// Add link to manage manuals
+	} else {
+		$output .= "<p><a href=\"" . str_replace( '$1', "Documentation:$shortName:Versions" , $wgArticlePath )
+			. "\">Click to manage $shortName manuals</a></p>\n";
 	}
 	
-	// Add links to manage versions and manuals
-	$output .= "<p><a href=\"" . str_replace( '$1', "Documentation:$shortName:Versions" , $wgArticlePath )
-		. "\">Click to manage $shortName manuals</a></p>\n";
+	// Add link to manage versions
 	$output .= "<p><a href=\"" . str_replace( '$1', "Documentation:$shortName:Manuals" , $wgArticlePath )
 		. "\">Click to manage $shortName versions</a></p>\n";
 	
