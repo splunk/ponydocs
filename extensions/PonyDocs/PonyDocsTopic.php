@@ -284,7 +284,7 @@ class PonyDocsTopic {
 		# To ensure there is nothing else on the line, we start and stop the regex with \n
 		# However, \s also matches \n, so we need to use [^\S\n] to match any possible whitespace
 		# If we just use \s, headings that immediately follow a heading are suppressed.
-		$pattern = "/[^\S\n]*(=+)([^=]*)(=+)[^\S\n]*\n/";
+		$pattern = "/[^\S\n]*(=+)(.*?)(=+)[^\S\n]*\n/";
 		if ( preg_match_all( $pattern, $content, $matches, PREG_SET_ORDER ) ) {
 			foreach ( $matches as &$match ) {
 				if (strlen($match[1]) == strlen($match[3])) {
