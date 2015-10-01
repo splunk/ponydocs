@@ -537,8 +537,11 @@ class PonyDocsExtension
 				}
 			}
 			if(!$found) {
-				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");}
-				header("Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", true, 301);
+				if (PONYDOCS_DEBUG) {
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__
+						. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");
+				}
+				header("Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", true, 302);
 				exit(0);
 			}
 
