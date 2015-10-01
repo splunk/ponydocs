@@ -36,8 +36,7 @@ class SpecialTOCList extends SpecialPage
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 * @param string $par the URL path following the special page name
 	 */
-	public function execute( $par )
-	{
+	public function execute( $par ) {
 		global $wgOut, $wgArticlePath;
 
 		$dbr = wfGetDB( DB_SLAVE );
@@ -51,66 +50,70 @@ class SpecialTOCList extends SpecialPage
 		 * page is linked to at least one version (category) and thus has an entry in the categorylinks table.  So to do this we
 		 * must run this query for each manual type, which involes getting the list of manuals defined.
 		 */
-		$out			  = array( );
+		$out = array( );
 
 		// Added for WEB-10802, looking for product name passed in
 		// e.g. /Special:TOCList/Splunk
 		$parts = explode( '/', $par );
-		$product		  = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct( );
-		$manuals		  = PonyDocsProductManual::GetDefinedManuals( $product );
+		$product = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct( );
+		$manuals = PonyDocsProductManual::GetDefinedManuals( $product );
 		$allowed_versions = array();
 
 		$p = PonyDocsProduct::GetProductByShortName($product);
 		$wgOut->setPagetitle( 'Table of Contents Management' );
-		$wgOut->addHTML( '<h2>Table of Contents Management Pages for ' . $p->getLongName() . '</h2>' );
-		
-		foreach (PonyDocsProductVersion::GetVersions($product) as $v) $allowed_versions[] = $v->getVersionName();
-		
-		foreach( $manuals as $pMan ) {
-			
-			$res = $dbr->select(
-				array('categorylinks', 'page'),
-				array('page_title', 'GROUP_CONCAT(cl_to separator "|") categories'),
-				array(
-					'cl_from = page_id',
-					'page_namespace = "' . NS_PONYDOCS . '"',
-					"page_title LIKE '" . $dbr->strencode( "$product:" . $pMan->getShortName() ) . "TOC%'",
-					'cl_to LIKE "V:%:%"',
-					'cl_type = "page"',
-				),
-				__METHOD__,
-				array('GROUP BY' => 'page_title')
-			);
-			
-			while ( $row = $dbr->fetchObject( $res ) ) {
-				$versions = array();
-				$categories = explode('|', $row->categories);
-				foreach ($categories as $category) {
-					$categoryParts = explode(':', $category);
-					if ( in_array( $categoryParts[2], $allowed_versions ) ) {
-						$versions[] = $categoryParts[2];
-					}
-					
-				}
+		if ($p) {
+			$wgOut->addHTML( '<h2>Table of Contents Management Pages for ' . $p->getLongName() . '</h2>' );
 
-				if ( sizeof( $versions ) ) {
-					$wgOut->addHTML( '<a href="' 
-						. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath ) . '">'
-						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" . '</a> - Versions: ' 
-						. implode( ' | ', $versions ) . '<br />' );
+			foreach (PonyDocsProductVersion::GetVersions($product) as $v) $allowed_versions[] = $v->getVersionName();
+
+			foreach( $manuals as $pMan ) {
+
+				$res = $dbr->select(
+					array('categorylinks', 'page'),
+					array('page_title', 'GROUP_CONCAT(cl_to separator "|") categories'),
+					array(
+						'cl_from = page_id',
+						'page_namespace = "' . NS_PONYDOCS . '"',
+						"page_title LIKE '" . $dbr->strencode( "$product:" . $pMan->getShortName() ) . "TOC%'",
+						'cl_to LIKE "V:%:%"',
+						'cl_type = "page"',
+					),
+					__METHOD__,
+					array('GROUP BY' => 'page_title')
+				);
+
+				while ( $row = $dbr->fetchObject( $res ) ) {
+					$versions = array();
+					$categories = explode('|', $row->categories);
+					foreach ($categories as $category) {
+						$categoryParts = explode(':', $category);
+						if ( in_array( $categoryParts[2], $allowed_versions ) ) {
+							$versions[] = $categoryParts[2];
+						}
+
+					}
+
+					if ( sizeof( $versions ) ) {
+						$wgOut->addHTML( '<a href="' 
+							. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath ) . '">'
+							. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" . '</a> - Versions: ' 
+							. implode( ' | ', $versions ) . '<br />' );
+					}
 				}
 			}
+
+			$html = '<h2>Other Useful Management Pages</h2>' .
+					'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product .
+						PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath ) .
+						'">Version Management</a> - Define and update available ' . $product .
+						' versions.<br />' .
+					'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product .
+						PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath ) .
+						'">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br/><br/>';
+
+			$wgOut->addHTML( $html );
+		} else { 
+			$wgOut->addHTML( "<h2>Table of Contents Management Page</h2>Error: Product $product does not exist." );
 		}
-
-		$html = '<h2>Other Useful Management Pages</h2>' .
-				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product .
-					PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath ) .
-					'">Version Management</a> - Define and update available ' . $product .
-					' versions.<br />' .
-				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product .
-					PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath ) .
-					'">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br/><br/>';
-
-		$wgOut->addHTML( $html );
 	}
 }
