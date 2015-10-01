@@ -467,6 +467,12 @@ function efProductParserFunction_Render(
 			. "\">Click to manage static documentation</a></p>\n";
 	}
 	
+	// Add links to manage versions and manuals
+	$output .= "<p><a href=\"" . str_replace( '$1', "Documentation:$shortName:Versions" , $wgArticlePath )
+		. "\">Click to manage $shortName manuals</a></p>\n";
+	$output .= "<p><a href=\"" . str_replace( '$1', "Documentation:$shortName:Manuals" , $wgArticlePath )
+		. "\">Click to manage $shortName versions</a></p>\n";
+	
 	$output .= "\n";
 
 	return $parser->insertStripItem( $output, $parser->mStripState );
