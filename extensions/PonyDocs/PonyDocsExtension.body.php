@@ -267,7 +267,7 @@ class PonyDocsExtension
 
 	/**
 	 * Hook for ArticleFromTitle.  Takes our title object, rewrites it with the RewriteTitle() method, then creates an instance of
-	 * our custom Article sub-class 'PonyDocsAliasArticle' and stores it in the passed reference.
+	 * our custom Article sub-class 'Article' and stores it in the passed reference.
 	 *
 	 * @param Title $title
 	 * @param Article $article
@@ -281,7 +281,7 @@ class PonyDocsExtension
 		{
 			$title = Title::newFromText( $newTitleStr );
 			
-			$article = new PonyDocsAliasArticle( $title );
+			$article = new Article( $title );
 			$article->loadContent( );
 
 			if( !$article->exists( ))
@@ -377,7 +377,7 @@ class PonyDocsExtension
 
 				$row = $dbr->fetchObject( $res );
 				$title = Title::newFromId( $row->cl_from );
-				$article = new PonyDocsAliasArticle( $title );
+				$article = new Article( $title );
 				$article->loadContent( );
 
 				if ( !$article->exists() ) {
@@ -584,7 +584,7 @@ class PonyDocsExtension
 					$row = $dbr->fetchObject( $res );
 					$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
 
-					$article = new PonyDocsAliasArticle( $title );
+					$article = new Article( $title );
 					$article->loadContent();
 
 					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionName() );
@@ -655,7 +655,7 @@ class PonyDocsExtension
 			/// FIXME this shouldn't be necessary because selected version already comes from here
 			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionSelectedName );
 
-			$article = new PonyDocsAliasArticle( $title );
+			$article = new Article( $title );
 			$article->loadContent( );
 
 			if ( !$article->exists() ) {
@@ -782,54 +782,6 @@ class PonyDocsExtension
 			}
 		}
 		return TRUE;
-	}
-
-	/**
-	 * Hook called AFTER an article was SUCCESSFULLY saved (meaning a new revision was created).  This specific hook is used
-	 * to regenerate the manual TOC cache for this manual.
-	 *
-	 * TODO: AFAICT no one calls this. Let's confirm and then delete it.
-	 * 
-	 * @param WikiPage $article
-	 * @param User $user
-	 * @param string $text
-	 * @param string $summary
-	 * @param boolean $minor
-	 * @param boolean $watch
-	 * @param $sectionanchor
-	 * @param integer $flags
-	 * @param Revision $revision
-	 * 
-	 * @deprecated Replace with PageContentSaveComplete hook
-	 */
-	static public function onArticleSaveComplete_UpdateTOCCache( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags, $revision )
-	{
-		$title = $article->getTitle( );
-
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
-		{
-			/**
-			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
-			 * and call loadContent(), which should rehash the TOC data and store it into the key.
-			 */
-			$cache = PonyDocsCache::getInstance( );
-
-			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
-			$pManual = PonyDocsProductManual::GetManualByShortName( $match[1], $match[2] );
-			$pVersion = PonyDocsProductVersion::GetVersionByName( $match[1], $match[3] );
-
-			$tocKey = PonyDocsTOC . '_' . $pProduct->getShortName() . '_' . $pManual->getShortName( ) . '_' . $pVersion->getName( );
-			
-			$cache->remove( $tocKey );
-
-			// Clear any PDF for this manual
-			PonyDocsPdfBook::removeCachedFile($pProduct->getShortName(), $pManual->getShortName(), $pVersion->getName());
-
-			$pTOC = new PonyDocsTOC( $pManual, $pVersion, $pProduct );
-			$pTOC->loadContent( );
-		}
-
-		return true;
 	}
 
 	/**
@@ -1842,10 +1794,10 @@ EOJS;
 				$currentProduct = PonyDocsProduct::GetSelectedProduct();
 				$currentVersion = PonyDocsProductVersion::GetSelectedVersion($currentProduct);
 				$targetVersion = $currentVersion;
-				// Now, let's get the PonyDocsAliasArticle, and fetch the versions 
+				// Now, let's get the Article, and fetch the versions 
 				// it applies to.
 				$title = Title::newFromText($title->__toString());
-				$article = new PonyDocsAliasArticle($title);
+				$article = new Article($title);
 				$topic = new PonyDocsTopic($article);
 				$topicVersions = $topic->getProductVersions();
 				$found = false;

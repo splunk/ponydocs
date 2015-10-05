@@ -17,7 +17,6 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.body.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsAjax.php" );
-require_once( "$IP/extensions/PonyDocs/PonyDocsAliasArticle.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsBaseExport.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsBranchInheritEngine.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsCache.php" );
