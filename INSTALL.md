@@ -374,7 +374,7 @@ F.A.Q.
 ------
 
 Q. Why do I get an error "Table 'ponydocs_doclinks' doesn't exist"?  
-A. You likely missed running the schema.sql file in step 3.
+A. You likely missed running the ponydocs.sql file in step 3.
 
 Q. Why can't I edit or create any docs pages?  
 A. Go back to step 6 and make sure your user is in the in the correct productShortName-docteam group(s)
