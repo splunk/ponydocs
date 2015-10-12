@@ -210,7 +210,7 @@ a one-line change.
 ### 3) Install Ponydocs extension and Configure MediaWiki to load it.
 
 1. Move the extensions/PonyDocs/ directory into your MediaWiki instance's extensions directory.
-2. Update your MediaWiki database schema by running extensions/PonyDocs/sql/schema.sql.
+2. Update your MediaWiki database schema by running sql/ponydocs.sql.
 	* Remove this sql file as it's no longer needed and is publicly reachable via your Ponydocs site.
 3. Activate the Ponydocs skin
 	* There is a sample Ponydocs skin that is provided in this archive.
