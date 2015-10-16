@@ -1,3 +1,9 @@
 {
+	"@metadata": {
+		"authors": [ "Ashley Jones", "Taylor Dondich", "David Lanstein", "Heather Hunsinger", "Zurab Davitiani", "Franck Curier",
+			"Russell Uman", "Salim Mujawar" ]
+	},
+	"skinname-ponydocs": "Ponydocs",
+	"ponydocs-desc": "Ponydocs sample skin",
 	"specialpages-group-ponydocs": "Ponydocs"
 }
