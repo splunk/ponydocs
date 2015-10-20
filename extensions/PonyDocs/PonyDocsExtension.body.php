@@ -2113,11 +2113,7 @@ EOJS;
 	 */
 	static public function onArticleSaveComplete(
 		&$article, &$user, $text, $summary, $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
-		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
-		// Currently used for branch/inherit.
-		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
-			return TRUE;
-		}
+
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
@@ -2150,6 +2146,11 @@ EOJS;
 		$manVersionList = $topic->getProductVersions( );
 		// Clear all TOC cache entries for each version.
 		if($manual) {
+			// Dangerous.  Only set the flag if you know that you should be skipping this processing.
+			// Currently used for branch/inherit.
+			if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
+				return TRUE;
+			}
 			foreach($manVersionList as $version) {
 				PonyDocsTOC::clearTOCCache($manual, $version, $product);
 				PonyDocsProductVersion::clearNAVCache($version);
