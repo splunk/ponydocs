@@ -210,7 +210,7 @@ a one-line change.
 ### 3) Install Ponydocs extension and Configure MediaWiki to load it.
 
 1. Move the extensions/PonyDocs/ directory into your MediaWiki instance's extensions directory.
-2. Update your MediaWiki database schema by running extensions/PonyDocs/sql/schema.sql.
+2. Update your MediaWiki database schema by running sql/ponydocs.sql.
 	* Remove this sql file as it's no longer needed and is publicly reachable via your Ponydocs site.
 3. Activate the Ponydocs skin
 	* There is a sample Ponydocs skin that is provided in this archive.
@@ -374,7 +374,7 @@ F.A.Q.
 ------
 
 Q. Why do I get an error "Table 'ponydocs_doclinks' doesn't exist"?  
-A. You likely missed running the schema.sql file in step 3.
+A. You likely missed running the ponydocs.sql file in step 3.
 
 Q. Why can't I edit or create any docs pages?  
 A. Go back to step 6 and make sure your user is in the in the correct productShortName-docteam group(s)
