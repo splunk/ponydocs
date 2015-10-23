@@ -2140,17 +2140,14 @@ EOJS;
 			// Clear any PDF for this manual
 			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
 		}
-
-		// Clear any TOC cache entries this article may be related to.
-		$topic = new PonyDocsTopic( $realArticle );
-		$manVersionList = $topic->getProductVersions( );
+		
 		// Clear all TOC cache entries for each version.
-		if($manual) {
-			// Dangerous.  Only set the flag if you know that you should be skipping this processing.
-			// Currently used for branch/inherit.
-			if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
-				return TRUE;
-			}
+		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
+		// Currently used for branch/inherit.
+		if($manual && !PonyDocsExtension::isSpeedProcessingEnabled()) {		
+			// Clear any TOC cache entries this article may be related to.
+			$topic = new PonyDocsTopic( $realArticle );
+			$manVersionList = $topic->getProductVersions( );
 			foreach($manVersionList as $version) {
 				PonyDocsTOC::clearTOCCache($manual, $version, $product);
 				PonyDocsProductVersion::clearNAVCache($version);

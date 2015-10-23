@@ -230,12 +230,16 @@ class SpecialRenameVersion extends SpecialPage
 					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
+		
 		}
 
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
 		$endTime = (float)$msec + (float)$sec; 
 		print "Done with $manualName! Execution Time: " . round($endTime - $startTime, 3) . ' seconds<br />';
-
+		//WEB-10792, Clear TOCCACHE for the target version only, each Manual at a time
+		PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);		
+		//Also clear the NAVCache for the target version
+		PonyDocsProductVersion::clearNAVCache($targetVersion);		
 		unlink($path);
 		$buffer = ob_get_clean();
 		return $buffer;
