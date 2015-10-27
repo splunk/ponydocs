@@ -467,12 +467,12 @@ function efProductParserFunction_Render(
 			. "\">Click to manage static documentation</a><br>\n";
 	// Add link to manage manuals
 	} else {
-		$output .= "<a href=\"" . str_replace( '$1', "Documentation:$shortName:Versions" , $wgArticlePath )
+		$output .= "<a href=\"" . str_replace( '$1', "Documentation:$shortName:Manuals" , $wgArticlePath )
 			. "\">Click to manage $shortName manuals</a><br>\n";
 	}
 	
 	// Add link to manage versions
-	$output .= "<a href=\"" . str_replace( '$1', "Documentation:$shortName:Manuals" , $wgArticlePath )
+	$output .= "<a href=\"" . str_replace( '$1', "Documentation:$shortName:Versions" , $wgArticlePath )
 		. "\">Click to manage $shortName versions</a><br>\n";
 	
 	$output .= "<br>\n";
