@@ -441,7 +441,7 @@ function efProductParserFunction_Render(
 		$shortName = substr( $shortName, strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
 	}
 	
-	$output = "$shortName ($longName)";
+	$output = "$shortName (" . strip_tags($longName, '<del><em><ins><strong><sub><sup>') . ')';
 
 	// Invalid $shortName
 	if ( !preg_match(PONYDOCS_PRODUCT_REGEX, $shortName ) ) {
