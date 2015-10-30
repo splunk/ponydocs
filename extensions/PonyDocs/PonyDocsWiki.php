@@ -158,8 +158,7 @@ class PonyDocsWiki
 	{
 		PonyDocsProductVersion::LoadVersionsForProduct($product); 	// Dependency
 		PonyDocsProductVersion::getSelectedVersion($product);
-		PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
-		$manuals = PonyDocsProductManual::GetManuals( $product );
+		$manuals = PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
 
 		$out = array( );
 		foreach( $manuals as $m )
