@@ -222,16 +222,6 @@ class PonyDocsProductManual
 	}
 
 	/**
-	 * Just an alias.
-	 *
-	 * @static
-	 * @return array
-	 */
-	static public function GetManuals( $productName ) {
-		return self::LoadManualsForProduct( $productName );
-	}
-
-	/**
 	 * Return list of ALL defined manuals regardless of selected version.
 	 *
 	 * @static
