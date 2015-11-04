@@ -130,8 +130,8 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$coverPageDoc = new DOMDocument();
 		@$coverPageDoc->loadHTML($coverPageHTML);
 
-		self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  &$imgData);
-		self::prepareImageRequests($coverPageDoc, $rollingCurl, $tempDirPath, &$imgData);
+		self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  $imgData);
+		self::prepareImageRequests($coverPageDoc, $rollingCurl, $tempDirPath, $imgData);
 
 		// Execute the RollingCurl requests
 		$rollingCurl->execute();
