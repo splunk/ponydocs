@@ -86,7 +86,7 @@ class SpecialTOCList extends SpecialPage {
 					$versions = array();
 					$categories = explode( '|', $row->categories );
 					foreach ( $categories as $category ) {
-						$categoryParts = explode ':', $category );
+						$categoryParts = explode ( ':', $category );
 						if ( in_array( $categoryParts[2], $allowed_versions ) ) {
 							$versions[] = $categoryParts[2];
 						}
@@ -96,7 +96,7 @@ class SpecialTOCList extends SpecialPage {
 					if ( sizeof( $versions ) ) {
 						$wgOut->addHTML( '<a href="' 
 							. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}", $wgArticlePath )
-							. '">' PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" . '</a> - Versions: ' 
+							. '">' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" . '</a> - Versions: ' 
 							. implode( ' | ', $versions ) . '<br />' );
 					}
 				}
