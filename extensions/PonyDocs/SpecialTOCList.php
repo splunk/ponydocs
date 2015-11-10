@@ -54,15 +54,15 @@ class SpecialTOCList extends SpecialPage {
 		// e.g. /Special:TOCList/Splunk
 		$parts = explode( '/', $par );
 		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
-		$manuals = PonyDocsProductManual::GetDefinedManuals( $product );
+		$manuals = PonyDocsProductManual::GetDefinedManuals( $productName );
 		$allowed_versions = array();
 
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$wgOut->setPagetitle( 'Table of Contents Management' );
 		if ( $product ) {
-			$wgOut->addHTML( '<h2>Table of Contents Management Pages for ' . $p->getLongName() . '</h2>' );
+			$wgOut->addHTML( '<h2>Table of Contents Management Pages for ' . $product->getLongName() . '</h2>' );
 
-			foreach ( PonyDocsProductVersion::GetVersions( $product ) as $v ) {
+			foreach ( PonyDocsProductVersion::GetVersions( $productName ) as $v ) {
 				$allowed_versions[] = $v->getVersionName();
 			}
 
