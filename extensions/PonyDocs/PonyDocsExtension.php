@@ -445,27 +445,35 @@ function efProductParserFunction_Render(
 
 	// Invalid $shortName
 	if ( !preg_match(PONYDOCS_PRODUCT_REGEX, $shortName ) ) {
-		$output .= ' - Invalid Product Name, Please Fix';
+		$output .= ' - Invalid Product Name, Please Fix<br>';
 	}
 	
 	if ( $description != '' ) {
-		$output .= "<br>$description";
+		$output .= "$description<br>";
 	}
 	
 	if ( $parent != '' ) {
-		$output .= "<br>Parent: $parent";
+		$output .= "Parent: $parent<br>";
 	}
 	
 	if ( $categories != '') {
-		$output .= "<br>Categories: $categories";
+		$output .= "Categories: $categories<br>";
 	}
 
 	if ( $static ) {
-		$output .= "<p><a href=\"" . str_replace( '$1', "Special:StaticDocImport/$shortName" , $wgArticlePath )
-			. "\">Click to manage static documentation</a></p>\n";
+		$output .= "<a href=\"" . str_replace( '$1', "Special:StaticDocImport/$shortName" , $wgArticlePath )
+			. "\">Click to manage static documentation</a><br>\n";
+	// Add link to manage manuals
+	} else {
+		$output .= "<a href=\"" . str_replace( '$1', "Documentation:$shortName:Manuals" , $wgArticlePath )
+			. "\">Click to manage $shortName manuals</a><br>\n";
 	}
 	
-	$output .= "\n";
+	// Add link to manage versions
+	$output .= "<a href=\"" . str_replace( '$1', "Documentation:$shortName:Versions" , $wgArticlePath )
+		. "\">Click to manage $shortName versions</a><br>\n";
+	
+	$output .= "<br>\n";
 
 	return $parser->insertStripItem( $output, $parser->mStripState );
 }
