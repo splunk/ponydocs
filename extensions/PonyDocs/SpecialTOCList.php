@@ -53,7 +53,11 @@ class SpecialTOCList extends SpecialPage {
 		// Added for WEB-10802, looking for product name passed in
 		// e.g. /Special:TOCList/Splunk
 		$parts = explode( '/', $par );
-		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
+		if ( isset($parts[0]) && is_string($parts[0]) and $parts[0] != '') {
+			$productName = $parts[0];
+		} else {
+			$productName = PonyDocsProduct::GetSelectedProduct();
+		}
 		$manuals = PonyDocsProductManual::GetDefinedManuals( $productName );
 		$allowed_versions = array();
 
