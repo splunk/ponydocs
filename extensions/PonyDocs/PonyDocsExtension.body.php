@@ -1337,85 +1337,80 @@ EOJS;
 	 * @param Article $article
 	 * @return boolean|string
 	 */
-	static public function onUnknownAction( $action, &$article )
-	{
-		global $wgRequest, $wgParser, $wgTitle;
-		global $wgHooks;
+	static public function onUnknownAction( $action, $article ) {
+		global $wgHoooks, $wgParser, $wgRequest, $wgTitle;
 
-		$ponydocs  = PonyDocsWiki::getInstance( );
-		$dbr = wfGetDB( DB_SLAVE );
-
-		/**
-		 * This is accessed when we want to REMOVE version tags from a supplied topic.
-		 *	title=	Topic to remove version tags from.
-		 *  versions= List of versions, colon delimited, to remove.
-		 *
-		 * This is intended to be an AJAX call and produces no output.
-		 */
-		if( !strcmp( $action, 'ajax-removetags' ))
-		{
+		switch( $action ) {
 			/**
-			 * First open the title and strip the [[Category]] tags from the content and save.
+			 * This is accessed when we want to REMOVE version tags from a supplied topic.
+			 * - title=	Topic to remove version tags from.
+			 * - versions= List of versions, colon delimited, to remove.
+			 *
+			 * This is intended to be an AJAX call and produces no output.
 			 */
-			$versions = explode( ',', $wgRequest->getVal( 'versions' ) );
-			$product = $wgRequest->getVal('product');
-			$title = Title::newFromText( $wgRequest->getVal( 'title' ) );
-			$article = new Article( $title );
-			$content = $article->getContent( );
+			case 'ajax-removetags':
+				/**
+				 * First open the title and strip the [[Category]] tags from the content and save.
+				 */
+				$versions = explode( ',', $wgRequest->getVal( 'versions' ) );
+				$product = $wgRequest->getVal('product');
+				$title = Title::newFromText( $wgRequest->getVal( 'title' ) );
+				$article = new Article( $title );
+				$content = $article->getContent( );
 
-			$findArray = $repArray = array( );
-			foreach( $versions as $v )
-			{
-				$findArray[] = '/\[\[\s*Category\s*:\s*V:\s*' . $v . '\]\]/i';
-				$repArray[] = '';
-			}
-			$content = preg_replace( $findArray, $repArray, $content );
-			
-			$article->doEdit( $content, 'Automatic removal of duplicate version tags.', EDIT_UPDATE );
-
-			/**
-			 * Now update the categorylinks (is this needed?).
-			 */
-			$q = "DELETE FROM categorylinks"
-				. " WHERE cl_sortkey = '" . $dbr->strencode( strtoupper( $title->getText() ) ) . "'"
-				. " AND cl_to IN ('V:$product:" . implode( "','V:$product:", $versions ) . "')"
-				. " AND cl_type = 'page'";
-
-			$res = $dbr->query( $q, __METHOD__ );
-
-			/**
-			 * Do not output anything, this is an AJAX call.
-			 */
-			die();
-		}
-
-		/**
-		 * Our custom print action -- 'print' exists so we need to use our own.  Require that 'type' is set to 'topic' for the
-		 * current topic or 'manual' for entire current manual.  The 'title' param should be set as well.  Output a print
-		 * ready page.
-		 */
-		else if( !strcmp( $action, 'doprint' ))
-		{
-			$type = 'topic';
-			if( $wgRequest->getVal( 'type' ) || strlen( $wgRequest->getVal( 'type' )))
-			{
-				if( !strcasecmp( $wgRequest->getVal( 'type' ), 'topic' ) && !strcasecmp( $wgRequest->getVal( 'type' ), 'manual' ))
+				$findArray = $repArray = array( );
+				foreach( $versions as $v )
 				{
-					// Invalid!
+					$findArray[] = '/\[\[\s*Category\s*:\s*V:\s*' . $v . '\]\]/i';
+					$repArray[] = '';
 				}
-				$type = strtolower( $wgRequest->getVal( 'type' ));
-			}
+				$content = preg_replace( $findArray, $repArray, $content );
 
-			if( !strcmp( $type, 'topic' ))
-			{
-				$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' )));
-				$c = $article->getContent();
+				$article->doEdit( $content, 'Automatic removal of duplicate version tags.', EDIT_UPDATE );
 
+				/**
+				 * Now update the categorylinks (is this needed?).
+				 */
+				$dbr = wfGetDB( DB_SLAVE );
+				$q = "DELETE FROM categorylinks"
+					. " WHERE cl_sortkey = '" . $dbr->strencode( strtoupper( $title->getText() ) ) . "'"
+					. " AND cl_to IN ('V:$product:" . implode( "','V:$product:", $versions ) . "')"
+					. " AND cl_type = 'page'";
+
+				$res = $dbr->query( $q, __METHOD__ );
+
+				/**
+				 * Do not output anything, this is an AJAX call.
+				 */
 				die();
-			}
+				break;
+				
+			/**
+			 * Our custom print action -- 'print' exists so we need to use our own.  Require that 'type' is set to 'topic' for the
+			 * current topic or 'manual' for entire current manual.  The 'title' param should be set as well.  Output a print
+			 * ready page.
+			 */
+			case 'doprint':
+				$type = 'topic';
+				if ( $wgRequest->getVal( 'type' ) || strlen( $wgRequest->getVal( 'type' ))) {
+					if ( !strcasecmp( $wgRequest->getVal( 'type' ), 'topic' )
+						&& !strcasecmp( $wgRequest->getVal( 'type' ), 'manual' ) ) {
+						// Invalid!
+					}
+					$type = strtolower( $wgRequest->getVal( 'type' ) );
+				}
 
-			die( "Print!" );
+				if ( !strcmp( $type, 'topic' )) {
+					$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' ) ) );
+					$c = $article->getContent();
+
+					die();
+				}
+
+				die( "Print!" );
+				break;
 		}
+
 		return true;
 	}
 
