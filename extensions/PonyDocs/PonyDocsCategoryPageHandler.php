@@ -31,7 +31,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 		$res = $cache->get($cacheKey);
 		if($res == null) {
 			// Either cache is disabled, or cached entry does not exist
-			$categoryViewer = new PonyDocsCategoryPageHandler($categoryArticle->getTitle(), $from, $until);
+			$categoryViewer = new PonyDocsCategoryPageHandler($categoryArticle->getTitle(), $categoryArticle->getContext(), $from, $until);
 			$res = $categoryViewer->getHTML();
 			// Store in our cache
 			$cache->put($cacheKey, $res, CATEGORY_CACHE_TTL);
