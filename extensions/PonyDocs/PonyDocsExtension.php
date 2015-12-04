@@ -780,7 +780,6 @@ $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
 $wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
-$wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
 $wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
 $wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
 $wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';

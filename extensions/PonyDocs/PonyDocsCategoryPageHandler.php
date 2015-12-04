@@ -22,8 +22,8 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 	 */
 	static function onCategoryPageView(&$categoryArticle) {
 		global $wgOut, $wgRequest;
-		$from = $wgRequest->getVal('from');
-		$until = $wgRequest->getVal('until');
+		$from = array();
+		$until = array();
 		$cacheKey = "category-" . $categoryArticle->getTitle() . "-$from-$until";
 		$res = null;
 		$cache = PonyDocsCache::getInstance();
@@ -31,7 +31,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 		$res = $cache->get($cacheKey);
 		if($res == null) {
 			// Either cache is disabled, or cached entry does not exist
-			$categoryViewer = new PonyDocsCategoryPageHandler($categoryArticle->getTitle(), $from, $until);
+			$categoryViewer = new PonyDocsCategoryPageHandler($categoryArticle->getTitle(), $categoryArticle->getContext(), $from, $until);
 			$res = $categoryViewer->getHTML();
 			// Store in our cache
 			$cache->put($cacheKey, $res, CATEGORY_CACHE_TTL);
