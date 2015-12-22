@@ -2082,6 +2082,15 @@ EOJS;
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks("delete", $realArticle);
 
+		//Delete the PDF on deleting the topic -WEB-7042
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
+		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
+		if($manual != null) {			
+			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
+		}
+
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return true;
 		}
