@@ -178,9 +178,15 @@ class SpecialBranchInherit extends SpecialPage
 	 * @return string Full job log of the process by printing to stdout.
 	 */
 	public static function ajaxProcessRequest($jobID, $productName, $sourceVersion, $targetVersion, $topicActions) {
-		global $wgScriptPath;
+		global $wgScriptPath, $wgUser;
 		ob_start();
                 
+		$groups = $wgUser->getGroups();
+		if(sizeof($groups) == 0) {
+			print("Permission denied.");
+			return false;
+		}		
+
 		$targetVersionName = $targetVersion;
 		$sourceVersionName = $sourceVersion;                             
                 
