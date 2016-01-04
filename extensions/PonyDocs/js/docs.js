@@ -269,16 +269,16 @@ SplunkBranchInherit = function() {
 								html += '<option value="ignore">Ignore</option>';
 							}
 							if(defaultAction == 'branch') {
-								html += '<option value="branch" selected="selected">Branch</option>';
+								html += '<option value="branchsplit" selected="selected">Branch</option>';
 							}
 							else {
-								html += '<option value="branch">Branch</option>';
+								html += '<option value="branchsplit">Branch</option>';
 							}
 							if(defaultAction == 'inherit') {
-								html += '<option value="inherit" selected="selected">Inherit</option>';
+								html += '<option value="inheritpurge" selected="selected">Inherit</option>';
 							}
 							else {
-								html += '<option value="inherit">Inherit</option>';
+								html += '<option value="inheritpurge">Inherit</option>';
 							}
 						}
 						else {
