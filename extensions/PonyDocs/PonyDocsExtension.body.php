@@ -2083,19 +2083,23 @@ EOJS;
 		PonyDocsExtension::updateOrDeleteDocLinks("delete", $realArticle);
 
 		//Delete the PDF on deleting the topic -WEB-7042
-		$productName = PonyDocsProduct::GetSelectedProduct();
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
-		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
-		if($manual != null) {			
-			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
-		}
+		$productArr = explode(':', $title->__toString( ));		
+		if(!empty($productArr[1])) {
+			$productName = $productArr[1];			
+			$versions= PonyDocsProductVersion::GetVersions( $productName);
+			$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);			
+			if($manual != null) {
+				foreach($versions as $key => $version) {
+					PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version->getVersionName());
+				}
+			}
+		}		
 
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
-			return true;
+				return true;
 		}
 		// Okay, article is in doc namespace
-		
+
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 		return true;
 	}
