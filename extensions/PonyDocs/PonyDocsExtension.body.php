@@ -2146,8 +2146,8 @@ EOJS;
 		// Currently used for branch/inherit.
 		if($manual && !PonyDocsExtension::isSpeedProcessingEnabled()) {		
 			// Clear any TOC cache entries this article may be related to.
-			$topic = new PonyDocsTopic( $realArticle );
-			$manVersionList = $topic->getProductVersions( );
+			// Get all versions for WEB-8918
+			$manVersionList = PonyDocsProductVersion::GetVersions($productName);
 			foreach($manVersionList as $version) {
 				PonyDocsTOC::clearTOCCache($manual, $version, $product);
 				PonyDocsProductVersion::clearNAVCache($version);
