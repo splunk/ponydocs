@@ -203,7 +203,7 @@ EOT;
 					);
 					
 					// Table vars
-					$table_extra = ' cellpadding="6"';
+					$table_extra = ' border="1" cellpadding="6"';
 					$th_extra = ' bgcolor="#C0C0C0"';
 					$td_extra = ' valign="center" align="left"';
 					
