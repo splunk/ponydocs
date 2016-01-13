@@ -2083,36 +2083,29 @@ EOJS;
 		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
 
 		//Delete the PDF on deleting the topic -WEB-7042
-		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {			
-			if ( strpos($title->getPrefixedText(), ':') !== FALSE ) {
-
-				$productArr  = explode(':', $title->getText( ));
-				$productName = $productArr[0];	
-				if ( PonyDocsProduct::IsProduct($productName) ) {				
-					if ( count($productArr) == 4
-						&& $productArr[0] == $productName
-						&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] )
-						&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
-							$topic = new PonyDocsTopic( $realArticle );
-							$topicVersions = $topic->getProductVersions();					
-							$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
-					
-						if ( $manual != null ) {
-							foreach( $topicVersions as $key => $version ) {
-								PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName() );
-							}	
-						}
-					}				
-				}
+		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 
+		&& strpos($title->getPrefixedText(), ':') !== FALSE ) {			
+			PonyDocsExtension::clearArticleCategoryCache( $realArticle );
+			$productArr  = explode( ':', $title->getText( ) );
+			$productName = $productArr[0];	
+			if ( PonyDocsProduct::IsProduct( $productName ) && count( $productArr ) == 4 ) {				
+				if ( preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] )
+					&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
+						$topic = new PonyDocsTopic( $realArticle );
+						$topicVersions = $topic->getProductVersions();					
+						$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
+				
+					if ( $manual != null ) {
+						foreach( $topicVersions as $key => $version ) {
+							PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName() );
+						}	
+					}
+				}				
 			}
 		}		
 
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
-				return true;
-		}
 		// Okay, article is in doc namespace
-
-		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
+		
 		return true;
 	}
 
