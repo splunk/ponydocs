@@ -2088,18 +2088,19 @@ EOJS;
 				PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 				$productArr  = explode( ':', $title->getText( ) );
 				$productName = $productArr[0];	
-				if ( PonyDocsProduct::IsProduct( $productName ) && count( $productArr ) == 4 
-					&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] ) ) {				
-					if ( preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
-							$topic = new PonyDocsTopic( $realArticle );
-							$topicVersions = $topic->getProductVersions();					
-							$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
+				if ( PonyDocsProduct::IsProduct( $productName ) 
+					&& count( $productArr ) == 4 
+					&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] ) 				
+					&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
+						$topic = new PonyDocsTopic( $realArticle );
+						$topicVersions = $topic->getProductVersions();					
+						$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
 						if ( $manual != null ) {
 							foreach( $topicVersions as $key => $version ) {
 								PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName() );
 							}	
 						}
-					}				
+								
 				}
 		}		
 
