@@ -210,7 +210,7 @@ class PonyDocsTopic {
 		$headCount = 0;
 		foreach ( $matches as $match ) {
 			$level = $match['level'];
-			if ( !isset($headReference[$match['line']]) ) {
+			if ( !isset( $headReference[$match['line']] ) ) {
 				$headReference[$match['line']] = 1;
 			} else {
 				$headReference[$match['line']] ++;
