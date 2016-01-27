@@ -2080,14 +2080,32 @@ EOJS;
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 
 		// Delete doc links
-		PonyDocsExtension::updateOrDeleteDocLinks("delete", $realArticle);
+		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
 
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
-			return true;
-		}
+		//Delete the PDF on deleting the topic -WEB-7042
+		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 
+			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {			
+			PonyDocsExtension::clearArticleCategoryCache( $realArticle );
+			$productArr  = explode( ':', $title->getText( ) );
+			$productName = $productArr[0];	
+			if ( PonyDocsProduct::IsProduct( $productName ) 
+				&& count( $productArr ) == 4 
+				&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] ) 				
+				&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
+				$topic = new PonyDocsTopic( $realArticle );
+				$topicVersions = $topic->getProductVersions();					
+				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
+				if ( $manual != null ) {
+					foreach( $topicVersions as $key => $version ) {
+						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName() );
+					}	
+				}
+								
+			}
+		}		
+
 		// Okay, article is in doc namespace
 		
-		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 		return true;
 	}
 
