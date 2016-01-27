@@ -223,16 +223,16 @@ class PonyDocsTopic {
 				}
 				$headCount = $headReference[$match['line']];
 				if ( $headCount > 1 ) {
-					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match['line']), 'noninitial') . '_' . $headCount;
+					$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' ) . '_' . $headCount;
 				} else {
-					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match['line']), 'noninitial');
+					$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' );
 				}
 
 				$sections[] = array(
 					'level' => $level,
 					'link' => $link,
 					'text' => $match['line'],
-					'class' => 'toclevel-' . round($level - 1, 0)
+					'class' => 'toclevel-' . round( $level - 1, 0 )
 				);
 			}
 		}
