@@ -204,16 +204,16 @@ class PonyDocsTopic {
 			return $sections;
 		}
 
-		$matches = $this->parseSections();
+		$matches = $this->pArticle->getParserOutput()->getSections();
 		$h2 = FALSE;
 		$headReference = array();
 		$headCount = 0;
 		foreach ( $matches as $match ) {
-			$level = strlen( $match[1] );
-			if ( !isset($headReference[$match[2]]) ) {
-				$headReference[$match[2]] = 1;
+			$level = $match['level'];
+			if ( !isset( $headReference[$match['line']] ) ) {
+				$headReference[$match['line']] = 1;
 			} else {
-				$headReference[$match[2]] ++;
+				$headReference[$match['line']] ++;
 			}
 
 			// We don't want to include any H3s that don't have an H2 parent
@@ -221,18 +221,18 @@ class PonyDocsTopic {
 				if ( $level == 2 ) {
 					$h2 = TRUE;
 				}
-				$headCount = $headReference[$match[2]];
+				$headCount = $headReference[$match['line']];
 				if ( $headCount > 1 ) {
-					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial') . '_' . $headCount;
+					$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' ) . '_' . $headCount;
 				} else {
-					$link = '#' . Sanitizer::escapeId(PonyDocsTOC::normalizeSection($match[2]), 'noninitial');
+					$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' );
 				}
 
 				$sections[] = array(
 					'level' => $level,
 					'link' => $link,
-					'text' => $match[2],
-					'class' => 'toclevel-' . round($level - 1, 0)
+					'text' => $match['line'],
+					'class' => 'toclevel-' . round( $level - 1, 0 )
 				);
 			}
 		}
