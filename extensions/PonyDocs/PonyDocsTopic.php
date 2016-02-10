@@ -200,40 +200,40 @@ class PonyDocsTopic {
 	public function getSubContents() {
 		$sections = array();
 
-		if ( preg_match('/__NOTOC__/', $this->pArticle->getContent() ) ) {
-			return $sections;
-		}
-
-		$matches = $this->pArticle->getParserOutput()->getSections();
-		$h2 = FALSE;
-		$headReference = array();
-		$headCount = 0;
-		foreach ( $matches as $match ) {
-			$level = $match['level'];
-			if ( !isset( $headReference[$match['line']] ) ) {
-				$headReference[$match['line']] = 1;
-			} else {
-				$headReference[$match['line']] ++;
-			}
-
-			// We don't want to include any H3s that don't have an H2 parent
-			if ( $level == 2 || ( $level == 3 && $h2 ) ) {
-				if ( $level == 2 ) {
-					$h2 = TRUE;
-				}
-				$headCount = $headReference[$match['line']];
-				if ( $headCount > 1 ) {
-					$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' ) . '_' . $headCount;
+		if ( !preg_match('/__NOTOC__/', $this->pArticle->getContent() )
+			&& $this->pArticle->getParserOutput() ) {
+			
+			$matches = $this->pArticle->getParserOutput()->getSections();
+			$h2 = FALSE;
+			$headReference = array();
+			$headCount = 0;
+			foreach ( $matches as $match ) {
+				$level = $match['level'];
+				if ( !isset( $headReference[$match['line']] ) ) {
+					$headReference[$match['line']] = 1;
 				} else {
-					$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' );
+					$headReference[$match['line']] ++;
 				}
 
-				$sections[] = array(
-					'level' => $level,
-					'link' => $link,
-					'text' => $match['line'],
-					'class' => 'toclevel-' . round( $level - 1, 0 )
-				);
+				// We don't want to include any H3s that don't have an H2 parent
+				if ( $level == 2 || ( $level == 3 && $h2 ) ) {
+					if ( $level == 2 ) {
+						$h2 = TRUE;
+					}
+					$headCount = $headReference[$match['line']];
+					if ( $headCount > 1 ) {
+						$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' ) . '_' . $headCount;
+					} else {
+						$link = '#' . Sanitizer::escapeId( PonyDocsTOC::normalizeSection( $match['line'] ), 'noninitial' );
+					}
+
+					$sections[] = array(
+						'level' => $level,
+						'link' => $link,
+						'text' => $match['line'],
+						'class' => 'toclevel-' . round( $level - 1, 0 )
+					);
+				}
 			}
 		}
 
