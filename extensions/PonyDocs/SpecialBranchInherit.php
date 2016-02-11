@@ -35,6 +35,26 @@ class SpecialBranchInherit extends SpecialPage
 	}
 	
 	/**
+	 * Check for Permission
+	 * @param String $productName Ponydocs Product name
+	 * 
+	 * @return boolean
+	 */
+	public function checkPermissions($productName = "") {
+		global $wgUser;	
+		if(empty($productName)) {
+			$productName = PonyDocsProduct::GetSelectedProduct();
+		}
+		// Security Check
+		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName);
+		$groups = $wgUser->getGroups( );
+		if(!in_array( $authProductGroup, $groups)) {			
+			return FALSE;
+		}
+		return TRUE;
+	}
+	
+	/**
 	 * Returns a human readable description of this special page.
 	 *
 	 * @returns string
@@ -52,6 +72,12 @@ class SpecialBranchInherit extends SpecialPage
  	 * @returns string JSON representation of the manuals
 	 */
 	public static function ajaxFetchManuals($product, $ver) {
+		$perms = SpecialBranchInherit::checkPermissions($product);
+		if(!$perms) {
+			$result = array("success", false);
+			$result = json_encode($result);
+			return $result;
+		}		
 		PonyDocsProductVersion::LoadVersionsForProduct($product);
 		PonyDocsProductVersion::SetSelectedVersion($product, $ver);
 		$manuals = PonyDocsProductManual::LoadManualsForProduct($product, TRUE);
@@ -77,6 +103,12 @@ class SpecialBranchInherit extends SpecialPage
 	 * @returns string JSON representation of all titles requested
 	 */
 	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $manuals, $forcedTitle = null) {
+		$perms = SpecialBranchInherit::checkPermissions($productName);
+		if(!$perms) {
+			$result = array("success", false);
+			$result = json_encode($result);
+			return $result;
+		}		
 		PonyDocsProduct::LoadProducts(true);
 		$product = PonyDocsProduct::GetProductByShortName($productName);
 		PonyDocsProductVersion::LoadVersionsForProduct(true, true);
@@ -147,6 +179,10 @@ class SpecialBranchInherit extends SpecialPage
 	 * @returns string The unique id for this job.
 	 */
 	public static function ajaxFetchJobID() {
+		$perms = SpecialBranchInherit::checkPermissions();
+		if(!$perms) {			
+			return FALSE;
+		}
 		$uniqid = uniqid("ponydocsbranchinherit", true);
 		// Create the file.
 		$path = PonyDocsExtension::getTempDir() . $uniqid;
@@ -157,6 +193,10 @@ class SpecialBranchInherit extends SpecialPage
 	}
 
 	public static function ajaxFetchJobProgress($jobID) {
+		$perms = SpecialBranchInherit::checkPermissions();
+		if(!$perms) {			
+			return "Access denied.";
+		}		
 		$uniqid = uniqid("ponydocsbranchinherit", true);
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents($path);
@@ -179,6 +219,15 @@ class SpecialBranchInherit extends SpecialPage
 	 */
 	public static function ajaxProcessRequest($jobID, $productName, $sourceVersion, $targetVersion, $topicActions) {
 		global $wgScriptPath;
+		$perms = SpecialBranchInherit::checkPermissions($productName);
+		if(!$perms) {	
+			print("Access Denied.");
+			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes($productName) . "\" " 
+							. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" error=\"Access Denied \" " 
+							. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+			error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );		
+			return FALSE;
+		}
 		ob_start();
                 
 		$targetVersionName = $targetVersion;
@@ -475,10 +524,9 @@ class SpecialBranchInherit extends SpecialPage
 			$products = $ponydocs->getProductsForTemplate( );
 		}
 
-		// Security Check
-		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct);
-		$groups = $wgUser->getGroups( );
-		if(!in_array( $authProductGroup, $groups)) {
+		$perms = SpecialBranchInherit::checkPermissions( $forceProduct );		
+		// Security Check		
+		if(!$perms) {
 			$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
 			return;
 		}
