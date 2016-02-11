@@ -69,7 +69,7 @@ class SpecialRenameVersion extends SpecialPage
 	public static function ajaxFetchJobID() {
 		$perms = SpecialRenameVersion::checkPermissions();	
 		if(!$perms) {			
-			return FALSE;
+			return "Access Denied";
 		}
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
 		// Create the file.
@@ -112,9 +112,11 @@ class SpecialRenameVersion extends SpecialPage
 	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionName ) {
 		global $wgScriptPath;
 		$perms = SpecialRenameVersion::checkPermissions($productName);
-		if(!$perms) {
-			print "Access denied for product: $productName<br />";
-			return FALSE;
+		if(!$perms) {		
+			$logFields = "action=start status=failure error=\"Access Denied\" product=$productName manual=$manualName "
+				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+			error_log( 'WARNING [' . __METHOD__ . "] [RenameVersion] $logFields" );	
+			return "Access denied for product: $productName<br />";
 		}		
 		ob_start();
 
