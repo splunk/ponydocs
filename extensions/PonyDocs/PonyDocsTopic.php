@@ -262,42 +262,6 @@ class PonyDocsTopic {
 	}
 
 	/**
-	 * Parse out all the headings in the form:
-	 * 	= Headings =, == Heading ==, etc.
-	 * One set is H1, two is H2, and so forth.
-	 * The results array has:
-	 * - 0 = Complete match with equal signs.
-	 * - 1 = Right-hand side set of equal signs.
-	 * - 2 = The heading text inside the equal signs.
-	 * - 3 = Left hand side set of equal signs.
-	 *
-	 * @return array
-	 */
-	public function parseSections() {
-		$content = $this->pArticle->getContent();
-		$content = str_replace("<nowiki>", "", $content);
-		$content = str_replace("</nowiki>", "", $content);
-		$content = strip_tags($content, '<h1><h2><h3><h4><h5>');	
-		$headings = array();
-		# A heading is a line that only contains an opening set of '=', some text, and a closing set of '='
-		# There can be an arbitrary amount of whitespace before and after each component of the heading
-		# To ensure there is nothing else on the line, we start and stop the regex with \n
-		# However, \s also matches \n, so we need to use [^\S\n] to match any possible whitespace
-		# If we just use \s, headings that immediately follow a heading are suppressed.
-		$pattern = "/[^\S\n]*(=+)(.*?)(=+)[^\S\n]*\n/";
-		if ( preg_match_all( $pattern, $content, $matches, PREG_SET_ORDER ) ) {
-			foreach ( $matches as &$match ) {
-				if (strlen($match[1]) == strlen($match[3])) {
-					$match[2] = trim( $match[2] );
-					$headings[] = $match;
-				}
-			}
-		}
-		return $headings;
-	}
-
-		
-	/**
 	 * This function returns information about the versions on this topic.
 	 * - Version permissions: unreleased, preview, or released
 	 * - Version age: older, latest, or newer
