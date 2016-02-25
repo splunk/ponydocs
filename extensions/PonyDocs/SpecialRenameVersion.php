@@ -38,13 +38,13 @@ class SpecialRenameVersion extends SpecialPage
 	 * 
 	 * @return boolean
 	 */
-	public function checkPermissions($productName = "") {
+	public function checkPermissions( $productName = "" ) {
 		global $wgUser;	
-		if(empty($productName)) {
+		if( empty( $productName ) ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 		}
 		// Security Check
-		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName);
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$groups = $wgUser->getGroups( );
 		if(!in_array( $authProductGroup, $groups)) {			
 			return FALSE;
@@ -68,7 +68,7 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxFetchJobID() {
 		$perms = SpecialRenameVersion::checkPermissions();	
-		if(!$perms) {			
+		if( !$perms ) {			
 			return "Access Denied";
 		}
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
@@ -88,7 +88,7 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxFetchJobProgress( $jobID ) {
 		$perms = SpecialRenameVersion::checkPermissions();	
-		if(!$perms) {			
+		if( !$perms ) {			
 			return 'Access denied.';
 		}
 		$path = PonyDocsExtension::getTempDir() . $jobID;
@@ -112,7 +112,7 @@ class SpecialRenameVersion extends SpecialPage
 	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionName ) {
 		global $wgScriptPath;
 		$perms = SpecialRenameVersion::checkPermissions($productName);
-		if(!$perms) {		
+		if( !$perms ) {		
 			$logFields = "action=start status=failure error=\"Access Denied\" product=$productName manual=$manualName "
 				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
 			error_log( 'WARNING [' . __METHOD__ . "] [RenameVersion] $logFields" );	
@@ -297,7 +297,7 @@ class SpecialRenameVersion extends SpecialPage
 		$products = $ponydocs->getProductsForTemplate();
 
 		// Security Check
-		$perms = SpecialRenameVersion::checkPermissions($forceProduct);		
+		$perms = SpecialRenameVersion::checkPermissions( $forceProduct );		
 		if ( !$perms ) {
 			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
 			return;

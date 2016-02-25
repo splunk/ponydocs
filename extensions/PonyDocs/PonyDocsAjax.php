@@ -29,21 +29,6 @@ function efPonyDocsAjaxInit()
 }
 
 /**
- * Check for Permission
- * 
- * @return boolean
- */
-function checkPermissions() {
-	global $wgUser, $wgPonyDocsBaseAuthorGroup;		
-	// Security Check	
-	$groups = $wgUser->getGroups( );
-	if(!in_array( $wgPonyDocsBaseAuthorGroup, $groups)) {			
-		return FALSE;
-	}
-	return TRUE;
-}
-
-/**
  * This is called when a product change occurs in the select box.  It should update the product
  * only;  to update the page the Ajax function in JS should then refresh by using history.go(0)
  * or something along those lines, otherwise the content may reflect the old product selection.
