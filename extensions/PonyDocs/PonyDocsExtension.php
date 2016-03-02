@@ -85,6 +85,7 @@ $editorPerms = array(
 	'upload' => true,
 	'unwatchedpages' => true,
 	'upload_by_url' => true,
+	'writeapi' => true,
 	'branchtopic' => true, // Custom permission to branch a single topic.
 	'branchmanual' => true, // Custom permission to branch an entire manual.
 	'inherit' => true, // Custom permission to inherit a topic.
