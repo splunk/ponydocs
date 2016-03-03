@@ -51,12 +51,15 @@ if ( !isset ( $ponyDocsProductsList ) || sizeof( $ponyDocsProductsList ) == 0) {
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
 
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] = true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] = true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload']			= true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload']		= true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared']	= true;
-$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit']		= true;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['createpage'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['edit'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['minoredit'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['read'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['reupload-shared'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['upload'] = TRUE;
+$wgGroupPermissions[$wgPonyDocsEmployeeGroup]['writeapi'] = TRUE;
 
 // these will be tweaked in PonyDocsExtension::onUserCan()
 $editorPerms = array(
@@ -85,7 +88,6 @@ $editorPerms = array(
 	'upload' => true,
 	'unwatchedpages' => true,
 	'upload_by_url' => true,
-	'writeapi' => true,
 	'branchtopic' => true, // Custom permission to branch a single topic.
 	'branchmanual' => true, // Custom permission to branch an entire manual.
 	'inherit' => true, // Custom permission to inherit a topic.
