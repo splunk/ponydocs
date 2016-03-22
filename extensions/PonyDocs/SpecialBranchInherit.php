@@ -43,13 +43,13 @@ class SpecialBranchInherit extends SpecialPage
 	 */
 	public function userCanExecute( $productName = "" ) {
 		global $wgUser;	
-		if( empty( $productName ) ) {
+		if ( empty( $productName ) ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 		}
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$groups = $wgUser->getGroups( );
-		if( !in_array( $authProductGroup, $groups ) ) {			
+		if ( !in_array( $authProductGroup, $groups ) ) {			
 			return FALSE;
 		}
 		return TRUE;
@@ -74,9 +74,9 @@ class SpecialBranchInherit extends SpecialPage
 	 */
 	public static function ajaxFetchManuals($product, $ver) {
 		$perms = SpecialBranchInherit::userCanExecute( $product );
-		if( !$perms ) {
-			$result = array("success", false);
-			$result = json_encode($result);
+		if ( !$perms ) {
+			$result = array( "success", FALSE );
+			$result = json_encode( $result );
 			return $result;
 		}		
 		PonyDocsProductVersion::LoadVersionsForProduct($product);
@@ -105,9 +105,9 @@ class SpecialBranchInherit extends SpecialPage
 	 */
 	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $manuals, $forcedTitle = null) {
 		$perms = SpecialBranchInherit::userCanExecute( $productName );
-		if( !$perms ) {
-			$result = array("success", false);
-			$result = json_encode($result);
+		if ( !$perms ) {
+			$result = array( "success", FALSE );
+			$result = json_encode( $result );
 			return $result;
 		}		
 		PonyDocsProduct::LoadProducts(true);
@@ -181,7 +181,7 @@ class SpecialBranchInherit extends SpecialPage
 	 */
 	public static function ajaxFetchJobID() {
 		$perms = SpecialBranchInherit::userCanExecute();
-		if( !$perms ) {			
+		if ( !$perms ) {			
 			return FALSE;
 		}
 		$uniqid = uniqid("ponydocsbranchinherit", true);
@@ -221,11 +221,11 @@ class SpecialBranchInherit extends SpecialPage
 	public static function ajaxProcessRequest($jobID, $productName, $sourceVersion, $targetVersion, $topicActions) {
 		global $wgScriptPath;
 		$perms = SpecialBranchInherit::userCanExecute( $productName );
-		if( !$perms ) {	
-			print("Access Denied.");
-			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes($productName) . "\" " 
-							. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" error=\"Access Denied \" " 
-							. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+		if ( !$perms ) {	
+			print( "Access Denied." );
+			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes( $productName ) . "\" " 
+							. "sourceVersion=\"" . addslashes( $sourceVersionName ) . "\" error=\"Access Denied \" " 
+							. "targetVersion=\"" . addslashes( $targetVersionName ) . "\"";
 			error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );		
 			return FALSE;
 		}
@@ -527,7 +527,7 @@ class SpecialBranchInherit extends SpecialPage
 
 		$perms = SpecialBranchInherit::userCanExecute( $forceProduct );		
 		// Security Check		
-		if(!$perms) {
+		if ( !$perms ) {
 			$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
 			return;
 		}

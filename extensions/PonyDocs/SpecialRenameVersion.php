@@ -41,13 +41,13 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public function userCanExecute( $productName = "" ) {
 		global $wgUser;	
-		if( empty( $productName ) ) {
+		if ( empty( $productName ) ) {
 			$productName = PonyDocsProduct::GetSelectedProduct();
 		}
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
-		$groups = $wgUser->getGroups( );
-		if(!in_array( $authProductGroup, $groups)) {			
+		$groups = $wgUser->getGroups();
+		if ( !in_array( $authProductGroup, $groups) ) {
 			return FALSE;
 		}
 		return TRUE;
@@ -69,7 +69,7 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxFetchJobID() {
 		$perms = SpecialRenameVersion::userCanExecute();	
-		if( !$perms ) {			
+		if ( !$perms ) {			
 			return "Access Denied";
 		}
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
@@ -89,7 +89,7 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxFetchJobProgress( $jobID ) {
 		$perms = SpecialRenameVersion::userCanExecute();	
-		if( !$perms ) {			
+		if ( !$perms ) {			
 			return 'Access denied.';
 		}
 		$path = PonyDocsExtension::getTempDir() . $jobID;
@@ -112,8 +112,8 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionName ) {
 		global $wgScriptPath;
-		$perms = SpecialRenameVersion::userCanExecute($productName);
-		if( !$perms ) {		
+		$perms = SpecialRenameVersion::userCanExecute( $productName );
+		if ( !$perms ) {		
 			$logFields = "action=start status=failure error=\"Access Denied\" product=$productName manual=$manualName "
 				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
 			error_log( 'WARNING [' . __METHOD__ . "] [RenameVersion] $logFields" );	
