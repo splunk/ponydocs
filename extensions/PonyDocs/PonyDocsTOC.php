@@ -487,6 +487,9 @@ class PonyDocsTOC
 	 * @return string
 	 */
 	static public function normalizeSection( $secText ) {
+		// Replace 2 or more spaces with 1 space
+		$secText = preg_replace( '/\s{2,}/', ' ', $secText );
+		// Trim whitespace from beginning and end of string, and then replace spaces with underscores
 		$secText = str_replace( ' ', '_', preg_replace( '/^\s*|\s*$/', '', $secText ) );
 		return $secText;
 	}
