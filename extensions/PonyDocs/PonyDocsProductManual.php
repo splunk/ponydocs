@@ -305,7 +305,7 @@ class PonyDocsProductManual
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 		if ( $latestVersion ) {
-			if ( $versionName == $latestVersion->getVersionName() ) {
+			if ( $versionName == $latestVersion->getVersionShortName() ) {
 				$versionName = 'latest';
 			}
 		}

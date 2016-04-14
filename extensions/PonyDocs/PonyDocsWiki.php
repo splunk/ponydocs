@@ -100,10 +100,10 @@ class PonyDocsWiki
 		$versions = array();
 		foreach ( $pTopic->getProductVersions() as $productVersion ) {
 			$versions[] = array(
-				'name' => $productVersion->getVersionName(),
+				'name' => $productVersion->getVersionShortName(),
 				'href' => str_replace(
 					'$1', 
-					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionName(),
+					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionShortName(),
 					$wgArticlePath )
 			);
 		}
@@ -141,8 +141,8 @@ class PonyDocsWiki
 			 * 	Only add it to our available list if its in our list of valid versions.
 			 *	NOTE disabled for now
 			 */
-			//if( in_array( 'V:' . $v->getVersionName( ), $validVersions ))
-				$out[] = array( 'name' => $v->getVersionName( ), 'status' => $v->getVersionStatus( ));
+			//if( in_array( 'V:' . $v->getVersionShortName( ), $validVersions ))
+				$out[] = array( 'name' => $v->getVersionShortName( ), 'status' => $v->getVersionStatus( ));
 		}
 
 		return $out;

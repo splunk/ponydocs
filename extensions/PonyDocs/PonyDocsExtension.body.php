@@ -185,7 +185,7 @@ class PonyDocsExtension
 			 * Once we hit one, redirect.  if we exhaust our list, go to the main page or something.
 			 */
 			foreach( $existingVersions as $pV ) {
-				if ( in_array( $pV->getVersionName( ), $versionNameList ) ) {
+				if ( in_array( $pV->getVersionShortName( ), $versionNameList ) ) {
 					/**
 					 * Look up topic name and redirect to URL.
 					 */
@@ -195,7 +195,7 @@ class PonyDocsExtension
 						array(
 							'cl_from = page_id',
 							'page_namespace = "' . NS_PONYDOCS . '"',
-							"cl_to = 'V:{$matches[1]}:" . $pV->getVersionName() . "'",
+							"cl_to = 'V:{$matches[1]}:" . $pV->getVersionShortName() . "'",
 							'cl_type = "page"',
 							"cl_sortkey LIKE '"
 								. $dbr->strencode( strtoupper( $matches[1] . ':' . $matches[2] . ':' . $matches[3] ) ) . ":%'",
@@ -242,7 +242,7 @@ class PonyDocsExtension
 				array(
 					'cl_from = page_id',
 					'page_namespace = "' . NS_PONYDOCS . '"',
-					"cl_to = 'V:$productName:" . $version->getVersionName() . "'",
+					"cl_to = 'V:$productName:" . $version->getVersionShortName() . "'",
 					'cl_type = "page"',
 					"cl_sortkey LIKE '" . strtoupper( $matches[1] ) . ':' . strtoupper( $matches[2] ) . ':'
 						. strtoupper( $matches[3] ) . ":%'",
@@ -471,7 +471,7 @@ class PonyDocsExtension
 			
 			$versionNameList = array( );
 			foreach( $versionList as $pV )
-				$versionNameList[] = $pV->getVersionName( );
+				$versionNameList[] = $pV->getVersionShortName( );
 
 			/**
 			 * Now get a list of version names to which the current topic is mapped in DESCENDING order as well
@@ -528,10 +528,10 @@ class PonyDocsExtension
 			// Okay, iterate through existingVersions.  If we can't see that 
 			// any of them belong to our latest released version, redirect to 
 			// our latest handler.
-			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion($productName)->getVersionName();
+			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion($productName)->getVersionShortName();
 			$found = false;
 			foreach($existingVersions as $docVersion) {
-				if($docVersion->getVersionName() == $latestReleasedVersion) {
+				if($docVersion->getVersionShortName() == $latestReleasedVersion) {
 					$found = true;
 					break;
 				}
@@ -552,7 +552,7 @@ class PonyDocsExtension
 			 */
 			foreach( $existingVersions as $pV )
 			{
-				if( in_array( $pV->getVersionName( ), $versionNameList ))
+				if( in_array( $pV->getVersionShortName( ), $versionNameList ))
 				{
 					/**
 					 * Look up topic name and redirect to URL.
@@ -565,7 +565,7 @@ class PonyDocsExtension
 						array(
 							'cl_from = page_id',
 							'page_namespace = "' . NS_PONYDOCS . '"',
-							"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $pV->getVersionName() ) . "'",
+							"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $pV->getVersionShortName() ) . "'",
 							'cl_type = "page"',
 							"cl_sortkey LIKE '" . 
 								$dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
@@ -587,7 +587,7 @@ class PonyDocsExtension
 					$article = new Article( $title );
 					$article->loadContent();
 
-					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionName() );
+					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionShortName() );
 
 					if ( !$article->exists() ) {
 						$article = NULL;
@@ -740,7 +740,7 @@ class PonyDocsExtension
 
 				$versionIn = array();
 				foreach ( $manVersionList as $pV ) {
-					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName();
+					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionShortName();
 				}
 
 				$res = $dbr->select(
@@ -760,13 +760,13 @@ class PonyDocsExtension
 					 * No match -- so this is a "new" topic.  Set name and create.
 					 */
 					$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $match[1] . ':' . $match[2].
-						':' . $wikiTopic . ':' . $earliestVersion->getVersionName();
+						':' . $wikiTopic . ':' . $earliestVersion->getVersionShortName();
 
 					$topicArticle = new Article( Title::newFromText( $topicName ) );
 					if ( !$topicArticle->exists() ) {
 						$content = 	"= " . $m[1] . "=\n\n" ;
 						foreach ( $manVersionList as $pVersion ) {
-							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionName( ) . ']]';
+							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionShortName( ) . ']]';
 						}
 
 						$topicArticle->doEdit(
@@ -1118,7 +1118,7 @@ HEREDOC;
 									// If there is no available latest released version go to the next match
 									if (!$pVersion) continue;
 									
-									$version  = $pVersion->getVersionName();
+									$version  = $pVersion->getVersionShortName();
 								}
 							}
 
@@ -1572,7 +1572,7 @@ EOJS;
 						if ($version == 'latest') {
 							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
 							$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
-							$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionName();
+							$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionShortName();
 						} else {
 							$dbVersion = $version;
 						}
@@ -1804,7 +1804,7 @@ EOJS;
 				// Now let's go through each version and make sure the user's 
 				// current version is still in the topic.
 				foreach($topicVersions as $version) {
-					if($version->getVersionName() == $currentVersion) {
+					if($version->getVersionShortName() == $currentVersion) {
 						$found = true;
 						break;
 					}
@@ -1818,7 +1818,7 @@ EOJS;
 					$targetVersion = "latest";
 					foreach($topicVersions as $version) {
 						if($version->getVersionStatus() == "released") {
-							$targetVersion = $version->getVersionName();
+							$targetVersion = $version->getVersionShortName();
 						}
 					}
 				}
@@ -1936,7 +1936,7 @@ EOJS;
 				$targetProduct = $match[1];
 				$targetVersion = $match[3];
 				if($targetVersion == "latest") {
-					PonyDocsProductVersion::SetSelectedVersion($targetProduct, PonyDocsProductVersion::GetLatestReleasedVersion($targetProduct)->getVersionName());
+					PonyDocsProductVersion::SetSelectedVersion($targetProduct, PonyDocsProductVersion::GetLatestReleasedVersion($targetProduct)->getVersionShortName());
 				}
 				else {
 					PonyDocsProductVersion::SetSelectedVersion($targetProduct, $targetVersion);
@@ -1995,7 +1995,7 @@ EOJS;
 				die();
 			}
 			// Okay, the version is valid, let's set the user's version.
-			PonyDocsProductVersion::SetSelectedVersion($targetProduct, $ver->getVersionName());
+			PonyDocsProductVersion::SetSelectedVersion($targetProduct, $ver->getVersionShortName());
 			PonyDocsProductManual::LoadManualsForProduct($targetProduct);
 			$manual = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
 			if ( !$manual ) {
@@ -2097,7 +2097,7 @@ EOJS;
 				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
 				if ( $manual != null ) {
 					foreach( $topicVersions as $key => $version ) {
-						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName() );
+						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );
 					}	
 				}
 								
@@ -2197,7 +2197,7 @@ EOJS;
 		$ponydocsVersions = $topic->getProductVersions();
 		if (count($ponydocsVersions) > 0) {
 			foreach ($ponydocsVersions as $ver) {
-				$cache->remove("category-Category:V:" . $ver->getProductName() . ':' . $ver->getVersionName());
+				$cache->remove("category-Category:V:" . $ver->getProductName() . ':' . $ver->getVersionShortName());
 			}
 		}
 	}
@@ -2449,7 +2449,7 @@ EOJS;
 				$topicMetaData = PonyDocsArticleFactory::getArticleMetadataFromTitle($toTitle);
 
 				// Put together the $toUrl
-				$toUrl = $pieces[0] . '/' . $ver->getProductName() . '/' . $ver->getVersionName() . '/' . $topicMetaData['manual'] . '/' . $pieces[1];
+				$toUrl = $pieces[0] . '/' . $ver->getProductName() . '/' . $ver->getVersionShortName() . '/' . $topicMetaData['manual'] . '/' . $pieces[1];
 
 			} else if (sizeof($pieces) == 4) {
 				// Handles links with no version specified:
@@ -2470,7 +2470,7 @@ EOJS;
 						error_log("WARNING [PonyDocs] [" . __METHOD__ . "] If Version is not specified in title, must include version object when calling translateTopicTitleForDocLinks().");
 						return false;
 					}
-					$toVersion = $ver->getVersionName();
+					$toVersion = $ver->getVersionShortName();
 				}
 
 				// Put together the $toUrl
