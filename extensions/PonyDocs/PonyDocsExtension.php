@@ -351,7 +351,7 @@ function efVersionParserFunction_Magic( &$magicWords, $langCode ) {
  * Which defines a version and its state. When output it currently does nothing but should perhaps be a list to Category:<version>.
  *
  * @param Parser $parser
- * @param string $param1 The version name itself.
+ * @param string $param1 The version short name.
  * @param string $param2 The status of the version (released, unreleased, or preview).
  * @param string $param3 The version long name.
  * @return array

@@ -21,7 +21,7 @@ class PonyDocsProductVersion {
 	const STATUS_INVALID = -2;
 
 	/**
-	 * The name of the version.
+	 * The short name of the version.
 	 * This can be of any form but is typically a decimal point delimited version number (3.9.1) or a "code name."
 	 *
 	 * @var string
@@ -94,18 +94,18 @@ class PonyDocsProductVersion {
 	/**
 	 * Construct a representation of a single version.
 	 * 
-	 * @param string $name Actual name of version, such as 1.0.2 or Foo.
+	 * @param string $versionShortName Actual short name of version, such as 1.0.2 or Foo.
 	 * @param string $status Version status: released, unreleased, preview.
 	 * @param string $versionLongName Long name of version.
 	 */
-	public function __construct( $productNameShort, $versionName, $versionStatus, $versionLongName ) {
-		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
+	public function __construct( $productNameShort, $versionShortName, $versionStatus, $versionLongName ) {
+		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionShortName ) 
 			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort ) ) {
 			$this->vStatusCode = self::STATUS_INVALID;
 			return;
 		}
 		$this->pName = $productNameShort;
-		$this->vShortName = $versionName;
+		$this->vShortName = $versionShortName;
 		$this->vStatus = strtolower( $versionStatus );
 		$this->vStatusCode = self::StatusToInt( $this->vStatus );
 		$this->vLongName = $versionLongName;
