@@ -78,7 +78,7 @@ class SpecialLatestDoc extends SpecialPage {
 			$productName = $matches[1];
 			$versionName = $matches[2];
 			$manualName = $matches[3];
-			$topicName = $matches[4];
+			$topicName = strip_tags( $matches[4] );
 			if(strcasecmp('latest', $versionName) !== 0) { // version is NOT 'latest'
 				?>
 				<p>
@@ -204,7 +204,7 @@ class SpecialLatestDoc extends SpecialPage {
 					The topic you've asked to see does not apply to the most recent version.
 					</p>
 					<p>
-					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
+					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $topicName;?>">Search</a></li>
 					</p>
 					<?php
 					if ( count( $primarySuggestions ) ) { ?>
