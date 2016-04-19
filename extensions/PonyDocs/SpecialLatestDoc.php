@@ -216,7 +216,7 @@ class SpecialLatestDoc extends SpecialPage {
 						<?php
 						foreach( $primarySuggestions as $suggestion ) {
 							?>
-							<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+							<li><?php echo $suggestion['product'];?> &raquo; <?php echo ($versionList[$suggestion['version']]->getVersionLongName()) ? $versionList[$suggestion['version']]->getVersionLongName() : $suggestion['version']; ?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
 							<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
 							<?php
 						}
@@ -224,7 +224,7 @@ class SpecialLatestDoc extends SpecialPage {
 						{
 							foreach( $suggestions as $suggestion ) {
 								?>
-									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo ($versionList[$suggestion['version']]->getVersionLongName()) ? $versionList[$suggestion['version']]->getVersionLongName() : $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
 									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
 								<?php
 
