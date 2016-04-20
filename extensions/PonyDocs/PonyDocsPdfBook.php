@@ -103,6 +103,8 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 
 		if ( isset($_GET['version']) && PonyDocsProductVersion::IsVersion($productName, $_GET['version'])) {
 			$versionText = $_GET['version'];
+		} else {
+			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
 		}
 
 		if (!empty($pManual)) {
