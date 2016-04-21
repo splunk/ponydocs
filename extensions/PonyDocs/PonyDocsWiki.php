@@ -104,7 +104,8 @@ class PonyDocsWiki
 				'href' => str_replace(
 					'$1', 
 					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionShortName(),
-					$wgArticlePath )
+					$wgArticlePath ),
+				'longName' => $productVersion->getVersionLongName()
 			);
 		}
 
