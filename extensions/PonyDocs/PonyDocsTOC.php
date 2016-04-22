@@ -105,7 +105,7 @@ class PonyDocsTOC
 	 */
 	public function & addVersion( PonyDocsProductVersion& $pVersion )
 	{
-		$this->pVersionList[$pVersion->getVersionShortName()] = $pVersion;
+		$this->pVersionList[$pVersion->getVersionName()] = $pVersion;
 		return $pVersion;
 	}
 
@@ -151,7 +151,7 @@ class PonyDocsTOC
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
 				"cl_to = 'V:"
-					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() ) . "'" ,
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionName() ) . "'" ,
 				'cl_type = "page"',
 				"cl_sortkey LIKE '"
 					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
@@ -259,12 +259,12 @@ class PonyDocsTOC
 		}
 
 		$selectedProduct = $this->pProduct->getShortName();
-		$selectedVersion = $this->pInitialVersion->getVersionShortName();
+		$selectedVersion = $this->pInitialVersion->getVersionName();
 		$selectedManual = $this->pManual->getShortName();
 
 		// Okay, let's determine if the VERSION that the user is in is latest, if so, we should set latest to true.
 		if ( PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct) != NULL ) {
-		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionShortName() ) {
+		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionName() ) {
 				$latest = TRUE;
 			}
 		}
@@ -496,8 +496,8 @@ class PonyDocsTOC
 
 	static public function clearTOCCache( $manual, $version, $product ) {
 		error_log( "INFO [PonyDocsTOC::clearTOCCache] Deleting cache entry of TOC for product " . $product->getShortName()
-			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionShortName());
-		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionShortName();
+			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionName());
+		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName();
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
 	}

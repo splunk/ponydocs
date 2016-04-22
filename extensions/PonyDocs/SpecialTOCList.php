@@ -67,7 +67,7 @@ class SpecialTOCList extends SpecialPage {
 			$wgOut->addHTML( '<h2>Table of Contents Management Pages for ' . $product->getLongName() . '</h2>' );
 
 			foreach ( PonyDocsProductVersion::GetVersions( $productName ) as $v ) {
-				$allowed_versions[] = $v->getVersionShortName();
+				$allowed_versions[] = $v->getVersionName();
 			}
 
 			foreach ( $manuals as $pMan ) {
