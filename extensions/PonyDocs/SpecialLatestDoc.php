@@ -107,10 +107,10 @@ class SpecialLatestDoc extends SpecialPage {
 					$latestVersionSql = null;
 					foreach ( $versionList as $pV ) {
 						if ( $latestVersionSql == null ) {
-							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionShortName();
+							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName();
 						}
-						$versionNameList[] = $pV->getVersionShortName();
-						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionShortName() . '\'';
+						$versionNameList[] = $pV->getVersionName();
+						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName() . '\'';
 					}
 					$versionSql = '(' . implode( ",",$versionSql ) . ')';
 

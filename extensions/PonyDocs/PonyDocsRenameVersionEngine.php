@@ -24,18 +24,18 @@ class PonyDocsRenameVersionEngine {
 		$title = PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion );
 		if ( $title == false ) {
 			throw new Exception( 'TOC does not exist for ' . $manual->getShortName()
-				. ' with version ' . $sourceVersion->getVersionShortName() );
+				. ' with version ' . $sourceVersion->getVersionName() );
 		}
 		$title = Title::newFromText( $title );
 		$wgTitle = $title;
 		$article = new Article( $title );
 		if ( !$article->exists() ) {
 			throw new Exception( 'TOC does not exist for ' . $manual->getShortName()
-				. ' with version ' . $sourceVersion->getVersionShortName() );
+				. ' with version ' . $sourceVersion->getVersionName() );
 		}
 		
-		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionShortName() . ']]';
-		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionShortName() . ']]';
+		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
+		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
 		
 		// Okay, let's search for the content.
 		$content = $article->getContent();
@@ -43,7 +43,7 @@ class PonyDocsRenameVersionEngine {
 		// TODO: Should we add the new version here anyway?
 		if ( strpos( $content, $oldCategory ) === FALSE ) {
 			throw new Exception(
-				'TOC for ' . $manual->getShortName() . ' does not contain source version ' . $sourceVersion->getVersionShortName() );
+				'TOC for ' . $manual->getShortName() . ' does not contain source version ' . $sourceVersion->getVersionName() );
 		// If the TOC already has the new version, then just delete the old version
 		} elseif ( strpos( $content, $newCategory ) !== FALSE ) {
 			$content = str_replace( $oldCategory, '', $content );
@@ -91,8 +91,8 @@ class PonyDocsRenameVersionEngine {
 		}
 		$content = $article->getContent();
 
-		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionShortName() . ']]';
-		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionShortName() . ']]';
+		$oldCategory = '[[Category:V:' . $product->getShortName() . ':' . $sourceVersion->getVersionName() . ']]';
+		$newCategory = '[[Category:V:' . $product->getShortName() . ':' . $targetVersion->getVersionName() . ']]';
 
 		$message = '';
 		$editTopic = TRUE;
@@ -132,7 +132,7 @@ class PonyDocsRenameVersionEngine {
 				// We can't find a topic with the source version, so something is odd. Let's complain
 				} else {
 					throw new Exception(
-						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionShortName() );
+						"Topic $topicTitle does not contain source version " . $sourceVersion->getVersionName() );
 				}
 			// If the Topic already has the new version, just remove the old version
 			} elseif ( strpos( $content, $newCategory ) !== FALSE ) {

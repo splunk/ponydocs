@@ -351,12 +351,11 @@ function efVersionParserFunction_Magic( &$magicWords, $langCode ) {
  * Which defines a version and its state. When output it currently does nothing but should perhaps be a list to Category:<version>.
  *
  * @param Parser $parser
- * @param string $param1 The version short name.
+ * @param string $param1 The version name itself.
  * @param string $param2 The status of the version (released, unreleased, or preview).
- * @param string $param3 The version long name.
  * @return array
  */
-function efVersionParserFunction_Render( &$parser, $param1 = '', $param2 = '', $param3 = '' ) {
+function efVersionParserFunction_Render( &$parser, $param1 = '', $param2 = '' ) {
 	global $wgUser, $wgScriptPath;
 	
 	$valid = TRUE;
@@ -370,7 +369,7 @@ function efVersionParserFunction_Render( &$parser, $param1 = '', $param2 = '', $
 		$valid = FALSE;
 	}
 		
-	$output = 'Version ' . $param1 . ' (' . $param3 . ') ' . $param2;
+	$output = 'Version ' . $param1 . ' (' . $param2 . ') ' ;
 	
 	if ( !$valid ) {
 		$output .= ' - Invalid Version Name or Status, Please Fix';
@@ -570,7 +569,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 
 	$versionIn = array();
 	foreach( $manVersionList as $pV ) {
-		$versionIn[] = $pV->getVersionShortName();
+		$versionIn[] = $pV->getVersionName();
 	}
 
 	$res = $dbr->select(
@@ -592,7 +591,7 @@ function efGetTitleFromMarkup( $markup = '' ) {
 		 * No match -- so this is a "new" topic. Set name.
 		 */
 		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' . $wikiTopic . ':'
-			. $earliestVersion->getVersionShortName();
+			. $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
 		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
@@ -685,7 +684,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 
 	$versionIn = array();
 	foreach( $manVersionList as $pV ) {
-		$versionIn[] = $productShortName . ':' . $pV->getVersionShortName();
+		$versionIn[] = $productShortName . ':' . $pV->getVersionName();
 	}
 
 	$res = $dbr->select(
@@ -708,7 +707,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' ) {
 		 * No match -- so this is a "new" topic. Set name.
 		 */
 		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' .
-			$wikiTopic . ':' . $earliestVersion->getVersionShortName();
+			$wikiTopic . ':' . $earliestVersion->getVersionName();
 	} else {
 		$row = $dbr->fetchObject( $res );
 		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
