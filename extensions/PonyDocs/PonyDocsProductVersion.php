@@ -415,7 +415,7 @@ class PonyDocsProductVersion {
 				$pcs = explode( '|', trim( $matches ), 3 );
 				$versionLongName = (isset($pcs[2])) ? $pcs[2] : '';
 			
-				$pVersion = new PonyDocsProductVersion( $productName, $pcs[0], $pcs[1], $pcs[2] );
+				$pVersion = new PonyDocsProductVersion( $productName, $pcs[0], $pcs[1], $versionLongName );
 				if ( !$pVersion->isValid() ) {
 					continue;
 				}
