@@ -313,9 +313,11 @@ class PonyDocsTemplate extends QuickTemplate {
 										</p>
 										<p>
 											<?php
-											if ( sizeof($this->data['manualtoc'] ) ) { ?>
+											if ( sizeof($this->data['manualtoc'] ) ) { 
+												$pdfLink = str_replace( '$1', '', $wgArticlePath ) . 'index.php?title=' . $wgTitle->__toString() . '&action=pdfbook&version=' .$this->data['selectedVersion'];
+												?>
 												<p>
-													<a href="<?php echo str_replace( '$1', '', $wgArticlePath );?>index.php?title=<?php echo $wgTitle->__toString();?>&action=pdfbook">Pdf Version</a>
+													<a href="<?php echo $pdfLink; ?>">Pdf Version</a>
 												</p>
 												<?php
 												$inUL = FALSE;

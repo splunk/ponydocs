@@ -101,7 +101,11 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
-		$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
+		if ( isset($_GET['version']) && PonyDocsProductVersion::IsVersion($productName, $_GET['version'])) {
+			$versionText = $_GET['version'];
+		} else {
+			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
+		}
 
 		if (!empty($pManual)) {
 			// We should always have a pManual, if we're printing from a TOC
