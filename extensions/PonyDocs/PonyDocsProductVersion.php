@@ -128,7 +128,16 @@ class PonyDocsProductVersion {
 	 * @return string Name of version.
 	 */
 	public function getVersionName() {
-		return $this->vName;
+		return $this->vShortName;
+	}
+	
+	/**
+	 * Return the short name of the version.
+	 *
+	 * @return string Short Name of version.
+	 */
+	public function getVersionShortName() {
+		return $this->vShortName;
 	}
 
 	/**
@@ -385,9 +394,10 @@ class PonyDocsProductVersion {
 			// version (if it's neither versiongroup nor version it's a blank line or other garbage and we can skip it)
 			} elseif ( preg_match( '/{{#version:/', $v ) ) {
 				$matches = preg_replace( '/{{#version:\s*(.*)\s*}}/i', '\\1', $v );
-				$pcs = explode( '|', trim( $matches ), 2 );
+				$pcs = explode( '|', trim( $matches ), 3 );
+				$versionLongName = (isset($pcs[2])) ? $pcs[2] : '';
 			
-				$pVersion = new PonyDocsProductVersion( $productName, $pcs[0], $pcs[1] );
+				$pVersion = new PonyDocsProductVersion( $productName, $pcs[0], $pcs[1], $versionLongName );
 				if ( !$pVersion->isValid() ) {
 					continue;
 				}
