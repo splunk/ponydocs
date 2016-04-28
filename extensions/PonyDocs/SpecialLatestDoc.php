@@ -204,7 +204,7 @@ class SpecialLatestDoc extends SpecialPage {
 					The topic you've asked to see does not apply to the most recent version.
 					</p>
 					<p>
-					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
+					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo strip_tags( $topicName );?>">Search</a></li>
 					</p>
 					<?php
 					if ( count( $primarySuggestions ) ) { ?>
