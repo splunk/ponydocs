@@ -96,7 +96,7 @@ class SpecialDocumentLinks extends SpecialPage {
 			// Get the latest released version of this product
 			$latestVersionObj = PonyDocsProductVersion::GetLatestReleasedVersion($titlePieces[1]);
 			if (is_object($latestVersionObj)) {
-				$latestVersion = $latestVersionObj->getVersionShortName();
+				$latestVersion = $latestVersionObj->getVersionName();
 			} else {
 				error_log('WARNING [PonyDocs] [' . __CLASS__ . '] Unable to find latest released version of ' . $titlePieces[1]);
 			}
@@ -112,7 +112,7 @@ class SpecialDocumentLinks extends SpecialPage {
 					$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($titleNoVersion, NULL, $ver);
 
 					// Compare this version with latest version. If they're the same, add the URL with "latest" too.
-					$thisVersion = $ver->getVersionShortName();
+					$thisVersion = $ver->getVersionName();
 					if ($thisVersion == $latestVersion) {
 						$titleLatestVersion = 
 							$titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
@@ -204,7 +204,7 @@ class SpecialDocumentLinks extends SpecialPage {
 						<h2><?php echo $fromProduct; ?></h2>
 						<?php
 						foreach ($fromProductVersions as $fromProductVersionObj) {
-							$fromProductVersionName = $fromProductVersionObj->getVersionShortName();
+							$fromProductVersionName = $fromProductVersionObj->getVersionName();
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
 								// Expand containers of incoming links from the current Product and Version
