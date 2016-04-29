@@ -26,7 +26,7 @@ class PonyDocsProductVersion {
 	 *
 	 * @var string
 	 */
-	protected $vName = '';
+	protected $vShortName = '';
 
 	/**
 	 * The status of this release;  one of:  released, unreleased, preview.  Should be checked.
@@ -34,6 +34,13 @@ class PonyDocsProductVersion {
 	 */
 	protected $vStatus = '';
 
+	/**
+	 * The long name of the version.
+	 * 
+	 * @var string
+	 */
+	protected $vLongName;
+	
 	/**
 	 * Status code (see consts above).
 	 * @var integer
@@ -89,17 +96,19 @@ class PonyDocsProductVersion {
 	 * 
 	 * @param string $name Actual name of version, such as 1.0.2 or Foo.
 	 * @param string $status Version status: released, unreleased, preview.
+	 * @param string $versionLongName Long name of version.
 	 */
-	public function __construct( $productNameShort, $versionName, $versionStatus ) {
+	public function __construct( $productNameShort, $versionName, $versionStatus, $versionLongName ) {
 		if ( !preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $versionName ) 
 			|| !preg_match( PONYDOCS_PRODUCT_REGEX, $productNameShort ) ) {
 			$this->vStatusCode = self::STATUS_INVALID;
 			return;
 		}
 		$this->pName = $productNameShort;
-		$this->vName = $versionName;
+		$this->vShortName = $versionName;
 		$this->vStatus = strtolower( $versionStatus );
 		$this->vStatusCode = self::StatusToInt( $this->vStatus );
+		$this->vLongName = $versionLongName;
 	}
 
 	/**
@@ -149,6 +158,15 @@ class PonyDocsProductVersion {
 		return $this->vStatus;
 	}
 
+	/**
+	 * Return the long name of the version.
+	 *
+	 * @return string Long Name of version.
+	 */
+	public function getVersionLongName() {
+		return $this->vLongName;
+	}
+	
 	/**
 	 * Return the name of the product.
 	 *
@@ -253,10 +271,10 @@ class PonyDocsProductVersion {
 			*/
 			if ( isset( self::$sVersionListReleased[$productName] ) && sizeof( self::$sVersionListReleased[$productName] ) ) {
 				$versionIndex = count( self::$sVersionListReleased[$productName] ) - 1;
-				$versionName = self::$sVersionListReleased[$productName][$versionIndex]->getVersionName();
+				$versionName = self::$sVersionListReleased[$productName][$versionIndex]->getVersionShortName();
 			} else {
 				$versionIndex = count( self::$sVersionList[$productName] ) - 1;
-				$versionName = self::$sVersionList[$productName][$versionIndex]->getVersionName();
+				$versionName = self::$sVersionList[$productName][$versionIndex]->getVersionShortName();
 			}
 			self::SetSelectedVersion( $productName, $versionName );
 			if ( PONYDOCS_DEBUG ) {
@@ -295,7 +313,7 @@ class PonyDocsProductVersion {
 		if ( $v == "latest" ) {
 			$latest = self::GetLatestReleasedVersion( $productName );
 			if ( $latest != NULL ) {
-				$v = $latest->vName;
+				$v = $latest->vShortName;
 			}
 		}
 
@@ -640,9 +658,9 @@ class PonyDocsProductVersion {
 
 	static public function clearNAVCache( PonyDocsProductVersion $version ) {
 		error_log( "INFO [" . __METHOD__ . "] Deleting cache entry of NAV for product " . $version->getProductName()
-			. " version " . $version->getVersionName());
+			. " version " . $version->getVersionShortName());
 		$cache = PonyDocsCache::getInstance();
-		$key = "NAVDATA-" . $version->getProductName() . "-" . $version->getVersionName();
+		$key = "NAVDATA-" . $version->getProductName() . "-" . $version->getVersionShortName();
 		$cache->remove( $key );
 	}
 
@@ -667,7 +685,7 @@ class PonyDocsProductVersion {
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 		if ( $latestVersion ) {
-			if ( $versionName == $latestVersion->getVersionName() ) {
+			if ( $versionName == $latestVersion->getVersionShortName() ) {
 				$versionName = 'latest';
 			}
 		}

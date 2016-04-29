@@ -280,20 +280,20 @@ class PonyDocsTopic {
 		// Just the names of our released versions
 		$releasedNames = array();
 		foreach ( $releasedVersions as $ver ) {
-			$releasedNames[] = strtolower( $ver->getVersionName() );
+			$releasedNames[] = strtolower( $ver->getVersionShortName() );
 		}
 		
 		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
 		// Just the names of our preview versions
 		$previewNames = array();
 		foreach ( $previewVersions as $ver ) {
-			$previewNames[] = strtolower( $ver->getVersionName() );
+			$previewNames[] = strtolower( $ver->getVersionShortName() );
 		}
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 	
 		foreach( $this->versions as $version ) {
-			$versionName = strtolower($version->getVersionName());
+			$versionName = strtolower($version->getVersionShortName());
 			
 			// Is this version released, preview, or unreleased?
 			if ( in_array( $versionName, $releasedNames ) ) {
@@ -369,7 +369,7 @@ class PonyDocsTopic {
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 		if ( $latestVersion ) {
-			if ( $versionName == $latestVersion->getVersionName() ) {
+			if ( $versionName == $latestVersion->getVersionShortName() ) {
 				$versionName = 'latest';
 			}
 		}

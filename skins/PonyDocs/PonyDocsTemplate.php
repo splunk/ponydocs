@@ -660,7 +660,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				. PONYDOCS_PRODUCTVERSION_SUFFIX,
 				$wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:name|status}} to define a new version,'
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:name|longName|status}} to define a new version,'
 					. ' where status is released, unreleased, or preview.'
 					. ' Valid chars in version name are A-Z, 0-9, period, comma, and dash.</i></span>' );
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#versiongroup:name|message}} to set a banner'
