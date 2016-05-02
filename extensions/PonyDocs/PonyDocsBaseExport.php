@@ -42,7 +42,7 @@ EOT;
 			$titleText  .= '<table height="100%" width="100%"><tr><td valign="top" height="50%">'
 				. '<center><img src="' . $image_path .  '" width="1024"></center>'
 				. '<h1>' . $product->getLongName() . ' ' . $version->getVersionName() . '</h1>'
-				. '<h2>' . $pdfName . '</h2>'
+				. '<h2>' . htmlspecialchars( $pdfName ) . '</h2>'
 				. 'Generated: ' . date('n/d/Y g:i a', time())
 				. '</td></tr><tr><td height="50%" width="100%" align="left" valign="bottom"><font size="2">'
 				. PONYDOCS_PDF_COPYRIGHT_MESSAGE
@@ -51,7 +51,7 @@ EOT;
 			// Render a none table format version.
 			$titleText .= '<img src="' . $image_path . '" width="1024">'
 				. '<h1 style="font-size: 32pt;">' . $product->getLongName() . ' ' . $version->getVersionName() . '</h1>'
-				. '<h2 style="font-size: 32pt;">' . $pdfName . '</h2>'
+				. '<h2 style="font-size: 32pt;">' . htmlspecialchars( $pdfName ) . '</h2>'
 				. '<h3 style="font-size: 24pt; font-weight: normal;">Generated: ' . date('n/d/Y g:i a', time())
 				. '</h3></body></html>';
 		}
