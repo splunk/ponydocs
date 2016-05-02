@@ -318,8 +318,8 @@ class PonyDocsTemplate extends QuickTemplate {
 												$topicLink = $pdfLink . '&topic=1';
 												?>
 												<p>
-													<a href="<?php echo $pdfLink; ?>">Download manual as PDF</a>
-													<a href="<?php echo $topicLink; ?>">Download topic as PDF</a>
+													<a href="<?php echo $pdfLink; ?>">Manual as PDF</a>
+													<a href="<?php echo $topicLink; ?>">Topic as PDF</a>
 												</p>
 												<?php
 												$inUL = FALSE;
