@@ -98,17 +98,17 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 		$productLongName = $pProduct->getLongName();
 		
-		if (!$justThisTopic && PonyDocsProductManual::isManual($productName, $pieces[2])) {
+		if (!$justThisTopic && PonyDocsProductManual::isManual( $productName, $pieces[2] ) ) {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
-		if ( isset($_GET['version']) && PonyDocsProductVersion::IsVersion($productName, $_GET['version'])) {
+		if ( isset( $_GET['version'] ) && PonyDocsProductVersion::IsVersion( $productName, $_GET['version'] ) ) {
 			$versionText = $_GET['version'];
 		} else {
 			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
 		}
 
-		if (!$justThisTopic && !empty($pManual)) {
+		if ( !$justThisTopic && !empty( $pManual ) ) {
 			// We should always have a pManual, if we're printing from a TOC
 			$v = PonyDocsProductVersion::GetVersionByName($productName, $versionText);
 
@@ -125,19 +125,19 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 				// No more processing
 				return false;
 			}
-		} else if ($justThisTopic) {
-			$topicName = new PonyDocsTopic($article);
+		} else if ( $justThisTopic ) {
+			$topic = new PonyDocsTopic($article);
 			$v = PonyDocsProductVersion::GetVersionByName($productName, $versionText);
-			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $topicName->getBaseTopicName()
+			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $topic->getBaseTopicName()
 					. "-book.pdf";
 			// Check first to see if this PDF has already been created and is up to date.  If so, serve it to the user and stop 
 			// execution.
 			if (file_exists($pdfFileName)) {
                                 //die('file exist');
 				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\""
-					. $wgUser->getName() . "\" product=\"" . $productName . "\" version=\"" . $versionText ."\" "
-					. " manual=\"" . $topicName->getBaseTopicName() . "\"");
-				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $topicName->getBaseTopicName());
+					. $wgUser->getName() . "\" product=\"" . addcslashes( $productName ) . "\" version=\"" . $versionText ."\" "
+					. " manual=\"" . addcslashes( $topic->getBaseTopicName() ) . "\"");
+				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $topic->getBaseTopicName());
 				// No more processing
 				return false;
 			}
@@ -147,7 +147,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		$pdfName = '';
-		if ($justThisTopic) {
+		if ( $justThisTopic ) {
 			$html = self::getTopicHTML($pProduct, $article, $v);
 			$title = $article->getTitle();
 			$pdfName = $title->getPrefixedText();
@@ -169,14 +169,14 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		// Okay, create the title page
 		$titlepagefile = "$wgUploadDirectory/" .uniqid('ponydocs-pdf-book-title');
 		$fh = fopen($titlepagefile, 'w+');
-		if ($justThisTopic) {
+		if ( $justThisTopic ) {
 			$coverPageHTML = self::getCoverPageHTML($pProduct, NULL, $v, true, $pdfName);
 		}else {
 			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $pdfName);
 		}
 
 		fwrite($fh, $coverPageHTML);
-		fclose($fh
+		fclose($fh);
 
 		if ( $justThisTopic ) {
 			$format = 'single'; 
@@ -189,7 +189,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 
 		// Send the file to the client via htmldoc converter
 		$wgOut->disable();
-		if ($justThisTopic) {
+		if ( $justThisTopic ) {
 			$cmd  = " --left $x_margin --right $x_margin --top $y_margin --bottom $y_margin";
 			$cmd .= " --header ... --footer $footer --quiet --jpeg --color";
 			$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
@@ -227,7 +227,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
-			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $pdfName . "\"");
+			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . addslashes( $pdfName ) . "\"");
 		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pdfName);
 		// No more processing
 		return false;
