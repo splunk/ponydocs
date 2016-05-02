@@ -142,7 +142,7 @@ class PonyDocsWiki
 			 *	NOTE disabled for now
 			 */
 			//if( in_array( 'V:' . $v->getVersionShortName( ), $validVersions ))
-				$out[] = array( 'name' => $v->getVersionShortName( ), 'status' => $v->getVersionStatus( ));
+				$out[] = array( 'name' => $v->getVersionShortName( ), 'status' => $v->getVersionStatus( ), 'longName' => $v->getVersionLongName( ));
 		}
 
 		return $out;
