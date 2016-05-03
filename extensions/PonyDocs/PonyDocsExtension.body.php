@@ -1317,7 +1317,9 @@ HEREDOC;
 			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
 			$script = <<<EOJS
 $(function() {
-	$('#wpTextbox1').val('\\n\\n[[Category:V:$productName:$versionName]]');
+	if ( $('#wpTextbox1').val() == '' ) {
+		$('#wpTextbox1').val('\\n\\n[[Category:V:$productName:$versionName]]');
+	}
 });
 EOJS;
 			$wgOut->addInLineScript( $script );
