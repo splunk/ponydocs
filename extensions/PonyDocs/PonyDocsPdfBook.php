@@ -135,7 +135,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			if (file_exists($pdfFileName)) {
                                 //die('file exist');
 				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\""
-					. $wgUser->getName() . "\" product=\"" . addcslashes( $productName ) . "\" version=\"" . $versionText ."\" "
+					. $wgUser->getName() . "\" product=\"" . addcslashes( $productName, '"' ) . "\" version=\"" . $versionText ."\" "
 					. " manual=\"" . addcslashes( $topic->getBaseTopicName() ) . "\"");
 				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $topic->getBaseTopicName());
 				// No more processing
@@ -227,7 +227,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
-			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . addslashes( $pdfName ) . "\"");
+			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . addcslashes( $pdfName, '"' ) . "\"");
 		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pdfName);
 		// No more processing
 		return false;
