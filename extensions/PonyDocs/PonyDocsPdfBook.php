@@ -136,7 +136,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
                                 //die('file exist');
 				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\""
 					. $wgUser->getName() . "\" product=\"" . addcslashes( $productName, '"' ) . "\" version=\"" . $versionText ."\" "
-					. " manual=\"" . addcslashes( $topic->getBaseTopicName() ) . "\"");
+					. " manual=\"" . addcslashes( $topic->getBaseTopicName(), '"'  ) . "\"");
 				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $topic->getBaseTopicName());
 				// No more processing
 				return false;
