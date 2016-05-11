@@ -93,8 +93,10 @@ class SpecialDocumentLinks extends SpecialPage {
 			$currentProduct = $titlePieces[1];
 			$currentVersion = $titlePieces[4];
 
-			// Get the latest released version of this product
-			$latestVersionObj = PonyDocsProductVersion::GetLatestReleasedVersion($titlePieces[1]);
+			// Get versions of the requested topic
+			$topic = new PonyDocsTopic( new Article( $title ) );
+			$versions = $topic->getProductVersions
+			
 			if (is_object($latestVersionObj)) {
 				$latestVersion = $latestVersionObj->getVersionShortName();
 			} else {
