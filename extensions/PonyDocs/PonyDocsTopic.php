@@ -335,6 +335,18 @@ class PonyDocsTopic {
 	}
 	
 	/**
+	 * Get just the topic part of the title
+	 * 
+	 * @return string
+	 */
+	public function getTopicName() {
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(),
+			$match ) ) {
+			return $match[3];
+		}
+	}
+	
+	/**
 	 * Return a regex to match the topic parser function
 	 * 
 	 * @param string $title An optional title to search for. If not supplied, we'll search for any title, using a capture group.
