@@ -1,7 +1,7 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
-
+}
 
 /**
  * An instance represents a single PonyDocs manual based upon the short/long name.  It also contains static
@@ -10,66 +10,122 @@ if( !defined( 'MEDIAWIKI' ))
 class PonyDocsProductManual
 {
 	/**
-	 * Short/abbreviated name for the manual used in page paths;  it is always lowercase and should be
-	 * alphabetic but is not required.
-	 *
-	 * @var string
+	 * @access protected
+	 * @var string Short/abbreviated name for the manual used in page paths
 	 */
 	protected $mShortName;
 
 	/**
-	 * Long name for the manual which functions as the 'display' name in the list of manuals and so
-	 * forth.
-	 *
-	 * @var string
+	 * @access protected
+	 * @var string Long name for the manual which functions as the 'display' name in the list of manuals.
 	 */
 	protected $mLongName;
 
+	/**
+	 * @access protected
+	 * @var array Categories that this Manual is in
+	 */
+	protected $mCategories;
+
+	/** 
+	 * @access protected
+	 * @var string Product name
+	 */
 	protected $pName;
 
 	/**
-	 * Our list of manuals loaded from the special page, stored statically.  This only contains the manuals
-	 * which have a TOC defined and tagged to the currently selected version.
-	 *
-	 * @var array
+	 * @access protected 
+	 * @var boolean Stores whether manual is defined as static
+	 */
+	protected $static;
+
+	/**
+	 * @access protected
+	 * @static
+	 * @var array List of manuals loaded from the special page which have a TOC defined for the currently selected version.
 	 */
 	static protected $sManualList = array( );
 
 	/**
-	 * Our COMPLETE list of manuals.
-	 *
-	 * @var array
+	 * @access protected
+	 * @static
+	 * @var array Complete list of manuals.
 	 */
 	static protected $sDefinedManualList = array( );
+	
+	/**
+	 * @access protected
+	 * @static
+	 * @var array An array mapping Categories to Manuals which have a TOC defined for the currently selected version
+	 */
+	static protected $sCategoryMap = array();
 
 	/**
-	 * Constructor is simply passed the short and long (display) name.  We convert the short name to lowercase
-	 * immediately so we don't have to deal with case sensitivity.
+	 * Manual constructor, called primarily by LoadManualsForProduct()
 	 *
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '' )
-	{
-		//$this->mShortName = strtolower( $shortName );
+	public function __construct( $pName, $shortName, $longName = '', $categories = '', $static = FALSE ) {
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
+		$this->mCategories = $categories && $categories != '' ? explode( ',', $categories ) : array();
+		$this->static = $static;
 	}
 
-	public function getShortName( )
-	{
+	public function getShortName() {
 		return $this->mShortName;
 	}
 	
-	public function getLongName( )
-	{
+	public function getLongName() {
 		return $this->mLongName;
 	}
+	
+	/**
+	 * Getter for categories
+	 * @return array
+	 */
+	public function getCategories() {
+		return $this->mCategories;
+	}
 
-	public function getProductName( )
-	{
+	public function getProductName() {
 		return $this->pName;
+	}
+
+	/**
+	 * Is this manual static?
+	 * @return boolean
+	 */
+	public function isStatic() {
+		return $this->static;
+	}
+	
+	/**
+	 * Get existing static documentation version names for this manual
+	 * @return array of versionName strings
+	 */
+	public function getStaticVersionNames() {
+		$return = FALSE;
+		if ( $this->static ) {
+			$versionNames = array();
+			$directory = PONYDOCS_STATIC_DIR . DIRECTORY_SEPARATOR . $this->pName;
+			if ( is_dir( $directory ) ) {
+				$versionNames = scandir( $directory );
+				foreach ( $versionNames as $i => $versionName ) {
+					if ( $versionName == '.'
+						|| $versionName == '..'
+						|| !is_dir(
+							$directory . DIRECTORY_SEPARATOR . $versionName . DIRECTORY_SEPARATOR . $this->mShortName ) ) {
+						unset( $versionNames[$i] );
+					}
+				}
+			}
+			$return = $versionNames;
+		}
+		
+		return $return;
 	}
 
 	/**
@@ -80,29 +136,29 @@ class PonyDocsProductManual
 	 * @return array
 	 */
 
-	static public function LoadManualsForProduct( $productName, $reload = false )
-	{
+	static public function LoadManualsForProduct( $productName, $reload = false ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
-		if( isset(self::$sManualList[$productName]) && sizeof( self::$sManualList[$productName] ) && !$reload )
+		if ( isset(self::$sManualList[$productName]) && sizeof( self::$sManualList[$productName] ) && !$reload ) {
 			return self::$sManualList[$productName];
+		}
 
-		self::$sManualList[$productName] = array( );
+		self::$sManualList[$productName] = array();
+		self::$sCategoryMap[$productName] = array();
 
-		// Use 0 as the last parameter to enforce getting latest revision of 
-		// this article.
-		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
+		// Use 0 as the last parameter to enforce getting latest revision of this article.
+		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
+			PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
 		$content = $article->getContent( );
 
-		if( !$article->exists( ))
-		{
+		if( !$article->exists() ) {
 			/**
 			 * There is no manuals file found -- just return.
 			 */
-			return array( );
+			return array();
 		}
 
 		/**
@@ -116,35 +172,53 @@ class PonyDocsProductManual
 		 * Otherwise, skip it!
 		 */
 
-		if( !preg_match_all( '/{{#manual:\s*(.*)[|](.*)\s*}}/i', $content, $matches, PREG_SET_ORDER ))
-			return array( );
+		// Explode on the closing tag to get an array of manual tags
+		$tags = explode( '}}', $content );
+		foreach ( $tags as $tag ) {
+			$tag = trim( $tag );
+			if ( strpos( $tag, '{{#manual:' ) === 0 ) { 
+				
+				// Remove the opening tag and prefix
+				$manual = str_replace( '{{#manual:', '', $tag ); 
+				$parameters = explode( '|', $manual );
+				$parameters = array_map( 'trim', $parameters );	
+				// Pad out array to avoid notices
+				$parameters = array_pad( $parameters, 3, '');
+				
+				// Set static flag if defined as static
+				$static = FALSE;
+				if ( strpos( $parameters[0], PONYDOCS_PRODUCT_STATIC_PREFIX ) === 0 ) {
+					$parameters[0] = substr( $parameters[0], strlen(PONYDOCS_PRODUCT_STATIC_PREFIX ) );
+					$static = TRUE;
+				}
+				$pManual = new PonyDocsProductManual( $productName, $parameters[0], $parameters[1], $parameters[2], $static );
 
-		foreach( $matches as $m )
-		{
-			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2] );
-			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
+				self::$sDefinedManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
+				
+				// If the Manual is static or there is a TOC for this Product/Manual/Version, add to sManualList
+				if (!$static) {
+					$res = PonyDocsCategoryLinks::getTOCByProductManualVersion(
+						$productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion( $productName ) );
+					if ( !$res->numRows() ) {
+						continue;
+					}
+				}
 
-			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
+				// Handle Manual Categories
+				if ( isset( $parameters[2] ) && $parameters[2] != '' ) {
+					$categories = explode( ',', $parameters[2] );
+					foreach ( $categories as $category ) {
+						self::$sCategoryMap[$productName][$category][$pManual->getShortName()] = $pManual;
+					}
+				} else {
+					self::$sCategoryMap[$productName][PONYDOCS_NO_CATEGORY][$pManual->getShortName()] = $pManual;
+				}
 
-			if( !$res->numRows( )) {
-				continue;
+				self::$sManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
 			}
-
-			self::$sManualList[$productName][strtolower($m[1])] = $pManual;
 		}
 
 		return self::$sManualList[$productName];
-	}
-
-	/**
-	 * Just an alias.
-	 *
-	 * @static
-	 * @return array
-	 */
-	static public function GetManuals( $productName )
-	{
-		return self::LoadManualsForProduct( $productName );
 	}
 
 	/**
@@ -153,12 +227,21 @@ class PonyDocsProductManual
 	 * @static
 	 * @returns array
 	 */
-	static public function GetDefinedManuals( $productName )
-	{
+	static public function GetDefinedManuals( $productName ) {
 		self::LoadManualsForProduct( $productName );
 		return self::$sDefinedManualList[$productName];
 	}
 
+	/**
+	 * Return manuals by category
+	 * @static
+	 * @return array
+	 */
+	static public function getManualsByCategory( $productName ) {
+		self::LoadManualsForProduct( $productName );
+		return self::$sCategoryMap[$productName];
+	}
+	
 	/**
 	 * Our manual list is a map of 'short' name to the PonyDocsManual object.  Returns it, or null if not found.
 	 *
@@ -166,8 +249,7 @@ class PonyDocsProductManual
 	 * @param string $shortName
 	 * @return PonyDocsManual&
 	 */
-	static public function & GetManualByShortName( $productName, $shortName )
-	{
+	static public function & GetManualByShortName( $productName, $shortName ) {
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
 		if( self::IsManual( $productName, $convertedName ))
 			return self::$sDefinedManualList[$productName][strtolower($convertedName)];
@@ -181,8 +263,7 @@ class PonyDocsProductManual
 	 * @param string $shortName
 	 * @return boolean
 	 */
-	static public function IsManual( $productName, $shortName )
-	{
+	static public function IsManual( $productName, $shortName ) {
 		// We no longer specify to reload the manual data, because that's just 
 		// insanity.
 		self::LoadManualsForProduct($productName, false);
@@ -197,8 +278,7 @@ class PonyDocsProductManual
 	 * @static
 	 * @return PonyDocsManual
 	 */
-	static public function GetCurrentManual($productName, $title = null )
-	{
+	static public function GetCurrentManual($productName, $title = null ) {
 		global $wgTitle;
 		$targetTitle = $title == null ? $wgTitle : $title;
 		$pcs = explode( ':', $targetTitle->__toString( ));
@@ -206,9 +286,32 @@ class PonyDocsProductManual
 			return null;
 		return self::GetManualByShortName( $productName, $pcs[2] );
 	}
-};
 
-/**
- * End of file.
- */
-?>
+	/**
+	 * Create a URL path (e.g. Documentation/Foo/latest/Manual) for a Manual
+	 * 
+	 * @param string $productName
+	 * @param string $manualName
+	 * @param string $versionName - Optional. We'll get the selected version (which defaults to 'latest') if empty
+	 * 
+	 * @return string
+	 */
+	static public function getManualURLPath( $productName, $manualName, $versionName = NULL ) {
+		global $wgArticlePath;
+
+		if (! isset( $versionName ) ) {
+			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
+		}
+		
+		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+		if ( $latestVersion ) {
+			if ( $versionName == $latestVersion->getVersionShortName() ) {
+				$versionName = 'latest';
+			}
+		}
+		
+		
+		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
+		return "$base/$productName/$versionName/$manualName";
+	}
+};

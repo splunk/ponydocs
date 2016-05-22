@@ -28,6 +28,25 @@ class SpecialDocumentLinks extends SpecialPage {
 	public function getDescription() {
 		return "View the inbound links from other Documentation topics that links to a specific Documentation topic.";
 	}
+	
+	/**
+	 * Return the colon-separated link with actual version (not base version) for the link to SpecialDocumentLinks
+	 */
+	public static function getDocumentLinksArticle() {
+		
+		global $wgTitle;
+		
+		$partialUrl = '';
+		$currentVersion = PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct(), false);
+		$partialUrl = htmlspecialchars($wgTitle->getPartialURL());
+		$partialUrlParts = explode(':', $partialUrl);
+		if (isset($partialUrlParts[3]) && isset($currentVersion)) {
+			$partialUrl = str_replace($partialUrlParts[3], $currentVersion, $partialUrl);
+		}
+		
+		return $partialUrl;
+		
+	}
 
 	/**
 	 * This is called upon loading the special page.  It should write output to 
@@ -77,7 +96,7 @@ class SpecialDocumentLinks extends SpecialPage {
 			// Get the latest released version of this product
 			$latestVersionObj = PonyDocsProductVersion::GetLatestReleasedVersion($titlePieces[1]);
 			if (is_object($latestVersionObj)) {
-				$latestVersion = $latestVersionObj->getVersionName();
+				$latestVersion = $latestVersionObj->getVersionShortName();
 			} else {
 				error_log('WARNING [PonyDocs] [' . __CLASS__ . '] Unable to find latest released version of ' . $titlePieces[1]);
 			}
@@ -93,7 +112,7 @@ class SpecialDocumentLinks extends SpecialPage {
 					$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($titleNoVersion, NULL, $ver);
 
 					// Compare this version with latest version. If they're the same, add the URL with "latest" too.
-					$thisVersion = $ver->getVersionName();
+					$thisVersion = $ver->getVersionShortName();
 					if ($thisVersion == $latestVersion) {
 						$titleLatestVersion = 
 							$titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
@@ -132,8 +151,8 @@ class SpecialDocumentLinks extends SpecialPage {
 					// If this is a PonyDocs style links, with slashes,
 					// save product, version, display URL accordingly.
 					$pieces = explode('/', $result->from_link);
-					$fromProduct = ucfirst($pieces[1]);
-					$fromVersion = ucfirst($pieces[2]);
+					$fromProduct = $pieces[1];
+					$fromVersion = $pieces[2];
 					$displayUrl = $result->from_link;
 				} else {
 					// If this is a generic mediawiki style link, with colons (or not),
@@ -141,11 +160,11 @@ class SpecialDocumentLinks extends SpecialPage {
 					// from the display URL. Leave version blank.
 					if (strpos($result->from_link, ':') !== false) {
 						$pieces = explode(':', $result->from_link);
-						$fromProduct = ucfirst($pieces[0]); // The "product" will be the namespace
+						$fromProduct = $pieces[0]; // The "product" will be the namespace
 						$displayUrl = $pieces[1]; // So the namespace doesn't show in every URL
 					} else { // it's possible to have a link with no colons
 						$fromProduct = 'Other'; // No namespace, so the "product" will be the string "Other"
-						$displayUrl = ucfirst($result->from_link);
+						$displayUrl = $result->from_link;
 					}
 					$fromVersion = 'None'; // No concept of versions outside of PonyDocs
 				}
@@ -185,7 +204,7 @@ class SpecialDocumentLinks extends SpecialPage {
 						<h2><?php echo $fromProduct; ?></h2>
 						<?php
 						foreach ($fromProductVersions as $fromProductVersionObj) {
-							$fromProductVersionName = $fromProductVersionObj->getVersionName();
+							$fromProductVersionName = $fromProductVersionObj->getVersionShortName();
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
 								// Expand containers of incoming links from the current Product and Version

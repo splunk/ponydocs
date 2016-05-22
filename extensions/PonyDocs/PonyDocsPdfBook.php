@@ -46,7 +46,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 
 		// Get the title and make sure we're in Documentation namespace
 		$title = $article->getTitle();
-		if($title->getNamespace() != PONYDOCS_DOCUMENTATION_NAMESPACE_ID) {
+		if($title->getNamespace() != NS_PONYDOCS) {
 			return true;
 		}
 
@@ -78,9 +78,9 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		if (strpos($pieces[2], "TOC") && count($pieces) == 3) {
 			$pieces[2] = substr($pieces[2], 0, strpos($pieces[2], "TOC"));
 		} else if (count($pieces) != 5) {
-			// something is wrong, let's get out of here
-			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
-			if (PONYDOCS_REDIRECT_DEBUG) {
+			// something is wrong, let's get out of here			
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
 			}
 			header( "Location: " . $defaultRedirect );
@@ -101,7 +101,11 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
-		$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
+		if ( isset($_GET['version']) && PonyDocsProductVersion::IsVersion($productName, $_GET['version'])) {
+			$versionText = $_GET['version'];
+		} else {
+			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
+		}
 
 		if (!empty($pManual)) {
 			// We should always have a pManual, if we're printing from a TOC

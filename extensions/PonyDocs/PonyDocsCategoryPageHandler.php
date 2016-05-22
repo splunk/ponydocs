@@ -3,7 +3,7 @@ if( !defined( 'MEDIAWIKI' )) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
-require_once($IP . "/includes/CategoryPage.php");
+require_once( "$IP/includes/page/CategoryPage.php" );
 
 class PonyDocsCategoryPageHandler extends CategoryViewer {
 	protected $articleCount = 0;
@@ -34,7 +34,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 			$categoryViewer = new PonyDocsCategoryPageHandler($categoryArticle->getTitle(), $from, $until);
 			$res = $categoryViewer->getHTML();
 			// Store in our cache
-			$cache->put($cacheKey, $res, time() + CATEGORY_CACHE_TTL);
+			$cache->put($cacheKey, $res, CATEGORY_CACHE_TTL);
 		}
 		$wgOut->addHTML($res);
 		return false; // We don't want to continue processing the "normal" mediawiki path, so return false here.
@@ -108,7 +108,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 	 * @return string
 	 * @private
 	 */
-	function columnList( $articles, $articles_start_char ) {
+	static function columnList( $articles, $articles_start_char ) {
 		$result = ksort($articles, SORT_STRING);
 		$r = '';
 
@@ -130,7 +130,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 	 * @see columnList
 	 *
 	 */
-	function shortList($articles, $articles_start_char) {
+	static function shortList($articles, $articles_start_char) {
 		return $this->columnList($articles, $articles_start_char);
 	}
 
@@ -173,7 +173,7 @@ class PonyDocsCategoryPageHandler extends CategoryViewer {
 		if( $c > 0 ) {
 			$r = "<div id=\"mw-pages\">\n";
 			$r .= '<h2>' . wfMsg( 'category_header', $ti ) . "</h2>\n";
-			$r .= wfMsgExt( 'categoryarticlecount', array( 'parse' ), $c );
+			$r .= wfMsgExt( 'Category-article-count', array( 'parse' ), $c, '{{NUMBEROFARTICLES}}' );
 			$r .= $this->formatList( $this->articles, $this->articles_start_char );
 			$r .= "\n</div>";
 		}

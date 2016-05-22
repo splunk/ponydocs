@@ -6,7 +6,7 @@ if( !defined( 'MEDIAWIKI' ) ) {
 /**
  * Needed since we subclass it;  it doesn't seem to be loaded elsewhere.
  */
-require_once( "$IP/includes/SpecialPage.php" );
+require_once( "$IP/includes/specialpage/SpecialPage.php" );
 
 /**
  * Register our 'Special' page so it is listed and accessible.
@@ -78,10 +78,10 @@ class SpecialRenameVersion extends SpecialPage
 	 * @param $productName string product short name
 	 * @param $manualName string manual short name
 	 * @param $sourceVersionName string String representation of the source version
-	 * @param $targetVersionName string String representaiton of the target version
+	 * @param $targetVersionShortName string String representaiton of the target version
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionName ) {
+	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionShortName ) {
 		global $wgScriptPath;
 		ob_start();
 
@@ -89,14 +89,14 @@ class SpecialRenameVersion extends SpecialPage
 		$startTime = (float)$msec + (float)$sec; 
 
 		$logFields = "action=start status=success product=$productName manual=$manualName "
-			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
 		error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );
 
 		// Validate product and versions
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$manual = PonyDocsProductManual::getManualByShortName( $productName, $manualName );
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $productName, $sourceVersionName );
-		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersionName );
+		$targetVersion = PonyDocsProductVersion::GetVersionByName( $productName, $targetVersionShortName );
 		if ( !($product && $manual && $sourceVersion && $targetVersion ) ) {
 			$result = array( 'success', false );
 			$result = json_encode( $result );
@@ -108,7 +108,7 @@ class SpecialRenameVersion extends SpecialPage
 		
 		print "Beginning process job for manual: $manualName<br />";
 		print "Source version is $productName:$sourceVersionName<br />";
-		print "Target version is $targetVersionName<br />";
+		print "Target version is $targetVersionShortName<br />";
 		
 		// Get topics
 		// Update log file
@@ -153,7 +153,7 @@ class SpecialRenameVersion extends SpecialPage
 		}
 
 		$logFields = "action=topics status=success product=$productName manual=$manualName "
-			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
 		error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );
 
 		// Enable speed processing to avoid any unnecessary processing on topics modified by this tool.
@@ -197,12 +197,12 @@ class SpecialRenameVersion extends SpecialPage
 						PonyDocsRenameVersionEngine::changeVersionOnTopic(
 							$topic['title'], $sourceVersion, $targetVersion );
 							$logFields = "action=topic status=success product=$productName manual=$manualName "
-								. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+								. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
 						error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );
 						print 'Complete</div>';
 					} catch( Exception $e ) {
 						$logFields = "action=topic status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+							. "title={$topic['title']} sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
 						error_log( 'WARNING [' . __METHOD__ ."] [RenameVersion] $logFields" );
 						print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 					}
@@ -214,28 +214,32 @@ class SpecialRenameVersion extends SpecialPage
 			// Determine if TOC already exists for target version.
 			if ( !PonyDocsBranchInheritEngine::TOCExists( $product, $manual, $sourceVersion ) ) {
 				print '<div class="normal">TOC Does not exist for Manual ' . $manual->getShortName()
-					. ' with version ' . $targetVersion->getVersionName() . '</div>';
+					. ' with version ' . $targetVersion->getVersionShortName() . '</div>';
 			} else {
 				try {
 					print '<div class="normal">Attempting to update TOC...';
 					PonyDocsRenameVersionEngine::changeVersionOnTOC( $product, $manual, $sourceVersion, $targetVersion);
 					$logFields = "action=TOC status=success product=$productName manual=$manualName "
-						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
 					error_log( 'INFO [' . __METHOD__ ."] [RenameVersion] $logFields" );
 					print 'Complete</div>' ;
 				} catch ( Exception $e ) {
 					$logFields = "action=TOC status=failure error={$e->getMessage()} product=$productName manual=$manualName "
-						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+						. "sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
 					error_log( 'WARNING [' . __METHOD__ ."] [RenameVersion] $logFields" );
 					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
+		
 		}
 
 		list ( $msec, $sec ) = explode( ' ', microtime() ); 
 		$endTime = (float)$msec + (float)$sec; 
 		print "Done with $manualName! Execution Time: " . round($endTime - $startTime, 3) . ' seconds<br />';
-
+		//WEB-10792, Clear TOCCACHE for the target version only, each Manual at a time
+		PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);		
+		//Also clear the NAVCache for the target version
+		PonyDocsProductVersion::clearNAVCache($targetVersion);		
 		unlink($path);
 		$buffer = ob_get_clean();
 		return $buffer;
@@ -321,8 +325,8 @@ class SpecialRenameVersion extends SpecialPage
 			<select name="version" id="versionselect_sourceversion">
 				<?php
 				foreach ( $versions as $version ) { ?>
-					<option value="<?php echo $version->getVersionName();?>">
-						<?php echo $version->getVersionName() . " - " . $version->getVersionStatus();?></option>
+					<option value="<?php echo $version->getVersionShortName();?>">
+						<?php echo $version->getVersionShortName() . " - " . $version->getVersionStatus();?></option>
 					<?php
 				} ?>
 			</select>
@@ -331,8 +335,8 @@ class SpecialRenameVersion extends SpecialPage
 			<select name="version" id="versionselect_targetversion">
 				<?php
 				foreach( $versions as $version ) { ?>
-					<option value="<?php echo $version->getVersionName();?>">
-						<?php echo $version->getVersionName() . " - " . $version->getVersionStatus();?></option>
+					<option value="<?php echo $version->getVersionShortName();?>">
+						<?php echo $version->getVersionShortName() . " - " . $version->getVersionStatus();?></option>
 					<?php
 				} ?>
 			</select>

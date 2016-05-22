@@ -20,15 +20,15 @@ class PonyDocsBranchInheritEngine {
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
-	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
+	 * @param $split Should we create a new page?
 	 * @returns boolean
 	 */
 	static function branchTopic(
-		$topicTitle, $version, $tocSection, $tocTitle, $deleteExisting = false, $split = true, $skipTOC = false ) {
+		$topicTitle, $version, $tocSection, $tocTitle, $deleteExisting, $split ) {
 		// Clear any hooks so no weirdness gets called after we create the 
 		// branch
 		$wgHooks['ArticleSave'] = array();
-		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Branch From" );
 		}
 
@@ -58,7 +58,7 @@ class PonyDocsBranchInheritEngine {
 					else {
 						// Do actual delete.
 						$article->doDelete( "Requested purge of conficting article when branching topic " . $topicTitle
-							. " with version: " . $version->getVersionName(), false );
+							. " with version: " . $version->getVersionShortName(), false );
 					}
 				}
 			}
@@ -75,8 +75,8 @@ class PonyDocsBranchInheritEngine {
 			// No such title exists in the system
 			throw new Exception( "Invalid Title to Branch From. Target Article does not exist:" . $topicTitle );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
-			. $version->getVersionName();
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
+			. $version->getVersionShortName();
 
 		$newArticle = PonyDocsArticleFactory::getArticleByTitle( $title );
 		if ( $newArticle->exists() ) {
@@ -89,16 +89,16 @@ class PonyDocsBranchInheritEngine {
 		// Build the versions which will go into the new array.
 		$newVersions = array();
 		// Text representation of the versions
-		$newVersions[] = $version->getVersionName();
+		$newVersions[] = $version->getVersionShortName();
 		if ( $split ) {
 			// We need to get all versions from PonyDocsVersion
 			$rawVersions = PonyDocsProductVersion::GetVersions( $productName );
 			$existingVersions = array();
 			foreach ( $rawVersions as $rawVersion ) {
-				$existingVersions[] = $rawVersion->getVersionName();
+				$existingVersions[] = $rawVersion->getVersionShortName();
 			}
 			// $existingVersions is now an array of version names in incremental order
-			$versionIndex = array_search( $version->getVersionName(), $existingVersions );
+			$versionIndex = array_search( $version->getVersionShortName(), $existingVersions );
 			// versionIndex is the index where our target version is
 			// we will use this to determine what versions need to be brought over.
 			preg_match_all( "/\[\[Category:V:([^\]]*):([^\]]*)\]\]/", $existingContent, $matches );
@@ -131,9 +131,6 @@ class PonyDocsBranchInheritEngine {
 		// doEdit on new article
 		$newArticle->doEdit( $newContent, "Created new topic from branched topic " . $topicTitle, EDIT_NEW );
 
-		if ( !$skipTOC ) {
-			self::addToTOC( $product, $manual, $version, $tocSection, $tocTitle );
-		}
 		return $title;
 	}
 
@@ -146,15 +143,13 @@ class PonyDocsBranchInheritEngine {
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
-	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance 
-	 * 							reasons)
 	 * @returns boolean
 	 */
-	static function inheritTopic( $topicTitle, $version, $tocSection, $tocTitle, $deleteExisting = false, $skipTOC = false ) {
+	static function inheritTopic( $topicTitle, $version, $tocSection, $tocTitle, $deleteExisting ) {
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the inherit
 		$wgHooks['ArticleSave'] = array();
-		if ( !preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
+		if ( !preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to Inherit From: " . $topicTitle );
 		}
 
@@ -184,7 +179,7 @@ class PonyDocsBranchInheritEngine {
 				}
 				else {
 					$article->doDelete( "Requested purge of conficting article when inheriting topic " . $topicTitle
-						. " with version: " . $version->getVersionName(), false );
+						. " with version: " . $version->getVersionShortName(), false );
 				}
 			}
 		}
@@ -201,20 +196,15 @@ class PonyDocsBranchInheritEngine {
 		// Check for existing category.
 		$content = $existingArticle->getContent();
 		if ( !preg_match(
-			"/\[\[Category:V:" . preg_quote($productName . ":" . $version->getVersionName()) . "\]\]/", $content ) ) {
-			$content .= "[[Category:V:" . $productName . ":" . $version->getVersionName() . "]]";
+			"/\[\[Category:V:" . preg_quote($productName . ":" . $version->getVersionShortName()) . "\]\]/", $content ) ) {
+			$content .= "[[Category:V:" . $productName . ":" . $version->getVersionShortName() . "]]";
 			// Save the article as an edit
 			$existingArticle->doEdit(
 				$content,
-				"Inherited topic " . $topicTitle . " with version: " . $productName . ":" . $version->getVersionName(),
+				"Inherited topic " . $topicTitle . " with version: " . $productName . ":" . $version->getVersionShortName(),
 				EDIT_UPDATE );
 		}
 		
-		// Okay, update our toc.
-		if ( !$skipTOC ) {
-			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manual );
-			self::addToTOC( $product, $manual, $version, $tocSection, $tocTitle );
-		}
 		return $title;
 	}
 
@@ -227,15 +217,27 @@ class PonyDocsBranchInheritEngine {
 	 */
 	static public function TOCExists( $product, $manual, $version ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $version->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:"
-			. $dbr->strencode(strtolower($product->getShortName()) . ':' . strtolower($manual->getShortName())) . "toc%'";
-		$res = $dbr->query( $query, __METHOD__ );
-
+		
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title' ,
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $version->getVersionShortName() ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '"
+					. $dbr->strencode( strtoupper( $product->getShortName() ) ) . ':' . strtoupper( $manual->getShortName() )
+					. "TOC%'",
+			),
+			__METHOD__
+		);
+		
 		if ( $res->numRows() ) {
 			$row = $dbr->fetchObject( $res );
-			return $row->cl_sortkey;
+			return PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 		}
+
 		return false;
 	}
 
@@ -253,14 +255,14 @@ class PonyDocsBranchInheritEngine {
 		$title = self::TOCExists( $product, $manual, $sourceVersion );
 		if ( $title == false ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $sourceVersion->getVersionName() );
+				"TOC does not exist for " . $manual->getShortName() . " with version " . $sourceVersion->getVersionShortName() );
 		}
 		$title = Title::newFromText( $title );
 		$wgTitle = $title;
 		$article = new Article( $title );
 		if ( !$article->exists() ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $sourceVersion>getVersionName() );
+				"TOC does not exist for " . $manual->getShortName() . " with version " . $sourceVersion>getVersionShortName() );
 		}
 		
 		// Let's grab the content and also do an update
@@ -268,7 +270,7 @@ class PonyDocsBranchInheritEngine {
 
 		// Remove old Version from old TOC (if exists)
 		preg_match_all(
-			"/\[\[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionName() . "\]\]/",
+			"/\[\[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionShortName() . "\]\]/",
 			$content,
 			$matches );
 		foreach ( $matches[0] as $match ) {
@@ -276,16 +278,16 @@ class PonyDocsBranchInheritEngine {
 		}
 		$article->doEdit(
 			$oldContent,
-			"Removed version " . $product->getShortName() . ':' . $targetVersion->getVersionName(),
+			"Removed version " . $product->getShortName() . ':' . $targetVersion->getVersionShortName(),
 			EDIT_UPDATE );
 
 		// Now do the TOC for the new version
 		if ( self::TOCExists($product, $manual, $targetVersion ) ) {
 			throw new Exception(
-				"TOC Already exists for " . $manual->getShortName() . " with version: " . $targetVersion->getVersionName() );
+				"TOC Already exists for " . $manual->getShortName() . " with version: " . $targetVersion->getVersionShortName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
-			. $targetVersion->getVersionName();
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
+			. $targetVersion->getVersionShortName();
 		$newTitle = Title::newFromText( $title );
 		$wgTitle = $newTitle;
 
@@ -299,7 +301,7 @@ class PonyDocsBranchInheritEngine {
 		// identify the last of the old tags
 		$lastTag = $matches[0][count( $matches[0] ) - 1];
 		// make the new tag
-		$newVersionTag = "[[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionName() . "]]";
+		$newVersionTag = "[[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionShortName() . "]]";
 		foreach ( $matches[0] as $match ) {
 			// delete tags that aren't the last tag
 			if ( $match != $lastTag ) { 
@@ -311,10 +313,9 @@ class PonyDocsBranchInheritEngine {
 		}
 		$newArticle->doEdit(
 			$content,
-			"Branched TOC For Version: " . $product->getShortName() . ':' . $sourceVersion->getVersionName() . " from Version: "
-				. $product->getShortName() . ':' . $sourceVersion->getVersionName(),
+			"Branched TOC For Version: " . $product->getShortName() . ':' . $sourceVersion->getVersionShortName() . " from Version: "
+				. $product->getShortName() . ':' . $sourceVersion->getVersionShortName(),
 			EDIT_NEW);
-		PonyDocsExtension::ClearNavCache();
 		return $title;
 	}
 
@@ -331,10 +332,10 @@ class PonyDocsBranchInheritEngine {
 		global $wgTitle;
 		if ( self::TOCExists($product, $manual, $version ) ) {
 			throw new Exception(
-				"TOC Already exists for " . $manual->getShortName() . " with version: " . $version->getVersionName() );
+				"TOC Already exists for " . $manual->getShortName() . " with version: " . $version->getVersionShortName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
-			. $version->getVersionName();
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
+			. $version->getVersionShortName();
 
 		$newTitle = Title::newFromText( $title );
 		$wgTitle = $newTitle;
@@ -345,12 +346,11 @@ class PonyDocsBranchInheritEngine {
 		}
 
 		// New TOC. Create empty content.
-		$newContent = "\n\n[[Category:V:" . $product->getShortName() . ":" . $version->getVersionName() . "]]";
+		$newContent = "\n\n[[Category:V:" . $product->getShortName() . ":" . $version->getVersionShortName() . "]]";
 		$newArticle->doEdit(
 			$newContent,
-			"Created TOC For Version: " . $product->getShortName() . ":" . $version->getVersionName(),
+			"Created TOC For Version: " . $product->getShortName() . ":" . $version->getVersionShortName(),
 			EDIT_NEW);
-		PonyDocsExtension::ClearNavCache();
 		return $title;
 	}
 
@@ -367,14 +367,14 @@ class PonyDocsBranchInheritEngine {
 		$title = self::TOCExists( $product, $manual, $version );
 		if ( $title == false ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
+				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
 		}
 		$title = Title::newFromText( $title );
 		$wgTitle = $title;
 		$article = new Article( $title );
 		if ( !$article->exists() ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
+				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
 		}
 
 		// Okay, let's search for the content.
@@ -383,40 +383,9 @@ class PonyDocsBranchInheritEngine {
 		$lastTag = $matches[0][count($matches[0]) - 1];
 		$content = str_replace(
 			$lastTag,
-			$lastTag . "[[Category:V:" . $product->getShortName() . ':' . $newVersion->getVersionName() . "]]",
+			$lastTag . "[[Category:V:" . $product->getShortName() . ':' . $newVersion->getVersionShortName() . "]]",
 			$content );
-		$article->doEdit( $content, "Added version " . $product->getShortName() . ':' . $version->getVersionName(), EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return TRUE;
-	}
-
-	/**
-	 * Remove entry from TOC. Will remove any instance of the entry from the TOC.
-	 *
-	 * @param $manual PonyDocsManual The manual the TOC belongs to.
-	 * @param $version PonyDocsVersion The version the TOC belongs to.
-	 * @returns boolean
-	 */
-	static function removeFromTOC( $product, $manual, $version, $tocTitle ) {
-		global $wgTitle;
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == false ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText($title);
-		$wgTitle = $title;
-		$article = new Article($title);
-		if ( !$article->exists() ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		$content = preg_replace( "/^ \* \{\{#topic:" . $tocTitle . "}}$/", "", $content );
-		$article->doEdit( $content, "Removed topic " . $tocTitle, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
+		$article->doEdit( $content, "Added version " . $product->getShortName() . ':' . $version->getVersionShortName(), EDIT_UPDATE );
 		return TRUE;
 	}
 
@@ -433,14 +402,14 @@ class PonyDocsBranchInheritEngine {
 		$title = self::TOCExists( $product, $manual, $version );
 		if ( $title == FALSE ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
+				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
 		}
 		$title = Title::newFromText($title);
 		$wgTitle = $title;
 		$article = new Article($title);
 		if (!$article->exists() ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
+				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
 		}
 
 		// Okay, let's search for the content.
@@ -463,11 +432,12 @@ class PonyDocsBranchInheritEngine {
 				$newContent = '';
 				foreach ( $content as $line ) {
 					$evalLine = trim(str_replace( '?', '', strtolower($line) ) );
+					$topicRegex = PonyDocsTopic::getTopicRegex($evalTopic);
 					if ( preg_match( "/^" . $evalSectionName . "$/", $evalLine ) ) {
 						$inSection = TRUE;
 						$newContent .= $line . "\n";
 						continue;
-					} elseif ( preg_match( "/\* \{\{#topic:" . $evalTopic . "\s*}}/", $evalLine ) ) {
+					} elseif ( preg_match( "/\*\s*$topicRegex/", $evalLine ) ) {
 						if ( $inSection ) {
 							$found = TRUE;
 						}
@@ -476,7 +446,7 @@ class PonyDocsBranchInheritEngine {
 					} elseif ( preg_match( "/^\s?$/", $evalLine ) ) {
 						if ( $inSection && !$found ) {
 							$newContent .= "* {{#topic:" . $topic . "}}\n\n";
-							$found = true;
+							$found = TRUE;
 							continue;
 						}
 						$inSection = FALSE;
@@ -496,79 +466,6 @@ class PonyDocsBranchInheritEngine {
 		}
 		// Okay, do the edit
 		$article->doEdit( $content, "Updated TOC in bulk branch operation.", EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
-		return true;
-	}
-
-	/**
-	 * Adds entry to TOC. Will not add if entry already exists in TOC under section.
-	 * Note, this isn't used anymore in the inherit/branch process, but is kept for historical purposes in case it's needed.
-	 * 
-	 * @param $manual PonyDocsManual The Manual the TOC belongs to.
-	 * @param $version PonyDocsVersion the Version the TOC belongs to.
-	 * @param $tocSection string The TOC section of the title.
-	 * @param $tocTitle string The topic title to add.
-	 * @returns boolean
-	 */
-	static function addToTOC( $product, $manual, $version, $tocSection, $tocTitle ) {
-		global $wgTitle;
-
-		// Cleanup title
-		$tocTitle = preg_replace( "/[^a-zA-Z0-9\s]/", "", $tocTitle );
-
-		$title = self::TOCExists( $product, $manual, $version );
-		if ( $title == FALSE ) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		$title = Title::newFromText( $title );
-		$wgTitle = $title;
-		$article = new Article( $title );
-		if(!$article->exists()) {
-			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName() );
-		}
-		
-		// Okay, let's search for the content.
-		$content = $article->getContent();
-		$content = explode( "\n", $content );
-		$found = FALSE;
-		$inSection = FALSE;
-		$newContent = '';
-		foreach ( $content as $line ) {
-			if ( preg_match("/^" . $tocSection . "$/", $line ) ) {
-				$inSection = TRUE;
-				$newContent .= $line . "\n";
-				continue;
-			}
-			if ( preg_match("/^\* \{\{#topic:" . $tocTitle . "}}$/", $line ) ) {
-				if ( $inSection ) {
-					$found = TRUE;
-				}
-				$newContent .= $line . "\n";
-				continue;
-			}
-			if ( preg_match("/^\s?$/", $line ) ) {
-				if ( $inSection && !$found ) {
-					$newContent .= "* {{#topic:" . $tocTitle . "}}\n\n";
-					$found = TRUE;
-					continue;
-				}
-				$inSection = FALSE;
-			}
-			$newContent .= $line . "\n";
-		}
-		
-		if ( !$found ) {
-			// Then the section didn't event exist, we should add to TOC and add the item.
-			// We need to add it before the Category line.
-			$text = $tocSection . "\n" . "* {{#topic:" . $tocTitle . "}}\n\n[[Category";
-			$newContent = preg_replace( "/\[\[Category/", $text, $newContent );
-		}
-
-		// Okay, do the edit
-		$article->doEdit( $newContent, "Updated TOC with " . $tocTitle . " in Section " . $tocSection, EDIT_UPDATE );
-		PonyDocsExtension::ClearNavCache();
 		return TRUE;
 	}
 
@@ -576,24 +473,32 @@ class PonyDocsBranchInheritEngine {
 	 * Determine if there is an existing topic that may interfere with a target topic and version.
 	 * If conflict(s) exist, return the topic names.
 	 *
-	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*' format
+	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*' format
 	 * @param $targetVersion PonyDocsVersion the version to search for
 	 * @return Array of conflicting topic names, otherwise false if no conflict exists.
 	 */
 	static function getConflicts( $product, $topicTitle, $targetVersion ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $topicTitle, $match ) ) {
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $topicTitle, $match ) ) {
 			throw new Exception( "Invalid Title to get conflicts for" );
 		}
 		$productName = $match[1];
 		$manual = $match[2];
 		$title = $match[3];
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':'
-			. $targetVersion->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE '"
-			. $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manual . ":" . $title ) )
-			. ":%'";
-		$res = $dbr->query( $query, __METHOD__ );
-
+		
+		$res = $dbr->select(
+			array('categorylinks', 'page'),
+			'page_title',
+			array(
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $targetVersion->getVersionShortName() ) . "'",
+				'cl_type = "page"',
+				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productName:$manual:$title" ) ) . ":%'",
+			),
+			__METHOD__
+		);
+		
 		if ( $res->numRows() ) {
 			/**
 			 * Technically we should only EVER get one result back. But who knows with past doc wiki consistency issues.
@@ -602,7 +507,7 @@ class PonyDocsBranchInheritEngine {
 
 			// Then let's return the topics that conflict.
 			while ( $row = $dbr->fetchObject( $res ) ) {
-				$conflicts[] = $row->cl_sortkey;
+				$conflicts[] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 			}
 			return $conflicts;
 		}
@@ -611,7 +516,7 @@ class PonyDocsBranchInheritEngine {
 		// Determine if any page exists that doesn't have a category link association
 		// or when its base version is not in its categories.
 		$destinationTitle =
-			PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionName();
+			PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionShortName();
 		$destinationArticle = PonyDocsArticleFactory::getArticleByTitle( $destinationTitle );
 		if ( $destinationArticle->exists() ) {
 			return array( $destinationArticle->metadata['title'] );

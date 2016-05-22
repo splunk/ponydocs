@@ -1,50 +1,49 @@
-PonyDocs 1.0 Beta 2 - June 14th, 2012
-=====================================
-
-Open-source software documentation Extension and Skin for MediaWiki
-
-For assistance:
-* Full Documentation: http://docs.splunk.com/Documentation/Ponydocs
-* Mailing list: https://groups.google.com/forum/#!forum/ponydocs
-* Developers: ponydocs@splunk.com
-
-Splunk > Open Source FTW!
+Ponydocs 1.1 - June 2015
+=======================
 
 Prerequisites & Assumptions
 ---------------------------
 
-1. You're a sysadmin
-2. You have a MediaWiki system at the ready.
-   PonyDocs has only been tested with [MW 1.16.4](http://bit.ly/KqnCbw?mediawiki-installer), PHP 5.2.16 or 5.3.3 and MySQL 5.1.52.
-3. You can update apache's conf files for the MediaWiki vhost.
-4. You can run SQL commands on the MediaWiki DB.
-5. You know this is a Beta-quality release ;)
-6. You promise to read AND follow all these steps IN ORDER.
-7. You've made a backup of your MediaWiki DB in case you didn't meet the previous requirement.
+### For Ponydocs
 
-It is further assumed that your wiki has 4 classes of users:
-
-* Anonymous users and guests who are logged in
-	* Users who are in the (default) or "user" group, and/or one of the per-Product "preview" groups.
-	* They can *only* read and cannot edit any pages.
-    * Preview users for a Product can view content in preview Versions.
+1. LAMP stack.
+1. MediaWiki 1.24.x, PHP 5.2.x or 5.3.x, MySQL 5.x
+1. Apache 2.x
+1. There are four classes of users in your wiki:
+* Anonymous and guests who are logged in
+	* These are folks who fall into the (default) or "user" group. 
+	* They can *only* read and can not edit any pages.
 * Employees
-	* Users who are in the "Employee" group can edit any single page but cannot use advanced PonyDocs functions like editing
-      TOCs, Versions, and Manuals, and Branching or Inheriting.
-* Docteam members
-	* Users who can edit content and access all PonyDocs Special Pages.
-	* They are in the per-Product "docteam" group.
-      i.e if you have a Product called "Foo", a docteam user would need to be in the "Foo-docteam" group.
+	* Folks who are in the "Employee" group and can edit any single page but not use any advanced Ponydocs functions like creating
+      TOCs, Versions and Branching or Inheriting
+* Editors
+	* Folks who can do it all, short of editing user perms.
+	* They are in the "PRODUCT-docteam" group.
+	* There is a per product docteam group so if you had a product called "Foo", the editor would need  to be in the "Foo-docteam"
+	  group
 * Admins
 	* Users who can edit User group membership.
+
+### For this INSTALL document
+
+1. You can run SQL commands on the MediaWiki DB
+1. You backed up your MediaWiki DB before starting the installation
 
 Quick Install Instructions
 --------------------------
 
-Note: Please complete all install instructions before attempting to use your new PonyDocs installation.
+Notes: Please complete all install instructions before attempting to use your new Ponydocs installation. 
 Failure to do so will result in frustration and keyboard tossing.
 
-### 1) Configure Apache.
+### 1) Patch MediaWiki
+
+The way that Ponydocs maps many URLs to the same MW Page/Title requires a small patch. We don't fully understand the ramifications
+of this change, and we are working on figuring out how to map URLs without patching core MW.
+
+Apply MediaWiki.patch in this directory to your MediaWiki directory. Or read the patch and make the modification manually, it's
+a one-line change.
+
+### 2) Configure Apache.
 
 1. Modify your Apache configuration for the use of friendly urls.  
 2. Modify your host to enable rewrite rules.
@@ -65,22 +64,26 @@ Failure to do so will result in frustration and keyboard tossing.
 	# Rewrite /Documentation/ to /Documentation
 	RewriteRule ^/Documentation/$   /Documentation [L,R=301]
 
+	# Proxy /DocumentationStatic to Special:StaticDocServer
+	RewriteRule ^/DocumentationStatic	- [L]
+	ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
+
 	# Rewrite rule to handle passing ugly doc urls to pretty urls
 	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
 	RewriteRule ^/Documentation:(.*):(.*):(.*)		/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
-	# get home page requests to Documentation
+	# Get home page requests to Documentation
 	RewriteRule ^/$ /Documentation [R]
 
-	# all other requests go to specific page
-	RewriteRule ^/(\/*)(.*)$ /index.php?title=$3 [PT,QSA]
+	# All other requests go through MW router
+	RewriteRule ^/.*$ /index.php [PT,QSA]
 	################# END SAMPLE APACHE CONFIGURATION #################
 	```
 3. Restart Apache so Rewrite Rules will take affect.
 
-### 2) Modify LocalSettings.php
+### 3) Modify LocalSettings.php
 
-1. Set `$wgLogo` to the PonyDocs logo if you like!
+1. Set `$wgLogo` to the Ponydocs logo if you like!
 2. Modify your `$wgGroupPermissions` to add PonyDoc's additional permissions to your existing groups.
 	* These permissions are named are branchTopic, branchmanual, inherit, viewall.
 	* You can also create new groups for your permissions.
@@ -161,42 +164,72 @@ Failure to do so will result in frustration and keyboard tossing.
 	define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');
 	define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
 
+        // Namespace setup
+	define( 'PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation' );
+	define( 'NS_PONYDOCS', 100 );
+	$wgExtraNamespaces[NS_PONYDOCS] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
+	// Include the Ponydocs namespace in article counts
+	$wgContentNamespaces[] = NS_PONYDOCS;
+
+	// Enable cache
+	define( 'PONYDOCS_CACHE_ENABLED', TRUE );
+
+	// Debug logging
+	define( 'PONYDOCS_DEBUG', FALSE );
+	
+	// Temp directory
+	define( 'PONYDOCS_TEMP_DIR', '/tmp/');
+
+	// Category cache expiration in seconds
+	define( 'CATEGORY_CACHE_TTL', 300 );
+	define( 'NAVDATA_CACHE_TTL', 3600 );
+	define( 'TOC_CACHE_TTL', 3600 );
+
+	// Key in the Category map for Products and Manuals w/o categories.
+	// Change to some string that you will not use as a category name
+	define( 'PONYDOCS_NO_CATEGORY', 'UNCATEGORIZED' );
+
 	// NOTE: this *must* match what is in Documentation:Products.
 	// This will be fixed in later versions
 	$ponyDocsProductsList = array('Foo');
 
-	include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");
+	// Crawler Passthrough (optional) allow a crawler at a specific IP to index older and unreleased Versions
+	define( 'PONYDOCS_CRAWLER_ADDRESS', "192.168.1.1" );
+	define( 'PONYDOCS_CRAWLER_USERAGENT_REGEX', "/foo-spider/" );
+
+	require_once("$IP/extensions/PonyDocs/PonyDocsExtension.php");
+	require_once("$IP/skins/PonyDocs/PonyDocs.php");
 	#################  PONYDOCS END #################
 	```
 
-### 3) Install PonyDocs extension and Configure MediaWiki to load it.
+### 3) Install Ponydocs extension and Configure MediaWiki to load it.
 
 1. Move the extensions/PonyDocs/ directory into your MediaWiki instance's extensions directory.
-2. Update your MediaWiki database schema by running extensions/PonyDocs/sql/schema.sql.
-	* Remove this sql file as it's no longer needed and is publicly reachable via your PonyDocs site.
-3. Activate the PonyDocs skin
-	* There is a sample PonyDocs skin that is provided in this archive.
+2. Update your MediaWiki database schema by running sql/ponydocs.sql.
+	* Remove this sql file as it's no longer needed and is publicly reachable via your Ponydocs site.
+3. Activate the Ponydocs skin
+	* There is a sample Ponydocs skin that is provided in this archive.
 	* In order to demo PonyDoc's features, you can use this skin by moving the contents of the `skin/` directory (two files and 
 	  one directory) to `MEDIAWIKIBASE/skins/`.
 	* This skin is just a starting point. Please customize this skin to suit your needs.
 	* To activate the skin, update the `$wgDefaultSkin` value in LocalSettings.php:
 	  `$wgDefaultSkin = 'ponydocs';`
 
-### 4) Take a look at PonyDocsConfig.php
+### 4) Review PonydocsConfig.php
 
 * Take a look at extensions/Ponydocs/PonyDocs.config.php.
 * This defines a bunch of constants, most of which you shouldn't need to touch.
-* As of this writing, changing these values has not been tested.
+* Change these values at your own risk!
 
 ### 5) Configure your Products
 
-1. Edit LocalSettings.php and add a $ponyDocsProductsList array
-	* $ponyDocsProductList *must* be defined before the PonyDocs extension is included, as in the example in section 2.
-	* $ponyDocsProductList is used to create docteam and preview permission groups.
-	* There needs to be at least one Product in the array.
-      Here is a minimal example for the Product Foo:
-      `$ponyDocsProductsList = array('Foo');`
-
+1. Edit your LocalSettings.php to include a list of products.
+	* There is an empty array already in place called $ponyDocsProductsList.
+	* This array *must* be defined before the Ponydocs extension is included, as in the example in section 2.
+	* This list will be used to determine user groups.
+	* There needs to be at least one product in the array. If you don't define one, Ponydocs will default to a "Splunk" product.
+   Here is one product defined (Foo):
+   `$ponyDocsProductsList = array('Foo');`
       And here are three:
       `$ponyDocsProductsList = array('Foo', 'Bar', 'Bas');`
 
@@ -331,7 +364,6 @@ In the Ponydocs skin, there is a link to "PDF Version".
 * If you would like this to work, you'll need to install [HTMLDOC](http://www.htmldoc.org/)
 * Additionally, you'll need to make sure your MEDIAWIKIBASE/images directory is writable by your web server user.
 
-
 F.A.Q.
 ------
 
@@ -357,6 +389,7 @@ A. Splunk as extended their skin without porting all enhancements back to PonyDo
 
 HISTORY
 -------
-* PonyDocs 1.0 Alpha 3 - May 24, 2011
-* PonyDocs 1.0 Beta 1 - September 6, 2011
-* PonyDocs 1.0 Beta 2 - June 14, 2012
+* Ponydocs 1.0 Alpha 3 - May 24, 2011
+* Ponydocs 1.0 Beta 1 - September 6, 2011
+* Ponydocs 1.0 Beta 2 - June 14, 2012
+* Ponydocs 1.1 - June, 2015

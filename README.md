@@ -72,11 +72,19 @@ Software Documentation-specific Features
   When viewing a previous Version of a Topic, PonyDocs will display a "not the latest version" banner.
   This helps visitors who have found your documentation via a search result know they're not viewing the latest docs.
 * **Helpful redirects** -
-  PonyDocs automaticall redirects you from a Manual URL to the first Topic in the Manual.
+  PonyDocs automatically redirects you from a Manual URL to the first Topic in the Manual.
+
+Gotchas
+-------
+
+* Ponydocs only supports MediaWiki 1.24. Please file an issue if you need support for an older supported version of MW
+* Ponydocs expects $wgCategoryCollation to be set to 'uppercase', the default. We are working on fixing this.
 
 For assistance
 --------------
 
 * Full Documentation: http://docs.splunk.com/Documentation/Ponydocs
 * Mailing list: https://groups.google.com/forum/#!forum/ponydocs
-* Developers: ponydocs@splunk.com
+* Email: ponydocs@splunk.com
+* IRC: #ponydocs on efnet
+* Slack: ponydocs on splunk-usergroups.slack.com
