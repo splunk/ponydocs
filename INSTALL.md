@@ -383,10 +383,3 @@ Q. How come the vanilla ponydocs skin shipping with the extension doesn't look a
 A. Splunk as extended their skin without porting all enhancements back to PonyDocs.
    Our long-term plan is to port all Splunk-only features back to the PonyDocs skin,
    and to remove as many features as possible from the skin and into the extension
-
-HISTORY
--------
-* Ponydocs 1.0 Alpha 3 - May 24, 2011
-* Ponydocs 1.0 Beta 1 - September 6, 2011
-* Ponydocs 1.0 Beta 2 - June 14, 2012
-* Ponydocs 1.1 - June, 2015
