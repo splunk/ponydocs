@@ -228,10 +228,8 @@ a one-line change.
 	* This array *must* be defined before the Ponydocs extension is included, as in the example in section 2.
 	* This list will be used to determine user groups.
 	* There needs to be at least one product in the array. If you don't define one, Ponydocs will default to a "Splunk" product.
-   Here is one product defined (Foo):
-   `$ponyDocsProductsList = array('Foo');`
-      And here are three:
-      `$ponyDocsProductsList = array('Foo', 'Bar', 'Bas');`
+		* Here is one product defined (Foo):`$ponyDocsProductsList = array('Foo');`
+		* And here are three: `$ponyDocsProductsList = array('Foo', 'Bar', 'Bas');`
 
 2. Set your default Product to be one of the above in LocalSettings.php:
    `define('PONYDOCS_DEFAULT_PRODUCT', 'Foo');`
@@ -289,9 +287,8 @@ a one-line change.
   `{{#version:versionName|status}}`
 * versionName can be any alphanumeric string (no spaces or underscores allowed).
 	* versionName should match your software's Version. Status is either "released", "unreleased" or  "preview".
-	* For example, to initialize Version 1.0 of your Product, have the following line in your 
-	  Documentation:productShortName:Versions page:
-	  `{{#version:1.0|unreleased}}`
+	* For example, to initialize Version 1.0 of your Product, have the following line in your
+	  Documentation:productShortName:Versions page: `{{#version:1.0|unreleased}}`
 * Once the Documentation:productShortName:Versions page is saved, you'll be able to move to the next step, defining your first
   Manual.
 * As you add more Versions of your Product, add more lines to the Documentation:productShortName:Versions page.
