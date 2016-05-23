@@ -98,7 +98,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 		$productLongName = $pProduct->getLongName();
 		
-		if (!$justThisTopic && PonyDocsProductManual::isManual( $productName, $pieces[2] ) ) {
+		if ( PonyDocsProductManual::isManual( $productName, $pieces[2] ) ) {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
@@ -108,7 +108,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
 		}
 
-		if ( !$justThisTopic && !empty( $pManual ) ) {
+		if ( !$justThisTopic ) {
 			// We should always have a pManual, if we're printing from a TOC
 			$v = PonyDocsProductVersion::GetVersionByName($productName, $versionText);
 
@@ -170,9 +170,9 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		$titlepagefile = "$wgUploadDirectory/" .uniqid('ponydocs-pdf-book-title');
 		$fh = fopen($titlepagefile, 'w+');
 		if ( $justThisTopic ) {
-			$coverPageHTML = self::getCoverPageHTML($pProduct, NULL, $v, true, $pdfName);
+			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
 		}else {
-			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $pdfName);
+			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
 		}
 
 		fwrite($fh, $coverPageHTML);
@@ -258,10 +258,18 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 * @param $manual string The short name of the manual remove
 	 * @param $version string The version of the manual to remove
 	 */
-	static public function removeCachedFile($product, $manual, $version) {
+	static public function removeCachedFile($product, $manual, $version, $topicName) {
 		global $wgUploadDirectory;
 		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
 		@unlink($pdfFileName);
+
+		if ( !empty( $topicName ) ) {
+			$pdfTopicFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $topicName . "-book.pdf";
+			if ( file_exists( $pdfTopicFileName ) ) {
+				@unlink( $pdfTopicFileName );
+			}
+		}
+
 		if (file_exists($pdfFileName)) {
 			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n')
 				. ": Failed to delete cached pdf file $pdfFileName");

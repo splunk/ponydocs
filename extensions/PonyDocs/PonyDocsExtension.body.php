@@ -2095,12 +2095,12 @@ EOJS;
 				$topic = new PonyDocsTopic( $realArticle );
 				$topicVersions = $topic->getProductVersions();					
 				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
+				$topicName = $topic->getBaseTopicName();
 				if ( $manual != null ) {
 					foreach( $topicVersions as $key => $version ) {
-						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName() );
+						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName(), $topicName );
 					}	
 				}
-								
 			}
 		}		
 
@@ -2151,12 +2151,13 @@ EOJS;
 		$product = PonyDocsProduct::GetProductByShortName($productName);
 		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
 		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
-
+		$topic = new PonyDocsTopic( $realArticle );
+		$topicName = $topic->getBaseTopicName();
 		if($manual != null) {
 			// Then we are in the documentation namespace, but we're not part of 
 			// manual.
 			// Clear any PDF for this manual
-			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
+			PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version, $topicName );
 		}
 		
 		// Clear all TOC cache entries for each version.
@@ -2164,7 +2165,6 @@ EOJS;
 		// Currently used for branch/inherit.
 		if($manual && !PonyDocsExtension::isSpeedProcessingEnabled()) {		
 			// Clear any TOC cache entries this article may be related to.
-			$topic = new PonyDocsTopic( $realArticle );
 			$manVersionList = $topic->getProductVersions( );
 			foreach($manVersionList as $version) {
 				PonyDocsTOC::clearTOCCache($manual, $version, $product);
