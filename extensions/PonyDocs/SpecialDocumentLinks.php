@@ -85,20 +85,20 @@ class SpecialDocumentLinks extends SpecialPage {
 		if ($titlePieces[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
 
 			// Get all the versions in the product
-			$versions = PonyDocsProductVersion::LoadVersionsForProduct($titlePieces[1], true);
-			if (empty($versions)) {
+			$topic = new PonyDocsTopic( new Article( $title ) );
+			$versions = $topic->getProductVersions();
+			
+			if ( empty( $versions ) ) {
 				error_log('WARNING [PonyDocs] [' . __CLASS__ . '] Unable to find product versions for this topic: ' . $title);
 			}
 
 			$currentProduct = $titlePieces[1];
 			$currentVersion = $titlePieces[4];
 
-			// Get versions of the requested topic
-			$topic = new PonyDocsTopic( new Article( $title ) );
-			$versions = $topic->getProductVersions
-			
-			if (is_object($latestVersionObj)) {
-				$latestVersion = $latestVersionObj->getVersionShortName();
+			// Get the latest released version of this product
+			$latestVersionObj = PonyDocsProductVersion::GetLatestReleasedVersion($titlePieces[1]);
+			if ( is_object( $latestVersionObj ) ) {
+				$latestVersion = $latestVersionObj->getVersionName();
 			} else {
 				error_log('WARNING [PonyDocs] [' . __CLASS__ . '] Unable to find latest released version of ' . $titlePieces[1]);
 			}
@@ -114,7 +114,7 @@ class SpecialDocumentLinks extends SpecialPage {
 					$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($titleNoVersion, NULL, $ver);
 
 					// Compare this version with latest version. If they're the same, add the URL with "latest" too.
-					$thisVersion = $ver->getVersionShortName();
+					$thisVersion = $ver->getVersionName();
 					if ($thisVersion == $latestVersion) {
 						$titleLatestVersion = 
 							$titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
@@ -206,7 +206,7 @@ class SpecialDocumentLinks extends SpecialPage {
 						<h2><?php echo $fromProduct; ?></h2>
 						<?php
 						foreach ($fromProductVersions as $fromProductVersionObj) {
-							$fromProductVersionName = $fromProductVersionObj->getVersionShortName();
+							$fromProductVersionName = $fromProductVersionObj->getVersionName();
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
 								// Expand containers of incoming links from the current Product and Version
