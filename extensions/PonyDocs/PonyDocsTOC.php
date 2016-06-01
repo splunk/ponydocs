@@ -105,7 +105,7 @@ class PonyDocsTOC
 	 */
 	public function & addVersion( PonyDocsProductVersion& $pVersion )
 	{
-		$this->pVersionList[$pVersion->getVersionName()] = $pVersion;
+		$this->pVersionList[$pVersion->getVersionShortName()] = $pVersion;
 		return $pVersion;
 	}
 
@@ -151,7 +151,7 @@ class PonyDocsTOC
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
 				"cl_to = 'V:"
-					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionName() ) . "'" ,
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() ) . "'" ,
 				'cl_type = "page"',
 				"cl_sortkey LIKE '"
 					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
@@ -259,12 +259,12 @@ class PonyDocsTOC
 		}
 
 		$selectedProduct = $this->pProduct->getShortName();
-		$selectedVersion = $this->pInitialVersion->getVersionName();
+		$selectedVersion = $this->pInitialVersion->getVersionShortName();
 		$selectedManual = $this->pManual->getShortName();
 
 		// Okay, let's determine if the VERSION that the user is in is latest, if so, we should set latest to true.
 		if ( PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct) != NULL ) {
-		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionName() ) {
+		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionShortName() ) {
 				$latest = TRUE;
 			}
 		}
@@ -487,14 +487,17 @@ class PonyDocsTOC
 	 * @return string
 	 */
 	static public function normalizeSection( $secText ) {
+		// Replace 2 or more spaces with 1 space
+		$secText = preg_replace( '/\s{2,}/', ' ', $secText );
+		// Trim whitespace from beginning and end of string, and then replace spaces with underscores
 		$secText = str_replace( ' ', '_', preg_replace( '/^\s*|\s*$/', '', $secText ) );
 		return $secText;
 	}
 
 	static public function clearTOCCache( $manual, $version, $product ) {
 		error_log( "INFO [PonyDocsTOC::clearTOCCache] Deleting cache entry of TOC for product " . $product->getShortName()
-			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionName());
-		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName();
+			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionShortName());
+		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionShortName();
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
 	}

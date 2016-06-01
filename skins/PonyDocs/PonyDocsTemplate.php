@@ -313,9 +313,11 @@ class PonyDocsTemplate extends QuickTemplate {
 										</p>
 										<p>
 											<?php
-											if ( sizeof($this->data['manualtoc'] ) ) { ?>
+											if ( sizeof($this->data['manualtoc'] ) ) { 
+												$pdfLink = str_replace( '$1', '', $wgArticlePath ) . 'index.php?title=' . $wgTitle->__toString() . '&action=pdfbook&version=' .$this->data['selectedVersion'];
+												?>
 												<p>
-													<a href="<?php echo str_replace( '$1', '', $wgArticlePath );?>index.php?title=<?php echo $wgTitle->__toString();?>&action=pdfbook">Pdf Version</a>
+													<a href="<?php echo $pdfLink; ?>">Pdf Version</a>
 												</p>
 												<?php
 												$inUL = FALSE;
@@ -658,9 +660,9 @@ class PonyDocsTemplate extends QuickTemplate {
 				. PONYDOCS_PRODUCTVERSION_SUFFIX,
 				$wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
-				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:name|status}} to define a new version,'
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#version:versionShortName|status|versionLongName}} to define a new version,'
 					. ' where status is released, unreleased, or preview.'
-					. ' Valid chars in version name are A-Z, 0-9, period, comma, and dash.</i></span>' );
+					. ' Valid chars in version short name are A-Z, 0-9, period, comma, and dash.</i></span>' );
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#versiongroup:name|message}} to set a banner'
 					. ' message that will appear on every topic in every version following the versiongroup.</i></span>' );
 			} elseif ( !strcmp( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $this->data['selectedProduct']

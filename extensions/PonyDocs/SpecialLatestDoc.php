@@ -107,10 +107,10 @@ class SpecialLatestDoc extends SpecialPage {
 					$latestVersionSql = null;
 					foreach ( $versionList as $pV ) {
 						if ( $latestVersionSql == null ) {
-							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName();
+							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionShortName();
 						}
-						$versionNameList[] = $pV->getVersionName();
-						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName() . '\'';
+						$versionNameList[] = $pV->getVersionShortName();
+						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionShortName() . '\'';
 					}
 					$versionSql = '(' . implode( ",",$versionSql ) . ')';
 
@@ -204,7 +204,7 @@ class SpecialLatestDoc extends SpecialPage {
 					The topic you've asked to see does not apply to the most recent version.
 					</p>
 					<p>
-					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
+					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo strip_tags( $topicName );?>">Search</a></li>
 					</p>
 					<?php
 					if ( count( $primarySuggestions ) ) { ?>
@@ -216,7 +216,7 @@ class SpecialLatestDoc extends SpecialPage {
 						<?php
 						foreach( $primarySuggestions as $suggestion ) {
 							?>
-							<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+							<li><?php echo $suggestion['product'];?> &raquo; <?php echo ($versionList[$suggestion['version']]->getVersionLongName()) ? $versionList[$suggestion['version']]->getVersionLongName() : $suggestion['version']; ?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
 							<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
 							<?php
 						}
@@ -224,7 +224,7 @@ class SpecialLatestDoc extends SpecialPage {
 						{
 							foreach( $suggestions as $suggestion ) {
 								?>
-									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
+									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo ($versionList[$suggestion['version']]->getVersionLongName()) ? $versionList[$suggestion['version']]->getVersionLongName() : $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
 									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
 								<?php
 

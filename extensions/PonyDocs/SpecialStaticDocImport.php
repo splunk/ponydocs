@@ -143,7 +143,7 @@ class SpecialStaticDocImport extends SpecialPage {
 			}
 			$wgOut->addHTML( '<select name="version">' );
 			foreach ( $versions as $version ) {
-				$wgOut->addHTML( '<option value="' . $version->getVersionName() . '">' . $version->getVersionName()
+				$wgOut->addHTML( '<option value="' . $version->getVersionShortName() . '">' . $version->getVersionShortName()
 					. "</option>\n" );
 			}
 			$wgOut->addHTML( "</select>\n" );
