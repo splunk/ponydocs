@@ -96,7 +96,6 @@ class PonyDocsTopic {
 		}
 		
 		$dbr = wfGetDB( DB_SLAVE );
-		$revision = $this->pArticle->mRevision;
 
 		$res = $dbr->select(
 			'categorylinks',
