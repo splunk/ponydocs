@@ -2140,31 +2140,27 @@ EOJS;
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
-
+		
 		$productName = PonyDocsProduct::GetSelectedProduct();
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
-		$version = PonyDocsProductVersion::GetSelectedVersion( $productName );
 		$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );
 		$topic = new PonyDocsTopic( $realArticle );
 
 		// Clear cache entries for each version on the article
-		if ( $manual && !PonyDocsExtension::isSpeedProcessingEnabled() ) {
+		if ( $manual ) {
 			$topicVersions = $topic->getProductVersions();
 			foreach ( $topicVersions as $topicVersion ) {
 				// Clear PDF cache, because article content may have been updated
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $topicVersion );
-				// Clear TOC and NAV cache in case h1 was edited (I think)
-				PonyDocsTOC::clearTOCCache( $manual, $topicVersion, $product );
-				PonyDocsProductVersion::clearNAVCache( $topicVersion );
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $topicVersion->getVersionShortName() );
+				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
+					// Clear TOC and NAV cache in case h1 was edited (I think)
+					PonyDocsTOC::clearTOCCache( $manual, $topicVersion, $product );
+					PonyDocsProductVersion::clearNAVCache( $topicVersion );
+				}
 			}
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 		
-		// TODO: Clear cache entries for any versions removed from the article
-		// - Get categories from this article
-		// - Get categories from the old article using baseRevId
-		// - Diff the categories
-
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
 		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
 		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString() ) ||
