@@ -333,6 +333,24 @@ class PonyDocsTopic {
 		return '';
 	}
 	
+	public function getPreviousRevisionId() {
+		$dbr = wfGetDB( DB_SLAVE );
+
+		$res = $dbr->select(
+			'revision',
+			'rev_id', 
+			array( 'rev_page' => $this->pTitle->getArticleID() ),
+			__METHOD__,
+			array(
+				'ORDER BY' => "rev_id DESC",
+				'LIMIT' => 1,
+				'OFFSET' => 1,)
+		);
+		
+		$row = $dbr->fetchObject( $res );
+		return($row->rev_id);
+	}
+	
 	/**
 	 * Return a regex to match the topic parser function
 	 * 
