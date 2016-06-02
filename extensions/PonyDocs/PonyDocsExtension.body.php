@@ -2110,9 +2110,7 @@ EOJS;
 	}
 
 	/**
-	 * When an article is fully saved, we want to update the doclinks for that 
-	 * article in our doclinks table.  Only if it's in the documentation 
-	 * namepsace, however.
+	 * Clean-up for doclinks and caches when a Topic is saved.
 	 * 
 	 * @param WikiPage $article
 	 * @param User $user
@@ -2144,9 +2142,9 @@ EOJS;
 		}
 
 		$productName = PonyDocsProduct::GetSelectedProduct();
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
-		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
+		$product = PonyDocsProduct::GetProductByShortName( $productName );
+		$version = PonyDocsProductVersion::GetSelectedVersion( $productName );
+		$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );
 		$topic = new PonyDocsTopic( $realArticle );
 
 		// Clear cache entries for each version on the article
@@ -2167,18 +2165,19 @@ EOJS;
 		// - Get categories from the old article using baseRevId
 		// - Diff the categories
 
-		// if this is product versions or manuals page, clear navigation cache
-		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString(), $matches ) ||
-			 preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString(), $matches )) {
+		// if this is product versions or manuals page, clear navigation cache for all versions in the product
+		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
+		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString() ) ||
+			 preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString() ) ) {
 			// reload to get updated version list
-			PonyDocsProductVersion::LoadVersionsForProduct($productName, true);
-			$prodVersionList = PonyDocsProductVersion::GetVersions($productName);
-			foreach($prodVersionList as $version) {
-				PonyDocsProductVersion::clearNAVCache($version);
+			PonyDocsProductVersion::LoadVersionsForProduct( $productName, TRUE );
+			$prodVersionList = PonyDocsProductVersion::GetVersions( $productName );
+			foreach( $prodVersionList as $version ) {
+				PonyDocsProductVersion::clearNAVCache( $version );
 			}
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	/**
