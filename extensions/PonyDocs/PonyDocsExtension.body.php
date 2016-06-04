@@ -2160,17 +2160,12 @@ EOJS;
 			}
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
-		
-		$oldId = $topic->getPreviousRevisionId();
-		error_log("old id $oldId");
-		$previousArticle = new Article($title, $oldId);
-		$previousTopic = new PonyDocsTopic($previousArticle);
-		$previousVersions = $previousTopic->getProductVersions();
-		error_log('new versions');
-		error_log(count($topicVersions));
-		error_log('old versions');
-		error_log(count($previousVersions));
 
+		$diff = new DifferenceEngine(NULL, $revision->getId(), 'prev');
+		//error_log($diff->getDiffBody());
+		global $wgExternalDiffEngine;
+		error_log($wgExternalDiffEngine);
+		
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
 		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
 		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString() ) ||
