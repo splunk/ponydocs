@@ -15,14 +15,25 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 
 /**
  * Setup credits for this extension to appear in the credits page of wiki.
+ * TODO: Fix for github
  */
 $wgExtensionCredits['other'][] = array(
 	'name' => 'PonyDocs Customized MediaWiki', 
 	'author' => 'Splunk',
 	'svn-date' => '$LastChangedDate$',
 	'svn-revision' => '$LastChangedRevision: 207 $',
-	'url' => 'http://www.splunk.com',
+	'url' => 'http://docs.splunk.com',
 	'description' => 'Provides custom support for product documentation'
+);
+
+$wgExtensionCredits['variable'][] = array(
+	'name' => 'PonyDocsMagic',
+	'author' => 'Splunk',
+	'version' => '1.0',
+	'svn-date' => '$LastChangedDate$',
+	'svn-revision' => '$LastChangedRevision: 207 $',
+	'url' => 'http://docs.splunk.com',
+	'description' => 'Provides product, version, manual, and topic variables for PonyDocs',
 );
 
 /**
@@ -132,7 +143,6 @@ $editorPerms = array(
 );
 	
 foreach ( $ponyDocsProductsList as $product ) {
-	
 	// check for empty product
 	if ( $product == '' ) {
 		// allow for existing product-less base groups
@@ -656,6 +666,46 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' ) {
 	return '<h3>Manual Description: </h3><h4>' . $param1 . '</h4>'; // Return formated output
 }
 
+/**
+ * Variables
+ */
+
+$wgExtensionMessagesFiles['PonyDocsMagic'] = __DIR__ . '/PonyDocs.i18n.magic.php';
+$wgHooks['ParserGetVariableValueSwitch'][] = 'wfPonyDocsGetVariableValueSwitch';
+$wgHooks['MagicWordwgVariableIDs'][] = 'wfPonyDocsMagicWordwgVariableIDs';
+
+function wfPonyDocsGetVariableValueSwitch( &$parser, &$cache, &$magicWordId, &$ret ) {
+	switch ( $magicWordId ) {
+		case 'PonyDocs_Product':
+			$ret = 'Foo';
+			break;
+		case 'PonyDocs_Version':
+			$ret = 'Bar';
+			break;
+		case 'PonyDocs_Manual':
+			$ret = 'Bas';
+			break;
+		case 'PonyDocs_Topic':
+			$ret = 'Bat';
+			break;
+	}
+
+	return TRUE;
+}
+
+/**
+ * Step 6: register wiki markup words associated with
+ *         MAG_NIFTYVAR as a variable and not some
+ *         other type of magic word
+ */
+function wfPonyDocsMagicWordwgVariableIDs( &$customVariableIds ) {
+	$customVariableIds[] = 'PonyDocs_Product';
+	$customVariableIds[] = 'PonyDocs_Version';
+	$customVariableIds[] = 'PonyDocs_Manual';
+	$customVariableIds[] = 'PonyDocs_Topic';
+
+	return TRUE;
+}
 /**
  * Hooks
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
