@@ -2163,6 +2163,7 @@ EOJS;
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
+		// Clear caches for any Versions removed from the Topic
 		$previousRevisionId = $title->getPreviousRevisionID($realArticle->getRevIdFetched());
 		$previousArticle = new Article( $title, $title->getPreviousRevisionID($realArticle->getRevIdFetched()) );
 		$categories = $realArticle->getParserOutput()->getCategories();
