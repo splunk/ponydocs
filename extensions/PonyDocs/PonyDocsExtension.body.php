@@ -2163,11 +2163,23 @@ EOJS;
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
-		$previousArticle = new Article( $title, $title-getPreviousRevisionID() );
+		$previousRevisionId = $title->getPreviousRevisionID($realArticle->getRevIdFetched());
+		$previousArticle = new Article( $title, $title->getPreviousRevisionID($realArticle->getRevIdFetched()) );
 		$categories = $realArticle->getParserOutput()->getCategories();
-		$previousCategories = $previousArticle->getParserOutput()->getCategories();
-		error_log("new: " . count($categories));
-		error_log("old: " . count($previousCategories));
+		$previousCategories = $realArticle->getParserOutput($previousRevisionId)->getCategories();
+		$removedCategories = array_diff(array_keys($previousCategories), array_keys($categories));
+		foreach ( $removedCategories as $removedCategory ) {
+			$removedVersion = $topic->convertCategoryToVersion( $removedCategory );
+			if ( $removedVersion ) {
+				// TODO: DRY out this copy of the previous code
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $removedVersion->getVersionShortName() );
+				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
+					// Clear TOC and NAV cache in case h1 was edited (I think)
+					PonyDocsTOC::clearTOCCache( $manual, $removedVersion, $product );
+					PonyDocsProductVersion::clearNAVCache( $removedVersion );
+				}
+			}
+		}
 		
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
 		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
