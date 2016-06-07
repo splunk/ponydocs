@@ -13,6 +13,41 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
 }
 
+/**
+ * Setup credits for this extension to appear in the credits page of wiki.
+ */
+$wgExtensionCredits['other'][] = array(
+	'name' => 'PonyDocs Customized MediaWiki', 
+	'author' => 'Splunk',
+	'svn-date' => '$LastChangedDate$',
+	'svn-revision' => '$LastChangedRevision: 207 $',
+	'url' => 'http://www.splunk.com',
+	'description' => 'Provides custom support for product documentation'
+);
+
+/**
+ * SVN revision #. This requires we enable this property in svn for this file:
+ * svn propset ?:? "Revision" <file>
+ * TODO: fix for github
+ */
+$wgRevision = '$Revision: 207 $';
+
+/**
+ * Create a single global instance of our extension.
+ */
+$wgPonyDocs = new PonyDocsExtension();
+
+/**
+ * Register a module for our scripts and css
+ */
+$wgResourceModules['ext.PonyDocs'] = array(
+	'scripts' => 'js/docs.js',
+	'dependencies' => 'jquery.json',
+	'localBasePath' => __DIR__,
+	'remoteExtPath' => 'PonyDocs',
+	'position' => 'top',
+);
+
 // TODO: can we use $wgAutoLoadClasses[] for this instead?
 require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.body.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
@@ -47,6 +82,10 @@ require_once( "$IP/extensions/PonyDocs/SpecialTopicList.php" );
 if ( !isset ( $ponyDocsProductsList ) || sizeof( $ponyDocsProductsList ) == 0) {
 	$ponyDocsProductsList[] = PONYDOCS_DEFAULT_PRODUCT;
 }
+
+/**
+ * User Rights
+ */
 
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
@@ -116,62 +155,10 @@ foreach ( $ponyDocsProductsList as $product ) {
 }
 
 /**
- * Setup credits for this extension to appear in the credits page of wiki.
+ * Setup
  */
-$wgExtensionCredits['other'][] = array(
-	'name' => 'PonyDocs Customized MediaWiki', 
-	'author' => 'Splunk',
-	'svn-date' => '$LastChangedDate$',
-	'svn-revision' => '$LastChangedRevision: 207 $',
-	'url' => 'http://www.splunk.com',
-	'description' => 'Provides custom support for product documentation' );
 
-/**
- * SVN revision #. This requires we enable this property in svn for this file:
- * svn propset ?:? "Revision" <file>
- */
-$wgRevision = '$Revision: 207 $';
-
-/**
- * Register the setup function for the extension.
- * This should setup all hooks to be used, any pre-setup, and so forth done upon initialization of a request.
- * I am sticking to the naming convention of 'ef' prefixing for 'extension function'. Also setup parser setup functions here.
- * 
- * I'd like to move all of this into PonyDocsExtension;
- * i.e. have a registerHooks method which does all of this and passes array( $this, 'methodName' ) for each
- * instead of using static methods?
- */
 $wgExtensionFunctions[] = 'efPonyDocsSetup';
-$wgExtensionFunctions[] = 'efManualParserFunction_Setup';
-$wgExtensionFunctions[] = 'efVersionParserFunction_Setup';
-$wgExtensionFunctions[] = 'efProductParserFunction_Setup';
-$wgExtensionFunctions[] = 'efTopicParserFunction_Setup';
-$wgExtensionFunctions[] = 'efManualDescriptionParserFunction_Setup';
-
-/**
- * Our magic words for our custom parser functions.
- */
-$wgHooks['LanguageGetMagic'][] = 'efManualParserFunction_Magic';
-$wgHooks['LanguageGetMagic'][] = 'efVersionParserFunction_Magic';
-$wgHooks['LanguageGetMagic'][] = 'efProductParserFunction_Magic';
-$wgHooks['LanguageGetMagic'][] = 'efTopicParserFunction_Magic';
-$wgHooks['LanguageGetMagic'][] = 'efManualDescriptionParserFunction_Magic';
-
-/**
- * Create a single global instance of our extension.
- */
-$wgPonyDocs = new PonyDocsExtension();
-
-/**
- * Register a module for our scripts and css
- */
-$wgResourceModules['ext.PonyDocs'] = array(
-	'scripts' => 'js/docs.js',
-	'dependencies' => 'jquery.json',
-	'localBasePath' => __DIR__,
-	'remoteExtPath' => 'PonyDocs',
-	'position' => 'top',
-);
 
 /**
  * Our primary setup function simply handles URL rewrites for aliasing (per spec) and calls our PonyDocsWiki singleton instance
@@ -234,6 +221,25 @@ function efPonyDocsSetup() {
 	}
 	PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
 }
+
+/**
+ * Parsers
+ */
+
+$wgExtensionFunctions[] = 'efManualParserFunction_Setup';
+$wgExtensionFunctions[] = 'efVersionParserFunction_Setup';
+$wgExtensionFunctions[] = 'efProductParserFunction_Setup';
+$wgExtensionFunctions[] = 'efTopicParserFunction_Setup';
+$wgExtensionFunctions[] = 'efManualDescriptionParserFunction_Setup';
+
+/**
+ * Our magic words for our custom parser functions.
+ */
+$wgHooks['LanguageGetMagic'][] = 'efManualParserFunction_Magic';
+$wgHooks['LanguageGetMagic'][] = 'efVersionParserFunction_Magic';
+$wgHooks['LanguageGetMagic'][] = 'efProductParserFunction_Magic';
+$wgHooks['LanguageGetMagic'][] = 'efTopicParserFunction_Magic';
+$wgHooks['LanguageGetMagic'][] = 'efManualDescriptionParserFunction_Magic';
 
 /**
  * This section handles the parser function {{#manual:<shortName>|<longName>}} which defines a manual.
@@ -504,103 +510,6 @@ function efManualDescriptionParserFunction_Magic( &$magicWords, $langCode ) {
 	return TRUE;
 }
 
-function efGetTitleFromMarkup( $markup = '' ) {
-	global $wgArticlePath, $wgTitle, $action;
-
-	/**
-	 * We ignore this parser function if not in a TOC management page.
-	 */
-	if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(),
-		$matches ) ) {
-		return FALSE;
-	}
-
-	$manualShortName = $matches[2];
-	$productShortName = $matches[1];
-
-	PonyDocsWiki::getInstance( $productShortName );
-
-	/**
-	 * Get the earliest tagged version of this TOC page and append it to the wiki page?
-	 * Ensure the manual is valid then use PonyDocsManual::getManualByShortName().
-	 * Next attempt to get the version tags for this page -- which may be NONE --
-	 * and from this determine the "earliest" version to which this page applies.
-	 */
-	if ( !PonyDocsProductManual::IsManual( $productShortName, $manualShortName ) ) {
-		return FALSE;
-	}
-
-	$pManual = PonyProductDocsManual::GetManualByShortName( $productShortName, $manualShortName );
-	$pTopic = new PonyDocsTopic( new Article( $wgTitle ) );
-
-	/**
-	 * @FIXME: If TOC page is NOT tagged with any versions we cannot create the pages/links to the topics, right?
-	 */
-	$manVersionList = $pTopic->getProductVersions();
-	if ( !sizeof( $manVersionList ) ) {
-		return $parser->insertStripItem( $param1, $parser->mStripState );
-	}
-	$earliestVersion = PonyDocsProductVersion::findEarliest( $productShortName, $manVersionList );
-
-	/**
-	 * Clean up the full text name into a wiki-form. This means remove spaces, #, ?, and a few other
-	 * characters which are not valid or wanted. It's not important HOW this is done as long as it is
-	 * consistent.
-	 */
-	$wikiTopic = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars()) . '])/', '', $param1 );
-	$wikiPath = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' . $wikiTopic;
-
-	$dbr = wfGetDB( DB_SLAVE );
-
-	/**
-	 * Now look in the database for any instance of this topic name PLUS :<version>.
-	 * We need to look in  categorylinks for it to find a record with a cl_to (version tag)
-	 * which is equal to the set of the versions for this TOC page.
-	 * For instance, if the TOC page was for versions 1.0 and 1.1 and our topic was 'How To Foo'
-	 * we need to find any cl_sortkey which is 'HowToFoo:%' and has a cl_to equal to 1.0 or 1.1.
-	 * There should only be 0 or 1, so we ignore anything beyond 1.
-	 * If found, we use THAT cl_sortkey as the link;
-	 * if NOT found we create a new topic, the name being the compressed topic name plus the earliest TOC version
-	 * ($earliestVersion->getName()).
-	 * We then need to ACTUALLY create it in the database, tag it with all the versions the TOC mgmt page is tagged with,
-	 * and set the H1 to the text inside the parser function.
-	 * 
-	 * @fixme: Can we test if $action=save here so we don't do this on every page view? 
-	 */
-
-	$versionIn = array();
-	foreach( $manVersionList as $pV ) {
-		$versionIn[] = $pV->getVersionShortName();
-	}
-
-	$res = $dbr->select(
-		array('categorylinks', 'page'),
-		'page_title',
-		array(
-			'cl_from = page_id',
-			'page_namespace = "' . NS_PONYDOCS . '"',
-			"cl_to IN ( 'V:$productShortName:" . implode( "','V:$productShortName:", $versionIn ) . "')",
-			'cl_type = "page"',
-			"cl_sortkey LIKE '"	. $dbr->strencode( strtoupper( $manualShortName . ':' . $wikiTopic ) ) . ":%'"
-		),
-		__METHOD__
-	);
-
-	$topicName = '';
-	if ( !$res->numRows() ) {
-		/**
-		 * No match -- so this is a "new" topic. Set name.
-		 */
-		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productShortName . ':' . $manualShortName . ':' . $wikiTopic . ':'
-			. $earliestVersion->getVersionShortName();
-	} else {
-		$row = $dbr->fetchObject( $res );
-		$topicName = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
-	}
-
-	return $topicName;
-}
-
 /**
  * This expects to find:
  * 	{{#topic:Text Name}}
@@ -748,27 +657,7 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' ) {
 }
 
 /**
- * Setup our 'hooks' here. We do this by assigning function names to the $wgHooks array.
- * The key of this array is the NAME of the hook, of which there are a predefined set of hooks within MediaWiki's core.
- * At a given point in the execution it will activate all hook functions and execute them IN THE ORDER DEFINED. For instance:
- * 
- * 	$wgHooks['someeventname'][] = 'functionName';
- * 
- * The value assigned to it can vary depending on the circumstances,
- * such as whether the hook is an object method, a function, and whether or not it is to be passed any arguments
- * (this is determined by wfRunHooks though and the event TYPE/NAME, not by the function being called).
- * You can also supply it with some optional data to be passed to the function when it is called.
- * 
- * A quick summary of the options:
- * - $wgHooks['event'][] = 'function'; Function with only default params.
- * - $wgHooks['event'][] = array( 'function', $someArg );
- *   Function with additional data to be passed to function($someArg, $param1, $param2, etc.)
- * - $wgHooks['event'][] = array( $object, 'method' ); Call 'method' within an object.
- * - $wgHooks['event'][] = array( $Object, 'method', $arg);
- * 
- * Returns true if successful, string on error (with msg),
- * false means success but halts processing of the hook (no further hooks for event are run).
- * 
+ * Hooks
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
  */
 
@@ -782,11 +671,9 @@ $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
 $wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
 $wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
+$wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
 $wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
 $wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
 $wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
 $wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
 $wgHooks['userCan'][] = 'PonyDocsExtension::onUserCan';
-
-// Add version field to edit form
-$wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
