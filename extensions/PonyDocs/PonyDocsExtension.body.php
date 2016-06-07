@@ -2134,6 +2134,12 @@ EOJS;
 
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		$product = PonyDocsProduct::GetProductByShortName( $productName );
+		$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );
+		$topic = new PonyDocsTopic( $realArticle );
+		$previousRevisionId = $title->getPreviousRevisionID($realArticle->getRevIdFetched());
+		$previousArticle = new Article( $title, $title->getPreviousRevisionID($realArticle->getRevIdFetched()) );
 
 		// Update doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "update", $realArticle, $text );
@@ -2143,45 +2149,34 @@ EOJS;
 			return TRUE;
 		}
 		
-		$productName = PonyDocsProduct::GetSelectedProduct();
-		$product = PonyDocsProduct::GetProductByShortName( $productName );
-		$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );
-		$topic = new PonyDocsTopic( $realArticle );
-
-		// Clear cache entries for each version on the article
+		// Clear cache entries for each version on the Topic
 		if ( $manual ) {
-			$topicVersions = $topic->getProductVersions();
-			foreach ( $topicVersions as $topicVersion ) {
+			$versionsToClear = $topic->getProductVersions();
+			
+			// Add any versions removed from the Topic
+			$categories = $realArticle->getParserOutput()->getCategories();
+			$previousCategories = $realArticle->getParserOutput($previousRevisionId)->getCategories();
+			$removedCategories = array_diff(array_keys($previousCategories), array_keys($categories));
+			foreach ( $removedCategories as $removedCategory ) {
+				$removedVersion = $topic->convertCategoryToVersion( $removedCategory );
+				if ( $removedVersion ) {
+					array_push( $removedVersion, $versionsToClear );
+				}
+			}
+			
+			
+			foreach ( $versionsToClear as $versionToClear ) {
 				// Clear PDF cache, because article content may have been updated
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $topicVersion->getVersionShortName() );
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $versionToClear->getVersionShortName() );
 				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
 					// Clear TOC and NAV cache in case h1 was edited (I think)
-					PonyDocsTOC::clearTOCCache( $manual, $topicVersion, $product );
-					PonyDocsProductVersion::clearNAVCache( $topicVersion );
+					PonyDocsTOC::clearTOCCache( $manual, $versionToClear, $product );
+					PonyDocsProductVersion::clearNAVCache( $versionToClear );
 				}
 			}
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
-		// Clear caches for any Versions removed from the Topic
-		$previousRevisionId = $title->getPreviousRevisionID($realArticle->getRevIdFetched());
-		$previousArticle = new Article( $title, $title->getPreviousRevisionID($realArticle->getRevIdFetched()) );
-		$categories = $realArticle->getParserOutput()->getCategories();
-		$previousCategories = $realArticle->getParserOutput($previousRevisionId)->getCategories();
-		$removedCategories = array_diff(array_keys($previousCategories), array_keys($categories));
-		foreach ( $removedCategories as $removedCategory ) {
-			$removedVersion = $topic->convertCategoryToVersion( $removedCategory );
-			if ( $removedVersion ) {
-				// TODO: DRY out this copy of the previous code
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $removedVersion->getVersionShortName() );
-				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
-					// Clear TOC and NAV cache in case h1 was edited (I think)
-					PonyDocsTOC::clearTOCCache( $manual, $removedVersion, $product );
-					PonyDocsProductVersion::clearNAVCache( $removedVersion );
-				}
-			}
-		}
-		
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
 		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
 		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString() ) ||
