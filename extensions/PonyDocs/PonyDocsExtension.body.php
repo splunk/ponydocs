@@ -2161,10 +2161,11 @@ EOJS;
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
-		$diff = new DifferenceEngine(NULL, $revision->getId(), 'prev');
-		//error_log($diff->getDiffBody());
-		global $wgExternalDiffEngine;
-		error_log($wgExternalDiffEngine);
+		$previousArticle = new Article( $title, $title-getPreviousRevisionID() );
+		$categories = $realArticle->getParserOutput()->getCategories();
+		$previousCategories = $previousArticle->getParserOutput()->getCategories();
+		error_log("new: " . count($categories));
+		error_log("old: " . count($previousCategories));
 		
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
 		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
