@@ -2112,9 +2112,7 @@ EOJS;
 	}
 
 	/**
-	 * When an article is fully saved, we want to update the doclinks for that 
-	 * article in our doclinks table.  Only if it's in the documentation 
-	 * namepsace, however.
+	 * Clean-up for doclinks and caches when a Topic is saved.
 	 * 
 	 * @param WikiPage $article
 	 * @param User $user
@@ -2136,57 +2134,62 @@ EOJS;
 
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		$product = PonyDocsProduct::GetProductByShortName( $productName );
+		$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );
+		$topic = new PonyDocsTopic( $realArticle );
+		$previousRevisionId = $title->getPreviousRevisionID($realArticle->getRevIdFetched());
+		$previousArticle = new Article( $title, $title->getPreviousRevisionID($realArticle->getRevIdFetched()) );
 
 		// Update doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "update", $realArticle, $text );
 
+		// Make sure this is a docs article
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
-		// Okay, article is in doc namespace
-
-		// Now we need to remove any pdf books for this topic.
-		// Since the person is editing the article, it's safe to say that the 
-		// version and manual can be fetched from the classes and not do any 
-		// manipulation on the article itself.
-		$productName = PonyDocsProduct::GetSelectedProduct();
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
-		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
-
-		if($manual != null) {
-			// Then we are in the documentation namespace, but we're not part of 
-			// manual.
-			// Clear any PDF for this manual
-			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
-		}
 		
-		// Clear all TOC cache entries for each version.
-		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
-		// Currently used for branch/inherit.
-		if($manual && !PonyDocsExtension::isSpeedProcessingEnabled()) {		
-			// Clear any TOC cache entries this article may be related to.
-			$topic = new PonyDocsTopic( $realArticle );
-			$manVersionList = $topic->getProductVersions( );
-			foreach($manVersionList as $version) {
-				PonyDocsTOC::clearTOCCache($manual, $version, $product);
-				PonyDocsProductVersion::clearNAVCache($version);
+		// Clear cache entries for each version on the Topic
+		if ( $manual ) {
+			$versionsToClear = $topic->getProductVersions();
+			
+			// Add any versions removed from the Topic
+			$categories = $realArticle->getParserOutput()->getCategories();
+			$previousCategories = $realArticle->getParserOutput($previousRevisionId)->getCategories();
+			$removedCategories = array_diff(array_keys($previousCategories), array_keys($categories));
+			foreach ( $removedCategories as $removedCategory ) {
+				$removedVersion = $topic->convertCategoryToVersion( $removedCategory );
+				if ( $removedVersion ) {
+					array_push( $removedVersion, $versionsToClear );
+				}
+			}
+			
+			
+			foreach ( $versionsToClear as $versionToClear ) {
+				// Clear PDF cache, because article content may have been updated
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $versionToClear->getVersionShortName() );
+				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
+					// Clear TOC and NAV cache in case h1 was edited (I think)
+					PonyDocsTOC::clearTOCCache( $manual, $versionToClear, $product );
+					PonyDocsProductVersion::clearNAVCache( $versionToClear );
+				}
 			}
 		}
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
-		// if this is product versions or manuals page, clear navigation cache
-		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString(), $matches ) ||
-			 preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString(), $matches )) {
+		// if this is product versions or manuals page, clear navigation cache for all versions in the product
+		// TODO: Don't clear anything we just cleared above (maybe this is exclusive with the above?)
+		if ( preg_match( PONYDOCS_PRODUCTVERSION_TITLE_REGEX, $title->__toString() ) ||
+			 preg_match( PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, $title->__toString() ) ) {
 			// reload to get updated version list
-			PonyDocsProductVersion::LoadVersionsForProduct($productName, true);
-			$prodVersionList = PonyDocsProductVersion::GetVersions($productName);
-			foreach($prodVersionList as $version) {
-				PonyDocsProductVersion::clearNAVCache($version);
+			PonyDocsProductVersion::LoadVersionsForProduct( $productName, TRUE );
+			$prodVersionList = PonyDocsProductVersion::GetVersions( $productName );
+			foreach( $prodVersionList as $version ) {
+				PonyDocsProductVersion::clearNAVCache( $version );
 			}
 		}
 
-		return true;
+		return TRUE;
 	}
 
 	/**

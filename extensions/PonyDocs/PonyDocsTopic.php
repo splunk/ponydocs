@@ -96,7 +96,6 @@ class PonyDocsTopic {
 		}
 		
 		$dbr = wfGetDB( DB_SLAVE );
-		$revision = $this->pArticle->mRevision;
 
 		$res = $dbr->select(
 			'categorylinks',
@@ -112,17 +111,31 @@ class PonyDocsTopic {
 		$this->versions = array();
 		
 		while ( $row = $dbr->fetchObject( $res ) ) {
-			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
-				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
-				if ( $v ) {
-					$this->versions[] = $v;
-				}
+			$version = $this->convertCategoryToVersion( $row->cl_to );
+			if ( $version ) {
+				$this->versions[] = $version;
 			}
 		}
 
 		// Sort by the order on the versions admin page
 		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
 		return $this->versions;
+	}
+	
+	/**
+	 * Convert a category tag to a PonyDocsProductVersion
+	 * 
+	 * @param string $category
+	 * @return PonyDocsProductVersion|NULL
+	 */
+	public function convertCategoryToVersion( $category ) {
+		if ( preg_match( '/^v:(.*):(.*)/i', $category, $match ) ) {
+			$version = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
+		}
+		
+		if ( $version ) {
+			return $version;
+		}
 	}
 
 	/**
