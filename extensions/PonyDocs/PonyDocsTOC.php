@@ -226,11 +226,7 @@ class PonyDocsTOC
 	 * @return array
 	 */
 	public function loadContent() {
-		global $wgArticlePath;
-		global $wgTitle;
-		global $wgScriptPath;
-		global $wgPonyDocs;
-		global $title;
+		global $title, $wgArticlePath, $wgScriptPath, $wgTitle;
 
 		/**
 		 * From this we have the page ID of the TOC page to use -- fetch it then  parse it so we can produce an output TOC array.

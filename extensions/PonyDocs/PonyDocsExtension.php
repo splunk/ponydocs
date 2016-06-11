@@ -74,11 +74,6 @@ $wgExtensionCredits['variable'][] = array(
 $wgRevision = '$Revision: 207 $';
 
 /**
- * Create a single global instance of our extension.
- */
-$wgPonyDocs = new PonyDocsExtension();
-
-/**
  * Register a module for our scripts and css
  */
 $wgResourceModules['ext.PonyDocs'] = array(
@@ -171,19 +166,25 @@ foreach ( $ponyDocsProductsList as $product ) {
 $wgExtensionFunctions[] = 'efPonyDocsSetup';
 
 /**
- * Our primary setup function simply handles URL rewrites for aliasing (per spec) and calls our PonyDocsWiki singleton instance
- * to ensure it runs the data retrieval functions for versions and manuals and the like. 
+ * Primary setup function 
+ * - Sets up session for anonymous users
+ * - Handles URL rewrites for aliasing (per spec)
+ * - Instantiates a PonyDocsWikisingleton instance which loads versions and manuals for the requested product
  */
 function efPonyDocsSetup() {
-	global $wgPonyDocs, $wgScriptPath, $wgArticlePath;
-	// force mediawiki to start session for anonymous traffic
+	global $wgScriptPath, $wgArticlePath;
+
+	// Start session for anonymous traffic
 	if ( session_id() == '' ) {
 		wfSetupSession();
 		if ( PONYDOCS_DEBUG ) {
 			error_log( "DEBUG [" . __METHOD__ . "] started session" );
 		}
 	}
+	
 	// Set selected product from URL
+	// This complicated regex matches /-delimited and :-delimited paths. 
+	// TODO: Generic ponydocs page-typing method should move here or to PonyDocsWiki.
 	if ( preg_match(
 		'/^' . str_replace("/", "\/", $wgScriptPath ) . '\/((index.php\?title=)|)'
 			. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[\/|:]{1}([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)[\/|:]?/i',
@@ -229,6 +230,8 @@ function efPonyDocsSetup() {
 			exit;
 		}
 	}
+	
+	// This has the side effect of loading versions and manuals for the product
 	PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
 }
 

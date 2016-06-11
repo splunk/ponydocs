@@ -1433,7 +1433,7 @@ EOJS;
 	 */
 	static public function onParserBeforeStrip( &$parser, &$text )
 	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgPonyDocs, $action;
+		global $action, $wgTitle, $wgArticlePath, $wgOut, $action;
 
 		$dbr = wfGetDB( DB_SLAVE );
 		if(empty($wgTitle)) {
