@@ -26,9 +26,6 @@ class PonyDocsExtension
 
 	protected static $speedProcessingEnabled;
 
-	/**
-	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
-	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
 
