@@ -1,6 +1,7 @@
 <?php
-if( !defined( 'MEDIAWIKI' ))
+if ( !defined( 'MEDIAWIKI' ) ) {
 	die( "PonyDocs MediaWiki Extension" );
+}
 
 /**
  * Singleton class to manage our PonyDocs customized wiki.  This manages things likes the manual list, version list, and
@@ -9,8 +10,7 @@ if( !defined( 'MEDIAWIKI' ))
  * sets of data in template-ready form (as simple arrays) so that the templates never need to directly use our PonyDocs
  * classes.
  */
-class PonyDocsWiki
-{
+class PonyDocsWiki {
 	/**
 	 * Our singleton instance.
 	 *
@@ -22,13 +22,12 @@ class PonyDocsWiki
 	 * Made private to enforce singleton pattern.  On instantiation (through the first call to 'getInstance') we cache our
 	 * versions and manuals [we don't save them we just cause them to load -- is this necessary?].
 	 */
-	private function __construct( $product )
-	{
+	private function __construct( $product ) {
 		/**
 		 * @FIXME:  Only necessary in Documentation namespace!
 		 */
-		PonyDocsProductVersion::LoadVersionsForProduct( $product, true );
-		PonyDocsProductManual::LoadManualsForProduct( $product, true );
+		PonyDocsProductVersion::LoadVersionsForProduct( $product, TRUE );
+		PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
 	}
 
 	/**
@@ -37,8 +36,7 @@ class PonyDocsWiki
 	 * @static
 	 * @return PonyDocsWiki
 	 */
-	static public function &getInstance( $product )
-	{
+	static public function &getInstance( $product ) {
 		if( !isset(self::$instance[$product]) )
 			self::$instance[$product] = new PonyDocsWiki( $product );
 		return self::$instance[$product];
@@ -61,20 +59,20 @@ class PonyDocsWiki
 			// Only add product to list if it has versions visible to this user
 			$valid = FALSE;
 			$versions = PonyDocsProductVersion::LoadVersionsForProduct($p->getShortName());
-			if (!empty($versions)) {
+			if ( !empty( $versions ) ) {
 				$valid = TRUE;
-			} elseif (empty($versions)) {
+			} elseif ( empty( $versions ) ) {
 				// Check for children with visibile versions
-				foreach (PonyDocsProduct::getChildProducts($p->getShortName()) as $childProductName) {
-					$childVersions = PonyDocsProductVersion::LoadVersionsForProduct($childProductName);
-					if (!empty($childVersions)) {
+				foreach ( PonyDocsProduct::getChildProducts( $p->getShortName() ) as $childProductName ) {
+					$childVersions = PonyDocsProductVersion::LoadVersionsForProduct( $childProductName );
+					if ( !empty($childVersions ) ) {
 						$valid = TRUE;
 						break;
 					}
 				}
 			}
 
-			if ($valid) {
+			if ( $valid ) {
 				$productAry[$p->getShortname()] = array(
 					'name' => $p->getShortName(),
 					'label' => $p->getLongName(),
@@ -121,11 +119,10 @@ class PonyDocsWiki
 	 *
 	 * @return array
 	 */
-	public function getVersionsForProduct( $productName )
-	{
+	public function getVersionsForProduct( $productName ) {
 		$dbr = wfGetDB( DB_SLAVE );
 		$version = PonyDocsProductVersion::GetVersions( $productName );
-		$validVersions = $out = array( );
+		$validVersions = $out = array();
 
 		/**
 		 * This should give us one row per version which has 1 or more TOCs tagged to it.  So basically, if its not in this list
@@ -133,17 +130,17 @@ class PonyDocsWiki
 		 */
 		$res = PonyDocsCategoryLinks::getTOCCountsByProductVersion( $productName );
 
-		while( $row = $dbr->fetchObject( $res ))
-			$validVersions[] = $row->cl_to;			
+		while ( $row = $dbr->fetchObject( $res ) ) {
+			$validVersions[] = $row->cl_to;
+		}
 
-		foreach( $version as $v )
-		{
+		foreach ( $version as $v ) {
 			/**
 			 * 	Only add it to our available list if its in our list of valid versions.
 			 *	NOTE disabled for now
 			 */
 			//if( in_array( 'V:' . $v->getVersionShortName( ), $validVersions ))
-				$out[] = array( 'name' => $v->getVersionShortName( ), 'status' => $v->getVersionStatus( ), 'longName' => $v->getVersionLongName( ));
+				$out[] = array( 'name' => $v->getVersionShortName(), 'status' => $v->getVersionStatus(), 'longName' => $v->getVersionLongName() );
 		}
 
 		return $out;
@@ -155,15 +152,14 @@ class PonyDocsWiki
 	 *
 	 * @return array
 	 */
-	public function getManualsForProduct( $product )
-	{
-		PonyDocsProductVersion::LoadVersionsForProduct($product); 	// Dependency
-		PonyDocsProductVersion::getSelectedVersion($product);
-		$manuals = PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
+	public function getManualsForProduct( $product ) {
+		PonyDocsProductVersion::LoadVersionsForProduct( $product ); 	// Dependency
+		PonyDocsProductVersion::getSelectedVersion( $product );
+		$manuals = PonyDocsProductManual::LoadManualsForProduct( $product );	// Dependency
 
-		$out = array( );
-		foreach( $manuals as $m )
-			$out[$m->getShortName( )] = $m->getLongName( );
+		$out = array();
+		foreach ( $manuals as $m )
+			$out[$m->getShortName()] = $m->getLongName();
 
 		return $out;
 	}
@@ -173,38 +169,34 @@ class PonyDocsWiki
 	 *
 	 * @return array
 	 */
-	public function generateSideBar( )
-	{
+	public function generateSideBar() {
 		global $wgArticlePath, $wgScriptPath, $wgUser, $wgPonyDocsEmployeeGroup;
-		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT);
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT );
 
 		$g = $wgUser->getAllGroups( );
 
 		$sidebar = array( 'navigation' => array(
-			array( 'text' => 'Main Page', 'href' => str_replace( '$1', 'Main_Page', $wgArticlePath )),
-			array( 'text' => 'Help', 'href' => str_replace( '$1', 'helppage', $wgArticlePath ))
+			array( 'text' => 'Main Page', 'href' => str_replace( '$1', 'Main_Page', $wgArticlePath ) ),
+			array( 'text' => 'Help', 'href' => str_replace( '$1', 'helppage', $wgArticlePath ) )
 			)
 		);
 
 		/**
 		 * Show Special pages if employee or author.
 		 */
-		if( in_array( $authProductGroup, $g ) || in_array( $wgPonyDocsEmployeeGroup, $g ))
-			$sidebar['navigation'][] = array( 'text' => 'Special Pages', 'href' => str_replace( '$1', 'Special:Specialpages', $wgArticlePath ));
+		if ( in_array( $authProductGroup, $g ) || in_array( $wgPonyDocsEmployeeGroup, $g ) ) {
+			$sidebar['navigation'][] = array( 'text' => 'Special Pages', 'href' => str_replace( '$1', 'Special:Specialpages', $wgArticlePath ) );
+		}
 
 		/**
 		 * TOC List Mgmt if author.
 		 */
-		if( in_array( $authorGroupByProduct, $g ))
-			$sidebar['navigation'][] = array( 'text' => 'TOC List Mgmt', 'href' => str_replace( '$1', 'Special:TOCList', $wgArticlePath ));
+		if ( in_array( $authorGroupByProduct, $g ) ) {
+			$sidebar['navigation'][] = array( 'text' => 'TOC List Mgmt', 'href' => str_replace( '$1', 'Special:TOCList', $wgArticlePath ) );
+		}
 
 		//echo '<pre>'; print_r( $sidebar ); die( );
 
 		return $sidebar;
 	}
 }
-
-/**
- * End of file
- */
-?>
