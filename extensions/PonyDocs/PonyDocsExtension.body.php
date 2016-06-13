@@ -2163,7 +2163,11 @@ EOJS;
 			// Then we are in the documentation namespace, but we're not part of 
 			// manual.
 			// Clear any PDF for this manual
-			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
+			$topicVersions = $topic->getProductVersions();	
+			foreach( $topicVersions as $key => $version ) {
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName(), $topicName );
+			}				
 		}
 		
 		// Clear cache entries for each version on the Topic

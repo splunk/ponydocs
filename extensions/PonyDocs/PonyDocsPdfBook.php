@@ -107,6 +107,8 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		} else {
 			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
 		}
+		
+		$topic = NULL;
 
 		if ( !$justThisTopic ) {
 			// We should always have a pManual, if we're printing from a TOC
@@ -228,7 +230,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
 			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . addcslashes( $pdfName, '"' ) . "\"");
-		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pdfName);
+		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pdfName, $justThisTopic, $topic);
 		// No more processing
 		return false;
 	}
@@ -238,10 +240,14 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 *
 	 * @param $fileName string The full path to the PDF file.
 	 */
-	static public function servePdf($fileName, $product, $version, $manual) {
+	static public function servePdf($fileName, $product, $version, $manual, $isTopic = FALSE, $topic = NULL) {
 		if (file_exists($fileName)) {
 			header("Content-Type: application/pdf");
-			header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");
+			if ($isTopic) {
+				header("Content-Disposition: attachment; filename=\"$product-$version-{$topic->getTopicName()}.pdf\"");			
+			} else {
+				header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");			
+			}
 			readfile($fileName);
 			die();				// End processing right away.
 		} else {
@@ -258,18 +264,18 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 * @param $manual string The short name of the manual remove
 	 * @param $version string The version of the manual to remove
 	 */
-	static public function removeCachedFile($product, $manual, $version, $topicName) {
+	static public function removeCachedFile($product, $manual, $version, $topicName = NULL) {
 		global $wgUploadDirectory;
 		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
 		@unlink($pdfFileName);
-
-		if ( !empty( $topicName ) ) {
-			$pdfTopicFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $topicName . "-book.pdf";
-			if ( file_exists( $pdfTopicFileName ) ) {
-				@unlink( $pdfTopicFileName );
+		
+		if (!empty($topicName)) {
+			$pdfTopicFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $topicName . "-book.pdf";			
+			if (file_exists($pdfTopicFileName)) {
+				@unlink($pdfTopicFileName);
 			}
-		}
-
+		}		
+		
 		if (file_exists($pdfFileName)) {
 			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n')
 				. ": Failed to delete cached pdf file $pdfFileName");
