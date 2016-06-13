@@ -191,7 +191,7 @@ EOT;
 					 */
 					$regex_search = array(
 						'|<a([^\>]+)href="(' . str_replace('/', '\/', $wgServer) . ')+\/'
-							. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/' . $product->getShortName() . '\/' . $version->getVersionName() . '\/'
+							. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/' . $product->getShortName() . '\/' . $version->getVersionShortName() . '\/'
 							. $manual->getShortName() . '\/([^"]*)"([^\<]*)>|',
 						'|<a[^\>]+href="(?!#)[^"]*"[^>]*>(.*?)</a>|',
 						'|<span[^\>]+id="([^"]*)"[^>]*>(.*?)</span>|',
