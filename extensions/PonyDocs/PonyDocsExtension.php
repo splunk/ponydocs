@@ -180,8 +180,6 @@ $wgExtensionFunctions[] = 'efPonyDocsSetup';
  * - Instantiates a PonyDocsWikisingleton instance which loads versions and manuals for the requested product
  */
 function efPonyDocsSetup() {
-	global $wgScriptPath, $wgArticlePath;
-
 	// Start session for anonymous traffic
 	if ( session_id() == '' ) {
 		wfSetupSession();
@@ -190,57 +188,19 @@ function efPonyDocsSetup() {
 		}
 	}
 	
-	// Set selected product from URL
-	// This complicated regex matches /-delimited and :-delimited paths. 
-	// TODO: Generic ponydocs page-typing method should move here or to PonyDocsWiki.
-	if ( preg_match(
-		'/^' . str_replace("/", "\/", $wgScriptPath ) . '\/((index.php\?title=)|)'
-			. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[\/|:]{1}([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)[\/|:]?/i',
-		$_SERVER['PATH_INFO'],
-		$match ) ) {
-		PonyDocsProduct::SetSelectedProduct( $match[3] );
-	}
-	
-	// Set selected version from URL
-	// - every time from /-separated title URLs
-	// - only when no selected version already set from :-separated title
-	$currentVersion = PonyDocsProductVersion::GetSelectedVersion( PonyDocsProduct::GetSelectedProduct(), FALSE );
-	if ( preg_match(
-		'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-			. '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'],
-		$match)
-		|| preg_match(
-			'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-				. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/[' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC(['
-				. PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i',
-			$_SERVER['PATH_INFO'],
-			$match )
-		|| ( !isset( $currentVersion )
-			&& preg_match(
-				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
-				. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
-				. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)/i',
-				$_SERVER['PATH_INFO'], $match ) )
-		|| ( !isset($currentVersion )
-			&& preg_match(
-				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
-					. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
-					. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+:[^:]+:([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS
-					. ']+)/i', $_SERVER['PATH_INFO'], $match ) ) ) {
-		$result = PonyDocsProductVersion::SetSelectedVersion( $match[3], $match[4] );
-		if ( is_null( $result ) ) {
-			// this version isn't available to this user; go away
-			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-			if ( PONYDOCS_DEBUG ) {
-				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
-			}
-			header( "Location: " . $defaultRedirect );
-			exit;
-		}
-	}
-	
 	// This has the side effect of loading versions and manuals for the product
-	PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
+	$wiki = PonyDocsWiki::getInstance();
+
+	if ( ( $wiki->getType() == 'Topic' || $wiki->getType() == 'TOC' )
+		&& !PonyDocsProductVersion::GetSelectedVersion( $wiki->getProduct()->getShortName(), FALSE ) ) {
+		// This version isn't available to this user; go away
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+		if ( PONYDOCS_DEBUG ) {
+			error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+		}
+		header( "Location: " . $defaultRedirect );
+		exit;
+	}
 }
 
 /**

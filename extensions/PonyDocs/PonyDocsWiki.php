@@ -4,44 +4,281 @@ if ( !defined( 'MEDIAWIKI' ) ) {
 }
 
 /**
- * Singleton class to manage our PonyDocs customized wiki.  This manages things likes the manual list, version list, and
- * methods to manage them.  Any hooks/extension type methods belong in our PonyDocsExtension class as static methods so
- * we can contain them in one place.  This will primarily be used as an access point and provide methods for returning
- * sets of data in template-ready form (as simple arrays) so that the templates never need to directly use our PonyDocs
- * classes.
+ * Singleton class that initializes various values for PonyDocs
+ * There are also some template helper methods here that should probably be moved out to the skins or a separate helper class
  */
 class PonyDocsWiki {
 	/**
-	 * Our singleton instance.
-	 *
-	 * @var PonyDocsWiki
+	 * @var $instance PonyDocsWiki
 	 */
-	static protected $instance = array();
+	static protected $instance;
+	
+	/**
+	 * @var $currentProduct PonyDocsProduct Product in current request
+	 * @var $currentVersion PonyDocsProductVersion Version in current request
+	 * @var $currentManual PonyDocsProductManual Manual in current request
+	 */
+	public $currentProduct;
+	public $currentVersion;
+	public $currentManual;
+	
+	/**
+	 * @var $requestType string Type of request
+	 * @var $requestSubtype string Subtype of request
+	 */
+	public $requestType;
+	public $requestSubtype = '';
 
 	/**
-	 * Made private to enforce singleton pattern.  On instantiation (through the first call to 'getInstance') we cache our
-	 * versions and manuals [we don't save them we just cause them to load -- is this necessary?].
-	 */
-	private function __construct( $product ) {
-		/**
-		 * @FIXME:  Only necessary in Documentation namespace!
-		 */
-		PonyDocsProductVersion::LoadVersionsForProduct( $product, TRUE );
-		PonyDocsProductManual::LoadManualsForProduct( $product, TRUE );
-	}
-
-	/**
-	 * Return our static singleton instance of the class or initialize if not existing.
+	 * Return singleton instance of the class or initialize if not existing.
 	 *
 	 * @static
 	 * @return PonyDocsWiki
 	 */
-	static public function &getInstance( $product ) {
-		if( !isset(self::$instance[$product]) )
-			self::$instance[$product] = new PonyDocsWiki( $product );
-		return self::$instance[$product];
+	static public function &getInstance() {
+		if ( !isset( self::$instance ) ) {
+			self::$instance = new PonyDocsWiki();
+		}
+		
+		return self::$instance;
 	}
 
+	/**
+	 * Made private to enforce singleton pattern.
+	 * On instantiation (through the first call to 'getInstance')
+	 * - Initialize version list for the requested product as a static value in PonyDocsProductVersion
+	 * - Initialze manuals list for the requested product as a static value in PonyDocsProductManual
+	 * - Determine the type of page we're on from the URL. All other code that parses URL or title should be replaced
+	 * - Set class variables for current product, version, and manual
+	 * 
+	 */
+	private function __construct() {
+		// Normalize path
+		$path = $this->getPath();
+
+		if ( $this->isPonyDocsPath( $path ) ) {
+			// We need to extract the product name first and initialize manuals and versions before we can run the path typer
+			$this->setProductFromPath( $path );
+			$this->currentProduct = PonyDocsProduct::GetProductByShortName( PonyDocsProduct::GetSelectedProduct() );
+			PonyDocsProductVersion::LoadVersionsForProduct( $this->currentProduct->getShortName(), TRUE );
+			PonyDocsProductManual::LoadManualsForProduct( $this->currentProduct->getShortName(), TRUE );
+			list ( $this->requestType, $this->requestSubtype ) = $this->parsePath( $path );
+		}
+	}
+
+	/**
+	 * Get a normalized path from either PATH_INFO or the query string title parameter
+	 * @global string $wgScriptPath
+	 * @return string
+	 */
+	private function getPath() {
+		global $wgScriptPath;
+
+		$path = $_SERVER['PATH_INFO'];
+		$path = preg_replace("#^/$wgScriptPath#", '', $path);
+		
+		if ( strpos( $path, 'index.php' ) === 0 ) {
+			$queryParts = parse_str( $_SERVER['QUERY_STRING'] );
+			$path = $queryParts['title'];
+		} 
+
+		return $path;
+	}
+
+	/**
+	 * Determine if the first part of the path is the ponydocs namespace
+	 * 
+	 * @param string $path
+	 * @return boolean
+	 */
+	private function isPonyDocsPath( $path ) {
+		if ( preg_match( '#^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '$#', $path )
+			|| preg_match( '#^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[/:]#', $path ) ) {
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
+
+	/**
+	 * Set selected product from path
+	 * 
+	 * @param string $path
+	 */
+	private function setProductFromPath( $path ) {
+		$pathParts = preg_split( '#[/:]#', $path );
+		if ( count( $pathParts ) > 1 ) {
+			PonyDocsProduct::SetSelectedProduct( $pathParts[1] );
+		}
+	}
+
+	/**
+	 * Parse path and return type array
+	 * As a side effect, set currentManual and currentVersion class parameters.
+	 * We need to support the following title formats:
+	 * - Landing
+	 *   - Documentation
+	 * - Product or Static Product
+	 *   - Documentation/<Product>
+	 *   - Documentation/<Product>/<Version>
+	 * - Static Manual
+	 *   - Documentation/<Product>/<Version>/<Manual>
+	 * - Product Management
+	 *   - Documentation:Products
+	 * - Version Management
+	 *   - Documentation:<Product>:<Version>
+	 * - Manual Management
+	 *   - Documentation:<Product>:<Manual>
+	 * - TOC
+	 *   - Documentation:<Product>:<Manual>TOC<BaseVersion>
+	 * - Topic
+	 *   - Documentation:<Product>:<Manual>:<Topic>:<BaseVersion>
+	 * 
+	 * @param string $path
+	 * 
+	 * @return array of type and subtype
+	 */
+	private function parsePath( $path ) {
+
+		$type = '';
+		$subtype = '';
+		
+		// Page: Landing. Title: Documentation
+		if ( $path == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) {
+			$type = 'landing';
+		// Page: Product management. Title: Documentation:Products
+		} elseif ( $path == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':Products' ) {
+			$type = 'management';
+			$subtype = 'product';
+		} else {
+			// Handle slash-separated paths, all of which are either product or static.
+			if ( strpos( $path, '/' ) !== FALSE ) {
+				$pieces = explode( '/', $path );
+				
+				// If the first piece isn't a valid product, these won't match
+				if ( $pieces[1] == $this->currentProduct->getShortName() ) {
+					// Page: Product or Static product. Title: Documentation/<Product>
+					if ( count($pieces) == 2 ) {
+						if ( $this->currentProduct->isStatic() ) {
+							$type = 'static';
+							$subtype = 'product';
+						} else {
+							$type = 'product';
+						}
+					// Page: Product or Static product. Title: Documentation/<Product>/<Version>
+					} elseif ( count( $pieces ) == 3
+						&& preg_match(PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] ) ) {
+						
+						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
+							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $pieces[2] );
+						}
+						
+						if ( $this->currentProduct->isStatic() ) {
+							$type = 'static';
+							$subtype = 'product';
+						} else {
+							$type = 'product';
+						}
+					// Page: Static manual. Title: Documentation/<Product>/<Version>/<Manual>
+					} elseif ( count( $pieces ) == 4
+						&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] )
+						&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[3] ) ) {
+
+						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
+							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $pieces[2] );
+						}
+
+						$this->currentManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[3] );
+						if ( isset( $this->currentManual ) && $this->currentManual->isStatic() ) {
+							$type = 'static';
+							$subtype = 'manual';
+						}
+					}
+				}
+
+			// Handle colon-separated paths
+			} elseif (strpos( $path, ':') !== FALSE ) {
+				$pieces = explode( ':', $path );
+				if ( count( $pieces ) == 3
+					&& $pieces[1] == $this->currentProduct->getShortName() ) {
+					// Page: TOC. Title: Documentation:<Product>:<Manual>TOC<BaseVersion>
+					if ( strpos($pieces[2], 'TOC' ) !== FALSE) {
+						$type = 'toc';
+						$tocPieces = explode( 'TOC', $pieces[2] );
+						$this->currentManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $tocPieces[0] );
+
+						// When there's a base version, only set the version if there isn't already a version set
+						if ( !PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
+							PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $tocPieces[1] );
+						}
+
+						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
+							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $tocPieces[1] );
+						}
+					// Page: Manual Management. Title: Documentation:<Product>:Manuals
+					} elseif ( $pieces[1] == 'Manuals' ) {
+						$type = 'management';
+						$subtype = 'manual';
+					// Page: Version Management. Title: Documentation:<Product>:Versions
+					} elseif ( $pieces[1] == 'Versions' ) {
+						$type = 'management';
+						$subtype = 'version';
+					}
+				// Page: Topic. Title: Documentation:<Product>:<Manual>:<Topic>:<BaseVersion>
+				} elseif (count($pieces) == 5
+					&& $pieces[1] == $this->currentProduct->getShortName()
+					&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[2] )
+					&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $pieces[4] ) ) {
+					
+					$this->currentManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
+
+					// When there's a base version, only set the version if there isn't already a version set
+					if (! PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
+						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[4] );
+					}
+
+					if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
+						$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $pieces[4] );
+					}
+					
+					$type = 'topic';
+				}
+			}
+		}
+		
+		return array($type, $subtype);
+	}
+	
+	/**
+	 * Getters
+	 */
+	
+	public function getProduct() {
+		return $this->currentProduct;
+	}
+	
+	public function getVersion() {
+		return $this->currentVersion;
+	}
+	
+	public function getManual() {
+		return $this->currentManual;
+	}
+	
+	public function getType() {
+		return $this->requestType;
+	}
+	
+	public function getSubtype() {
+		return $this->requestSubtype;
+	}
+
+	/**
+	 * Template helper methods
+	 */
+	
 	/**
 	 * This returns the list of available products for template output in a more useful way for templates.  
 	 * It is a simple list with each element being an associative array containing three keys: name status, and parent
@@ -55,7 +292,6 @@ class PonyDocsWiki {
 		$productAry = array();
 
 		foreach ($product as $p) {
-
 			// Only add product to list if it has versions visible to this user
 			$valid = FALSE;
 			$versions = PonyDocsProductVersion::LoadVersionsForProduct($p->getShortName());
