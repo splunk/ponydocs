@@ -191,7 +191,7 @@ function efPonyDocsSetup() {
 	// This has the side effect of loading versions and manuals for the product
 	$wiki = PonyDocsWiki::getInstance();
 
-	if ( ( $wiki->getType() == 'Topic' || $wiki->getType() == 'TOC' )
+	if ( ( $wiki->getRequestType() == 'Topic' || $wiki->getRequestType() == 'TOC' )
 		&& !PonyDocsProductVersion::GetSelectedVersion( $wiki->getProduct()->getShortName(), FALSE ) ) {
 		// This version isn't available to this user; go away
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
@@ -646,18 +646,25 @@ $wgHooks['ParserGetVariableValueSwitch'][] = 'wfPonyDocsGetVariableValueSwitch';
 $wgHooks['MagicWordwgVariableIDs'][] = 'wfPonyDocsMagicWordwgVariableIDs';
 
 function wfPonyDocsGetVariableValueSwitch( &$parser, &$cache, &$magicWordId, &$ret ) {
+	$wiki = PonyDocsWiki::getInstance();
 	switch ( $magicWordId ) {
 		case 'PonyDocs_Product':
-			$ret = 'Foo';
+			$product = $wiki->getCurrentProduct();
+			if ( $product ) {
+				$ret = $product->getLongName( TRUE );
+			}
 			break;
 		case 'PonyDocs_Version':
-			$ret = 'Bar';
+			$version = $wiki->getCurrentVersion();
+			if ( $version ) {
+				$ret = $version->getVersionLongName();
+			}
 			break;
 		case 'PonyDocs_Manual':
-			$ret = 'Bas';
-			break;
-		case 'PonyDocs_Topic':
-			$ret = 'Bat';
+			$manual = $wiki->getCurrentManual();
+			if ( $manual ) {
+				$ret = $manual->getLongName();
+			}
 			break;
 	}
 

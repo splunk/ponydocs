@@ -18,16 +18,16 @@ class PonyDocsWiki {
 	 * @var $currentVersion PonyDocsProductVersion Version in current request
 	 * @var $currentManual PonyDocsProductManual Manual in current request
 	 */
-	public $currentProduct;
-	public $currentVersion;
-	public $currentManual;
+	private $currentProduct;
+	private $currentVersion;
+	private $currentManual;
 	
 	/**
 	 * @var $requestType string Type of request
 	 * @var $requestSubtype string Subtype of request
 	 */
-	public $requestType;
-	public $requestSubtype = '';
+	private $requestType;
+	private $requestSubtype = '';
 
 	/**
 	 * Return singleton instance of the class or initialize if not existing.
@@ -132,6 +132,7 @@ class PonyDocsWiki {
 	 * - TOC
 	 *   - Documentation:<Product>:<Manual>TOC<BaseVersion>
 	 * - Topic
+	 *   - Documentation/<Product>/<Version>/<Manual>/<Topic>
 	 *   - Documentation:<Product>:<Manual>:<Topic>:<BaseVersion>
 	 * 
 	 * @param string $path
@@ -139,14 +140,13 @@ class PonyDocsWiki {
 	 * @return array of type and subtype
 	 */
 	private function parsePath( $path ) {
-
 		$type = '';
 		$subtype = '';
 		
-		// Page: Landing. Title: Documentation
+		// Page: Landing. Path: Documentation
 		if ( $path == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) {
 			$type = 'landing';
-		// Page: Product management. Title: Documentation:Products
+		// Page: Product management. Path: Documentation:Products
 		} elseif ( $path == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':Products' ) {
 			$type = 'management';
 			$subtype = 'product';
@@ -165,10 +165,10 @@ class PonyDocsWiki {
 						} else {
 							$type = 'product';
 						}
-					// Page: Product or Static product. Title: Documentation/<Product>/<Version>
+					// Page: Product or Static product. Path: Documentation/<Product>/<Version>
 					} elseif ( count( $pieces ) == 3
 						&& preg_match(PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] ) ) {
-						
+
 						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
 						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
 							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $pieces[2] );
@@ -180,7 +180,7 @@ class PonyDocsWiki {
 						} else {
 							$type = 'product';
 						}
-					// Page: Static manual. Title: Documentation/<Product>/<Version>/<Manual>
+					// Page: Static manual. Path: Documentation/<Product>/<Version>/<Manual>
 					} elseif ( count( $pieces ) == 4
 						&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] )
 						&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[3] ) ) {
@@ -195,6 +195,21 @@ class PonyDocsWiki {
 							$type = 'static';
 							$subtype = 'manual';
 						}
+					// Page: Topic. Path: Documentation/<Product>/<Version>/<Manual>/<Topic>
+					} elseif ( count ($pieces ) == 5
+						&& $pieces[1] == $this->currentProduct->getShortName()
+						&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] )
+						&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[3] ) ) {
+
+						$this->currentManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[3] );
+						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE );
+						if ( $selectedVersion ) {
+							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $selectedVersion );
+						}
+
+						$type = 'topic';
+						
 					}
 				}
 
@@ -203,7 +218,7 @@ class PonyDocsWiki {
 				$pieces = explode( ':', $path );
 				if ( count( $pieces ) == 3
 					&& $pieces[1] == $this->currentProduct->getShortName() ) {
-					// Page: TOC. Title: Documentation:<Product>:<Manual>TOC<BaseVersion>
+					// Page: TOC. Path: Documentation:<Product>:<Manual>TOC<BaseVersion>
 					if ( strpos($pieces[2], 'TOC' ) !== FALSE) {
 						$type = 'toc';
 						$tocPieces = explode( 'TOC', $pieces[2] );
@@ -217,16 +232,16 @@ class PonyDocsWiki {
 						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
 							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $tocPieces[1] );
 						}
-					// Page: Manual Management. Title: Documentation:<Product>:Manuals
+					// Page: Manual Management. Path: Documentation:<Product>:Manuals
 					} elseif ( $pieces[1] == 'Manuals' ) {
 						$type = 'management';
 						$subtype = 'manual';
-					// Page: Version Management. Title: Documentation:<Product>:Versions
+					// Page: Version Management. Path: Documentation:<Product>:Versions
 					} elseif ( $pieces[1] == 'Versions' ) {
 						$type = 'management';
 						$subtype = 'version';
 					}
-				// Page: Topic. Title: Documentation:<Product>:<Manual>:<Topic>:<BaseVersion>
+				// Page: Topic. Path: Documentation:<Product>:<Manual>:<Topic>:<BaseVersion>
 				} elseif (count($pieces) == 5
 					&& $pieces[1] == $this->currentProduct->getShortName()
 					&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[2] )
@@ -255,23 +270,23 @@ class PonyDocsWiki {
 	 * Getters
 	 */
 	
-	public function getProduct() {
+	public function getCurrentProduct() {
 		return $this->currentProduct;
 	}
 	
-	public function getVersion() {
+	public function getCurrentVersion() {
 		return $this->currentVersion;
 	}
 	
-	public function getManual() {
+	public function getCurrentManual() {
 		return $this->currentManual;
 	}
 	
-	public function getType() {
+	public function getRequestType() {
 		return $this->requestType;
 	}
 	
-	public function getSubtype() {
+	public function getRequestSubtype() {
 		return $this->requestSubtype;
 	}
 
