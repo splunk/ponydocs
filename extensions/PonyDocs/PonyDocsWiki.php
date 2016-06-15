@@ -53,7 +53,6 @@ class PonyDocsWiki
 	 * @return array  array of product arrays, keyed by shortname
 	 */
 	public function getProductsForTemplate() {
-		$dbr = wfGetDB(DB_SLAVE);
 		$product = PonyDocsProduct::GetProducts();
 		$productAry = array();
 
@@ -81,6 +80,7 @@ class PonyDocsWiki
 					'label' => $p->getLongName(),
 					'description' => $p->getDescription(),
 					'parent' => $p->getParent(),
+					'categories' => $p->getCategories(),
 				);
 			}
 		}
@@ -94,18 +94,22 @@ class PonyDocsWiki
 	 * @param PonyDocsTopic $pTopic Topic to obtain versions for.
 	 * @return array
 	 */
-	public function getVersionsForTopic( PonyDocsTopic &$pTopic )
-	{
+	public function getVersionsForTopic( PonyDocsTopic &$pTopic ) {
 		global $wgArticlePath;
-		$versions = $pTopic->getProductVersions( );
 
-		$out = array( );
-		foreach( $versions as $v )
-		{
-			$out[] = array( 'name' => $v->getVersionName( ), 'href' => str_replace( '$1', 'Category:V:' . $v->getProductName() . ':' . $v->getVersionName( ), $wgArticlePath ));
+		$versions = array();
+		foreach ( $pTopic->getProductVersions() as $productVersion ) {
+			$versions[] = array(
+				'name' => $productVersion->getVersionShortName(),
+				'href' => str_replace(
+					'$1', 
+					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionShortName(),
+					$wgArticlePath ),
+				'longName' => $productVersion->getVersionLongName()
+			);
 		}
 
-		return $out;
+		return $versions;
 	}
 
 	/**
@@ -138,8 +142,8 @@ class PonyDocsWiki
 			 * 	Only add it to our available list if its in our list of valid versions.
 			 *	NOTE disabled for now
 			 */
-			//if( in_array( 'V:' . $v->getVersionName( ), $validVersions ))
-				$out[] = array( 'name' => $v->getVersionName( ), 'status' => $v->getVersionStatus( ));
+			//if( in_array( 'V:' . $v->getVersionShortName( ), $validVersions ))
+				$out[] = array( 'name' => $v->getVersionShortName( ), 'status' => $v->getVersionStatus( ), 'longName' => $v->getVersionLongName( ));
 		}
 
 		return $out;
@@ -155,8 +159,7 @@ class PonyDocsWiki
 	{
 		PonyDocsProductVersion::LoadVersionsForProduct($product); 	// Dependency
 		PonyDocsProductVersion::getSelectedVersion($product);
-		PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
-		$manuals = PonyDocsProductManual::GetManuals( $product );
+		$manuals = PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
 
 		$out = array( );
 		foreach( $manuals as $m )

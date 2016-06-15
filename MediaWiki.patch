@@ -1,0 +1,13 @@
+Index: includes/page/Article.php
+===================================================================
+--- includes/page/Article.php	(revision 572)
++++ includes/page/Article.php	(revision 576)
+@@ -147,7 +147,7 @@
+ 	 */
+ 	public static function newFromWikiPage( WikiPage $page, IContextSource $context ) {
+ 		$article = self::newFromTitle( $page->getTitle(), $context );
+-		$article->mPage = $page; // override to keep process cached vars
++		//$article->mPage = $page; // override to keep process cached vars
+ 		return $article;
+ 	}
+ 

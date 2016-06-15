@@ -80,7 +80,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		} else if (count($pieces) != 5) {
 			// something is wrong, let's get out of here			
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-			if (PONYDOCS_REDIRECT_DEBUG) {
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
 			}
 			header( "Location: " . $defaultRedirect );
@@ -101,7 +101,11 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
-		$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
+		if ( isset($_GET['version']) && PonyDocsProductVersion::IsVersion($productName, $_GET['version'])) {
+			$versionText = $_GET['version'];
+		} else {
+			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
+		}
 
 		if (!empty($pManual)) {
 			// We should always have a pManual, if we're printing from a TOC

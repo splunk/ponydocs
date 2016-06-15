@@ -105,7 +105,7 @@ class PonyDocsTOC
 	 */
 	public function & addVersion( PonyDocsProductVersion& $pVersion )
 	{
-		$this->pVersionList[$pVersion->getVersionName()] = $pVersion;
+		$this->pVersionList[$pVersion->getVersionShortName()] = $pVersion;
 		return $pVersion;
 	}
 
@@ -143,25 +143,42 @@ class PonyDocsTOC
 		 * From this we then scan the same table for all 'cl_to' matches for the complete name and add those versions to our list.
 		 */
 		$dbr = wfGetDB( DB_SLAVE );
+		
 		$res = $dbr->select(
-			'categorylinks',
-			'cl_sortkey',
+			array('categorylinks', 'page'),
+			array('cl_sortkey', 'page_title') ,
 			array(
-				"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName() )
-					. ":" . $dbr->strencode( strtolower( $this->pManual->getShortName() ) ) . "toc%'",
-				"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName() ) . ":"
-					. $dbr->strencode( $this->pInitialVersion->getVersionName() ) . "'" ),
+				'cl_from = page_id',
+				'page_namespace = "' . NS_PONYDOCS . '"',
+				"cl_to = 'V:"
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() ) . "'" ,
+				'cl_type = "page"',
+				"cl_sortkey LIKE '"
+					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
+					. "TOC%'",
+			),
 			__METHOD__ );
-
+		
 		if ( !$res->numRows() ) {
 			return FALSE;
 		}
 
 		$row = $dbr->fetchObject( $res );
-		$mTOCPageTitle = $row->cl_sortkey;
+		$mTOCPageTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
 		$this->mTOCPageTitle = $mTOCPageTitle;
 		
-		$res = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $mTOCPageTitle ) . "'", __METHOD__ );
+		// TODO: Why not just get cl_to in previous query?
+		$res = $dbr->select(
+			'categorylinks',
+			'cl_to',
+			array(
+				'cl_to LIKE "V:%:%"',
+				'cl_type = "page"',
+				"cl_sortkey = '" . $dbr->strencode( $row->cl_sortkey ) . "'",
+			),
+			__METHOD__
+		);
+		
 		while( $row = $dbr->fetchObject( $res ) ) {
 			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
 				$addV = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
@@ -242,12 +259,12 @@ class PonyDocsTOC
 		}
 
 		$selectedProduct = $this->pProduct->getShortName();
-		$selectedVersion = $this->pInitialVersion->getVersionName();
+		$selectedVersion = $this->pInitialVersion->getVersionShortName();
 		$selectedManual = $this->pManual->getShortName();
 
 		// Okay, let's determine if the VERSION that the user is in is latest, if so, we should set latest to true.
 		if ( PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct) != NULL ) {
-		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionName() ) {
+		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionShortName() ) {
 				$latest = TRUE;
 			}
 		}
@@ -255,12 +272,13 @@ class PonyDocsTOC
 		$cache = PonyDocsCache::getInstance();
 		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
 		$toc = $cache->get( $key );
-		if ( $toc === NULL ) {
-			// Cache did not exist, let's load our content is build up our cache entry.
-			$toc = array();
-			$idx = 0; 				// The current index of the element in $toc we will work on
+		// Cache did not exist, let's load our content is build up our cache entry.
+		if ( $toc === NULL && is_object( $this->pTOCArticle ) && is_a( $this->pTOCArticle, 'Article' ) ) {
+			// The current index of the element in $toc we will work on
+			$idx = 0; 				
 			$section = -1;
-			$lines = explode( "\n", $this->pTOCArticle->mContent );
+			$content = $this->pTOCArticle->getContent();
+			$lines = explode( "\n", $content );
 			foreach ( $lines as $line ) {
 				/**
 				 * Indicates an arbitrary section header if it does not begin with a bullet point.
@@ -300,7 +318,7 @@ class PonyDocsTOC
 					$baseTopic = $matches[1];
 
 					$title_suffix = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $baseTopic );
-					$title = PONYDOCS_DOCUMENTATION_PREFIX . "$selectedProduct:$selectedManual:$title_suffix";
+					$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix";
 					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $title, $selectedProduct );
 
 					/**
@@ -351,97 +369,105 @@ class PonyDocsTOC
 			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
 		}
 
-		$currentIndex = -1;
-		$start = array();
+		if ( $toc ) {
+			$currentIndex = -1;
+			$start = array();
 
-		// Go through and determine start, prev, next and current elements.
-
-		foreach ( $toc as $idx => &$entry ) {
-			// Not using $entry. Only interested in $idx.
-			// This allows us to process tocs with removed key indexes.
-			if ( $toc[$idx]['level'] == 1 ) {
-				if ( empty( $start ) ) {
-					$start = $toc[$idx];
-				}
-				// Determine current
-				$toc[$idx]['current'] = strcmp( $wgTitle->mPrefixedText, $toc[$idx]['title'] ) ? FALSE : TRUE;
-				if ( $toc[$idx]['current'] ) {
-					$currentIndex = $idx;
-				}
-				// Now rewrite link with latest, if we are in latest
-				if ( $latest ) {
-					$safeVersion = preg_quote( $selectedVersion, '#' );
-					// Lets be specific and replace the version and not some other part of the URI that might match...
-					$toc[$idx]['link'] = preg_replace(
-						'#^/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/'
-							. "$safeVersion#",
-						'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
-						$toc[$idx]['link'],
-						1 );
-				}
-			}
-		}
-
-		/**
-		 * Figure out previous and next links.
-		 * 
-		 * Previous should point to previous topic regardless of section, so our best bet is to skip any 'level=0'. 
-		 * 
-		 * Next works the same way.
-		 */
-		$prev = $next = $idx = -1;
-
-		if ( $currentIndex >= 0 ) {
-			$idx = $currentIndex;
-			while ( $idx >= 0 ) {
-				--$idx;
-				if ( isset( $toc[$idx] ) && $toc[$idx]['level'] == 1 ) {
-					$prev = $idx;
-					break;
-				} 
-			}
-
-			$idx = $currentIndex;
-			// Array is sparse, so sizeof() truncates the end. Use max key instead.
-			while ( $idx <= max(array_keys( $toc ) ) ) {
-				++$idx;
-				if ( isset($toc[$idx]) && $toc[$idx]['level'] == 1 ) {
-					$next = $idx;
-					break;
+			// Go through and determine start, prev, next and current elements.
+			foreach ( $toc as $idx => &$entry ) {
+				// Not using $entry. Only interested in $idx.
+				// This allows us to process tocs with removed key indexes.
+				if ( $toc[$idx]['level'] == 1 ) {
+					if ( empty( $start ) ) {
+						$start = $toc[$idx];
+					}
+					// Determine current
+					$toc[$idx]['current'] = strcmp( $wgTitle->getPrefixedText(), $toc[$idx]['title'] ) ? FALSE : TRUE;
+					if ( $toc[$idx]['current'] ) {
+						$currentIndex = $idx;
+					}
+					// Now rewrite link with latest, if we are in latest
+					if ( $latest ) {
+						$safeVersion = preg_quote( $selectedVersion, '#' );
+						// Lets be specific and replace the version and not some other part of the URI that might match...
+						$toc[$idx]['link'] = preg_replace(
+							'#^/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/'
+								. "$safeVersion#",
+							'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
+							$toc[$idx]['link'],
+							1 );
+					}
 				}
 			}
 
-			if ( $prev != -1 ) {
-				$prev = array(
-					'link' => $toc[$prev]['link'],
-					'text' => $toc[$prev]['text']
-				);
-			}
-			if ( $next != -1 ) {
-				$next = array(
-					'link' => $toc[$next]['link'],
-					'text' => $toc[$next]['text']
-				);
-			}
-		}
+			/**
+			 * Figure out previous and next links.
+			 * 
+			 * Previous should point to previous topic regardless of section, so our best bet is to skip any 'level=0'. 
+			 * 
+			 * Next works the same way.
+			 */
+			$prev = $next = $idx = -1;
 
-		/**
-		 * You should typically capture this by doing:
-		 * list( $toc, $prev, $next, $start ) = $ponydocstoc->loadContent();
-		 *
-		 * @FIXME: Previous and next links change based on the page you are on, so we cannot CACHE those!
-		 *
-		 * $obj = new stdClass();
-		 * $obj->toc = $toc;
-		 * $obj->prev = $prev;
-		 * $obj->next = $next;
-		 * $obj->start = $start;
-		 * $cache->addKey($tocKey, $obj);
-		 */
-		
-		// Last but not least, get the manual description if there is one.
-		if ( is_object($this->pTOCArticle) && preg_match( '/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->mContent, $matches ) ) {
-			$this->mManualDescription = $matches[1];
+			if ( $currentIndex >= 0 ) {
+				$idx = $currentIndex;
+				while ( $idx >= 0 ) {
+					--$idx;
+					if ( isset( $toc[$idx] ) && $toc[$idx]['level'] == 1 ) {
+						$prev = $idx;
+						break;
+					} 
+				}
+
+				$idx = $currentIndex;
+				// Array is sparse, so sizeof() truncates the end. Use max key instead.
+				while ( $idx <= max(array_keys( $toc ) ) ) {
+					++$idx;
+					if ( isset($toc[$idx]) && $toc[$idx]['level'] == 1 ) {
+						$next = $idx;
+						break;
+					}
+				}
+
+				if ( $prev != -1 ) {
+					$prev = array(
+						'link' => $toc[$prev]['link'],
+						'text' => $toc[$prev]['text']
+					);
+				}
+				if ( $next != -1 ) {
+					$next = array(
+						'link' => $toc[$next]['link'],
+						'text' => $toc[$next]['text']
+					);
+				}
+			}
+
+			/**
+			 * You should typically capture this by doing:
+			 * list( $toc, $prev, $next, $start ) = $ponydocstoc->loadContent();
+			 *
+			 * @FIXME: Previous and next links change based on the page you are on, so we cannot CACHE those!
+			 *
+			 * $obj = new stdClass();
+			 * $obj->toc = $toc;
+			 * $obj->prev = $prev;
+			 * $obj->next = $next;
+			 * $obj->start = $start;
+			 * $cache->addKey($tocKey, $obj);
+			 */
+
+			// Last but not least, get the manual description if there is one.
+			if ( is_object($this->pTOCArticle) 
+				&& preg_match( '/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->getContent(), $matches ) ) {
+				$this->mManualDescription = $matches[1];
+			}
+		// $this->pTOCArticle is empty, we're probably creating a new TOC
+		} else {
+			$toc = array();
+			$prev = array();
+			$next = array();
+			$start = array();
 		}
 
 		return array( $toc, $prev, $next, $start );
@@ -461,14 +487,17 @@ class PonyDocsTOC
 	 * @return string
 	 */
 	static public function normalizeSection( $secText ) {
+		// Replace 2 or more spaces with 1 space
+		$secText = preg_replace( '/\s{2,}/', ' ', $secText );
+		// Trim whitespace from beginning and end of string, and then replace spaces with underscores
 		$secText = str_replace( ' ', '_', preg_replace( '/^\s*|\s*$/', '', $secText ) );
 		return $secText;
 	}
 
 	static public function clearTOCCache( $manual, $version, $product ) {
 		error_log( "INFO [PonyDocsTOC::clearTOCCache] Deleting cache entry of TOC for product " . $product->getShortName()
-			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionName());
-		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName();
+			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionShortName());
+		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionShortName();
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
 	}

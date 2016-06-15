@@ -59,7 +59,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		} else if (count($pieces) != 5) {
 			// something is wrong, let's get out of here
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-			if (PONYDOCS_REDIRECT_DEBUG) {
+			if (PONYDOCS_DEBUG) {
 				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
 			}
 			header( "Location: " . $defaultRedirect );

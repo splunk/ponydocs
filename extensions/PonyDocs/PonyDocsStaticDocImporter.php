@@ -42,16 +42,17 @@ class PonyDocsStaticDocImporter {
 		// verify path resides inside the expected base directory
 		$realdir = realpath( $directory );
 		if ( $realdir !== FALSE && !( strpos( $realdir, $this->baseDir . DIRECTORY_SEPARATOR) === 0 ) ) {
-			throw new InvalidArgumentException( 'There was a problem deleting directory. The directory ' . $directory
-				. ' is not valid.' );
+			throw new InvalidArgumentException(
+				"There was a problem deleting directory. The directory $directory is not valid.");
 		}
 		// extract archive to the created directory
 		exec( "unzip " . escapeshellarg( $filename ) . " -d " . escapeshellarg( $directory ), $output, $returnval );
 		if ( $returnval != 0 ) {
-			$errorText = "There was a problem extracting your archive (Code: $returnval)";
+			$errorText = "There was a problem extracting your archive (Code: $returnval)\n";
 			if ( $returnval == 2 ) {
 				$errorText .= ' The file you provided was not a valid zip archive.';
 			}
+			$errorText .= implode("\n", $output);
 			throw new RuntimeException( $errorText );
 		}
 	}
@@ -74,18 +75,20 @@ class PonyDocsStaticDocImporter {
 		// verify path resides inside the expected base directory
 		$realdir = realpath( $directory );
 		if ( $realdir !== FALSE && !( strpos( $realdir, $this->baseDir . DIRECTORY_SEPARATOR) === 0 ) ) {
-			throw new InvalidArgumentException( 'There was a problem deleting directory. The directory ' . $directory
-				. ' is not valid.' );
+			throw new InvalidArgumentException(
+				"There was a problem deleting directory. The directory $directory is not valid.");
 		}
 		// verify the path is a directory
 		if ( !is_dir( $directory ) ) {
-			throw new InvalidArgumentException( 'There was a problem deleting directory. The directory ' . $directory
-				. ' does not exist.' );
+			throw new InvalidArgumentException(
+				"There was a problem deleting directory. The directory $directory does not exist.");
 		}
 		// execute delete
+		// $output contains stdout. stderr goes to apache error log!
 		exec( "rm -rf " . escapeshellarg( $directory ), $output, $returnval );
 		if ( $returnval != 0 ) {
-			$errorText = "There was a problem deleting the directory $directory (Code: $returnval)";
+			$errorText = "There was a problem deleting the directory $directory (Code: $returnval)\n"
+				. implode("\n", $output);
 			throw new RuntimeException( $errorText );
 		}
 	}
