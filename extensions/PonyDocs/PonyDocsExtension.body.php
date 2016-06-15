@@ -1139,7 +1139,7 @@ HEREDOC;
 							);
 
 							if ( !$res->numRows() ) {
-								$topicTitle = PONYDOCS_DOCUMENTATION_PREFIX . $sqlMatch . ':' . $version;
+								$topicTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $sqlMatch . ':' . $version;
 								$tempArticle = new Article( Title::newFromText( $topicTitle ) );
 								if ( !$tempArticle->exists() ) {
 									/**
