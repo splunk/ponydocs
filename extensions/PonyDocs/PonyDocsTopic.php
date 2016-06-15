@@ -96,7 +96,6 @@ class PonyDocsTopic {
 		}
 		
 		$dbr = wfGetDB( DB_SLAVE );
-		$revision = $this->pArticle->mRevision;
 
 		$res = $dbr->select(
 			'categorylinks',
@@ -112,17 +111,31 @@ class PonyDocsTopic {
 		$this->versions = array();
 		
 		while ( $row = $dbr->fetchObject( $res ) ) {
-			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
-				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
-				if ( $v ) {
-					$this->versions[] = $v;
-				}
+			$version = $this->convertCategoryToVersion( $row->cl_to );
+			if ( $version ) {
+				$this->versions[] = $version;
 			}
 		}
 
 		// Sort by the order on the versions admin page
 		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
 		return $this->versions;
+	}
+	
+	/**
+	 * Convert a category tag to a PonyDocsProductVersion
+	 * 
+	 * @param string $category
+	 * @return PonyDocsProductVersion|NULL
+	 */
+	public function convertCategoryToVersion( $category ) {
+		if ( preg_match( '/^v:(.*):(.*)/i', $category, $match ) ) {
+			$version = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
+		}
+		
+		if ( $version ) {
+			return $version;
+		}
 	}
 
 	/**
@@ -335,6 +348,18 @@ class PonyDocsTopic {
 	}
 	
 	/**
+	 * Get just the topic part of the title
+	 * 
+	 * @return string
+	 */
+	public function getTopicName() {
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(),
+			$match ) ) {
+			return $match[3];
+		}
+	}
+	
+	/**
 	 * Return a regex to match the topic parser function
 	 * 
 	 * @param string $title An optional title to search for. If not supplied, we'll search for any title, using a capture group.
@@ -355,25 +380,29 @@ class PonyDocsTopic {
 	 * @param string $manualName
 	 * @param string $topicName
 	 * @param string $versionName - Optional. We'll get the selected version (which defaults to 'latest') if empty
+	 * @param boolean $makeLatestUrl - Optional.
+	 *                                 If TRUE (default) replace version string with 'latest' if the latest verson is passed in
 	 * 
 	 * @return string
 	 * 
 	 * TODO: We should really be passing a topic object into this and not a string
 	 */
-	static public function getTopicURLPath( $productName, $manualName, $topicName, $versionName = NULL ) {
+	static public function getTopicURLPath( $productName, $manualName, $topicName, $versionName = NULL, $makeLatestUrl = TRUE ) {
 		global $wgArticlePath;
 
 		if (! isset( $versionName ) ) {
 			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 		}
 		
-		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
-		if ( $latestVersion ) {
-			if ( $versionName == $latestVersion->getVersionShortName() ) {
-				$versionName = 'latest';
+		if ($makeLatestUrl) {
+			$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+			if ( $latestVersion ) {
+				if ( $versionName == $latestVersion->getVersionShortName() ) {
+					$versionName = 'latest';
+				}
 			}
 		}
-		
+
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 
 		return "$base/$productName/$versionName/$manualName/$topicName";
