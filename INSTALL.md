@@ -49,33 +49,33 @@ a one-line change.
 The following is an example Apache configuration that assumes MediaWiki is installed in the docroot.
 If MediaWiki is installed in a subdirectory of the docroot, modify the configuration accordingly.
 
- ```
- ################# START SAMPLE APACHE CONFIGURATION #################
- RewriteEngine On
+	```
+	################# START SAMPLE APACHE CONFIGURATION #################
+	RewriteEngine On
 
- # Rewrite home page requests to Documentation
- RewriteRule ^/$ /Documentation [R]
+	# Rewrite home page requests to Documentation
+	RewriteRule ^/$ /Documentation [R]
 
- # Rewrite /Documentation/ to /Documentation
- RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
+	# Rewrite /Documentation/ to /Documentation
+	RewriteRule ^/Documentation/$   /Documentation  [L,R=301]
 
- # Proxy /DocumentationStatic to Special:StaticDocServer
- RewriteRule ^/DocumentationStatic	- [L]
- ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
+	# Proxy /DocumentationStatic to Special:StaticDocServer
+	RewriteRule ^/DocumentationStatic	- [L]
+	ProxyPass /DocumentationStatic/	http://ponydocs.example.com/Special:StaticDocServer/
 
- # Rewrite ugly doc urls to pretty urls
- RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
- RewriteRule ^/Documentation:(.*):(.*):(.*)			/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
+	# Rewrite ugly doc urls to pretty urls
+	RewriteRule ^/Documentation:(.*):(.*):(.*):(.*)	/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+	RewriteRule ^/Documentation:(.*):(.*):(.*)			/Documentation/$1/latest/$2/$3 [L,QSA,R=301]
 
- # Send all other requests to MediaWiki
- # NB: If you are not using vhosts, or are using apache < 2.2, remove %{DOCUMENT_ROOT}
- #     See discussion of REQUEST_FILENAME in http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
- RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-f
- RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-d
- RewriteCond %{REQUEST_URI}							!=/favicon.ico
- RewriteRule ^/.*$	/index.php [L]
- ################# END SAMPLE APACHE CONFIGURATION #################
- ```
+	# Send all other requests to MediaWiki
+	# NB: If you are not using vhosts, or are using apache < 2.2, remove %{DOCUMENT_ROOT}
+	#     See discussion of REQUEST_FILENAME in http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond
+	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-f
+	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME}	!-d
+	RewriteCond %{REQUEST_URI}							!=/favicon.ico
+	RewriteRule ^/.*$	/index.php [L]
+	################# END SAMPLE APACHE CONFIGURATION #################
+	```
 
 Restart Apache
 
@@ -94,6 +94,7 @@ Restart Apache
 
 The following is an example LocalSettings.php file with settings that make sense for ponydocs
 
+```
 ################# PONYDOCS START #################
 
 # The settings below should be updated
@@ -191,6 +192,7 @@ $wgContentNamespaces[] = NS_PONYDOCS;
 
 include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");
 #################  PONYDOCS END #################
+```
 
 ### 5) Review PonyDocsConfig.php
 
