@@ -273,7 +273,7 @@ class PonyDocsTemplate extends QuickTemplate {
 												// do quick manip
 												$found = FALSE;
 												for ( $i =( count( $this->data['versions'] ) - 1 ); $i >= 0; $i-- ) {
-													$this->data['versions'][$i]['label'] = $this->data['versions'][$i]['name'];
+													$this->data['versions'][$i]['label'] = $this->data['versions'][$i]['longName'];
 													if ( !$found && $this->data['versions'][$i]['status'] == "released" ) {
 														$this->data['versions'][$i]['label'] .= " (latest release)";
 														$found = TRUE;
