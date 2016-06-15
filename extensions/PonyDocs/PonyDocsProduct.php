@@ -5,7 +5,7 @@ if( !defined( 'MEDIAWIKI' ) ) {
 
 /**
  * An instance represents a single PonyDocs product based upon the short/long name.
- * It also contains static methods and data for loading the global list of products from the special page. 
+ * It also contains static methods and data for loading the global list of products from the special page.
  */
 class PonyDocsProduct
 {
@@ -38,7 +38,7 @@ class PonyDocsProduct
 	 * @var array Categories that this Product is in
 	 */
 	protected $mCategories;
-	
+
 	/**
 	 * @access protected
 	 * @var boolean Is the Product static?
@@ -59,21 +59,21 @@ class PonyDocsProduct
 	 * @var array Complete list of Products
 	 */
 	static protected $sDefinedProductList = array();
-	
+
 	/**
 	 * @access protected
 	 * @static
 	 * @var array An array mapping parents to child Products
 	 */
 	static protected $sParentChildMap = array();
-	
+
 	/**
 	 * @access protected
 	 * @static
 	 * @var array An array mapping Categories to Products which have a TOC defined for the currently selected version
 	 */
 	static protected $sCategoryMap = array();
-	
+
 	/**
 	 * Constructor is simply passed the short and long (display) name.  We convert the short name to lowercase
 	 * immediately so we don't have to deal with case sensitivity.
@@ -82,7 +82,7 @@ class PonyDocsProduct
 	 * @param string $longName Display name for product.
 	 * @param string $status   Status for product. One of: hidden
 	 */
-	public function __construct( $shortName, $longName = '', $description = '', $parent = '', $categories = '' ) {
+	public function __construct( $shortName, $longName = '', $description = '', $parent = '', $categories = '', $static = FALSE ) {
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . '])/', '', $shortName );
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
 		$this->mDescription = $description;
@@ -113,7 +113,7 @@ class PonyDocsProduct
 	public function getDescription() {
 		return $this->mDescription;
 	}
-	
+
 	/**
 	 * Getter for parent name
 	 * @return string
@@ -121,21 +121,13 @@ class PonyDocsProduct
 	public function getParent() {
 		return $this->mParent;
 	}
-	
+
 	/**
 	 * Getter for categories
 	 * @return array
 	 */
 	public function getCategories() {
 		return $this->mCategories;
-	}
-
-	/**
-	 * Setter for static
-	 * @param boolean $static
-	 */
-	public function setStatic( $static ) {
-		$this->static = $static;
 	}
 
 	/**
@@ -150,7 +142,7 @@ class PonyDocsProduct
 	 * This loads the list of products.
 	 *
 	 * @param boolean $reload
-	 * 
+	 *
 	 * @return array
 	 */
 	static public function LoadProducts( $reload = FALSE ) {
@@ -183,10 +175,10 @@ class PonyDocsProduct
 		$tags = explode( '}}', $content );
 		foreach ( $tags as $tag ) {
 			$tag = trim( $tag );
-			if ( strpos( $tag, '{{#product:' ) === 0 ) { 
-				
+			if ( strpos( $tag, '{{#product:' ) === 0 ) {
+
 				// Remove the opening tag and prefix
-				$product = str_replace( '{{#product:', '', $tag ); 
+				$product = str_replace( '{{#product:', '', $tag );
 				$parameters = explode( '|', $product );
 				$parameters = array_map( 'trim', $parameters );
 				// Pad out array to avoid notices
@@ -205,12 +197,11 @@ class PonyDocsProduct
 						$parameters[$index] = '';
 					}
 				}
-				
+
 				// Avoid wedging the product page with a fatal error if shortName is omitted by some crazy nihilist
 				if ( isset( $parameters[0] ) && $parameters[0] != '' ) {
 					$pProduct = new PonyDocsProduct(
-						$parameters[0], $parameters[1], $parameters[2], $parameters[3], $parameters[4] );
-					$pProduct->setStatic( $static );
+						$parameters[0], $parameters[1], $parameters[2], $parameters[3], $parameters[4], $static );
 					self::$sDefinedProductList[$pProduct->getShortName()] = $pProduct;
 					self::$sProductList[$parameters[0]] = $pProduct;
 					// Handle child products
@@ -229,7 +220,7 @@ class PonyDocsProduct
 				}
 			}
 		}
-		
+
 		return self::$sProductList;
 	}
 
@@ -246,14 +237,14 @@ class PonyDocsProduct
 	/**
 	 * Return list of ALL defined products regardless of selected version.
 	 *
-	 * @static 	
+	 * @static
 	 * @returns array
 	 */
 	static public function GetDefinedProducts() {
 		self::LoadProducts();
 		return self::$sDefinedProductList;
 	}
-	
+
 	/**
 	 * Return products by category
 	 * @static
@@ -263,7 +254,7 @@ class PonyDocsProduct
 		self::LoadProducts();
 		return self::$sCategoryMap;
 	}
-	
+
 	/**
 	 * Our product list is a map of 'short' name to the PonyDocsProduct object.  Returns it, or null if not found.
 	 *
@@ -280,7 +271,7 @@ class PonyDocsProduct
 	}
 
 	/**
-	 * Test whether a given product exists (is in our list).  
+	 * Test whether a given product exists (is in our list).
 	 *
 	 * @static
 	 * @param string $shortName
@@ -316,7 +307,7 @@ class PonyDocsProduct
 	 * If it is not set we must apply some logic to auto-select the proper product.
 	 * Typically if it is not set it means the user just loaded the site for the first time this session and is thus not logged in
 	 * so its a safe bet to auto-select the most recent RELEASED product.
-	 * We're only going to use sessions to track this. 
+	 * We're only going to use sessions to track this.
 	 *
 	 * @static
 	 * @return string Currently selected product string.
@@ -367,15 +358,15 @@ class PonyDocsProduct
 		}
 		return $p;
 	}
-	
+
 	/**
 	 * Return an array of child products for a given product
-	 * 
+	 *
 	 * @access public
 	 * @static
-	 * 
+	 *
 	 * @param string $product  short name of a parent product
-	 * 
+	 *
 	 * @return array  An array of child product short names
 	 */
 	static public function getChildProducts( $productName ) {
@@ -390,18 +381,18 @@ class PonyDocsProduct
 
 	/**
 	 * Create a URL path (e.g. Documentation/Foo) for a Product
-	 * 
+	 *
 	 * @param string $productName - Optional. We'll get the selected product (which defaults to the default product) if empty
-	 * 
+	 *
 	 * @return string
 	 */
 	static public function getProductURLPath( $productName = NULL ) {
 		global $wgArticlePath;
-		
+
 		if ( !isset( $productName ) || ! self::isProduct( $productName ) ) {
 			$productName = getSelectedProduct()->getShortName();
 		}
-		
+
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 		return "$base/$productName";
 	}
@@ -426,7 +417,7 @@ class PonyDocsProduct
 			}
 			$return = $versionNames;
 		}
-		
+
 		return $return;
 	}
 }
