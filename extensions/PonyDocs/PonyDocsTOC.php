@@ -252,22 +252,10 @@ class PonyDocsTOC
 		// We should check to see if latest is our version.
 		// If so, we want to FORCE the URL to include /latest/ as the version instead of the version that the user is currently in
 		$tempParts = explode("/", $title);
-		$latest = FALSE;
-
-		if ( isset( $tempParts[1] ) && !strcmp( $tempParts[1], "latest" ) ) {
-			$latest = TRUE;
-		}
 
 		$selectedProduct = $this->pProduct->getShortName();
 		$selectedVersion = $this->pInitialVersion->getVersionShortName();
 		$selectedManual = $this->pManual->getShortName();
-
-		// Okay, let's determine if the VERSION that the user is in is latest, if so, we should set latest to true.
-		if ( PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct) != NULL ) {
-		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionShortName() ) {
-				$latest = TRUE;
-			}
-		}
 
 		$cache = PonyDocsCache::getInstance();
 		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
@@ -373,6 +361,12 @@ class PonyDocsTOC
 			$currentIndex = -1;
 			$start = array();
 
+			$latest = FALSE;
+			if ( PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct ) != NULL 
+				&& $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionShortName() ) {
+				$latest = TRUE;
+			}
+
 			// Go through and determine start, prev, next and current elements.
 			foreach ( $toc as $idx => &$entry ) {
 				// Not using $entry. Only interested in $idx.
@@ -387,7 +381,7 @@ class PonyDocsTOC
 						$currentIndex = $idx;
 					}
 					// Now rewrite link with latest, if we are in latest
-					if ( $latest ) {
+					if ( PONYDOCS_USE_LATEST && $latest ) {
 						$safeVersion = preg_quote( $selectedVersion, '#' );
 						// Lets be specific and replace the version and not some other part of the URI that might match...
 						$toc[$idx]['link'] = preg_replace(
