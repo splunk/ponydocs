@@ -230,7 +230,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
 			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . addcslashes( $pdfName, '"' ) . "\"");
-		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pdfName, $justThisTopic, $topic);
+		PonyDocsPdfBook::servePdf( $pdfFileName, $productName, $versionText, $pdfName, $topic );
 		// No more processing
 		return false;
 	}
@@ -239,11 +239,16 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 * Serves out a PDF file to the browser
 	 *
 	 * @param $fileName string The full path to the PDF file.
+	 * @param $product string The product name.
+	 * @param $version string The product version.
+	 * @param $manual string The manual name.
+	 * @param $isTopic string is it a topic or a manual.
+	 * @param $topic string topic object to get the topic name.
 	 */
-	static public function servePdf($fileName, $product, $version, $manual, $isTopic = FALSE, $topic = NULL) {
+	static public function servePdf( $fileName, $product, $version, $manual, $topic = NULL ) {
 		if (file_exists($fileName)) {
 			header("Content-Type: application/pdf");
-			if ($isTopic) {
+			if ( is_object( $topic ) ) {
 				header("Content-Disposition: attachment; filename=\"$product-$version-{$topic->getTopicName()}.pdf\"");			
 			} else {
 				header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");			
@@ -263,8 +268,9 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 *
 	 * @param $manual string The short name of the manual remove
 	 * @param $version string The version of the manual to remove
+	 * @param $topicName string The name of the topic to remove
 	 */
-	static public function removeCachedFile($product, $manual, $version, $topicName = NULL) {
+	static public function removeCachedFile( $product, $manual, $version, $topicName = NULL ) {
 		global $wgUploadDirectory;
 		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
 		@unlink($pdfFileName);
