@@ -18,8 +18,6 @@ if( !defined( 'MEDIAWIKI' ))
 /**
  * The primary purpose of this class is as a simple container for any defined hook or extension functions.
  * They will be implemented as static methods.  Currently there is no other use for this class.
- * TODO: Move this into PonyDocsWiki
- *       We should at least put all the constructors with side-effects into one place, plus this has URL logic
  */
 class PonyDocsExtension 
 {
@@ -28,6 +26,11 @@ class PonyDocsExtension
 
 	protected static $speedProcessingEnabled;
 
+	/**
+	 * Set up some hooks based on URL path
+	 * TODO: URL logic should move to PonyDocsWiki
+	 * TODO: Hook registration should move to the bottom of PonyDocsExtension.php
+	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
 

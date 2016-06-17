@@ -74,7 +74,8 @@ $wgExtensionCredits['variable'][] = array(
 $wgRevision = '$Revision: 207 $';
 
 /**
- * Register article hooks using side-effects in constructor. This should move to PonyDocsWiki
+ * Register article hooks using side-effects in constructor.
+ * TODO: hook registration should move to the bottom of this file, URL logic should move to PonyDocsWiki
  */
 $ponydocs = new PonyDocsExtension();
 
@@ -202,6 +203,7 @@ function efPonyDocsSetup() {
 
 /**
  * Parsers
+ * TODO: Move hook methods into a separate PonyDocsParser class
  */
 
 $wgExtensionFunctions[] = 'efManualParserFunction_Setup';
@@ -639,48 +641,9 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' ) {
  */
 
 $wgExtensionMessagesFiles['PonyDocsMagic'] = __DIR__ . '/PonyDocs.i18n.magic.php';
-$wgHooks['ParserGetVariableValueSwitch'][] = 'wfPonyDocsGetVariableValueSwitch';
-$wgHooks['MagicWordwgVariableIDs'][] = 'wfPonyDocsMagicWordwgVariableIDs';
+$wgHooks['ParserGetVariableValueSwitch'][] = 'PonyDocsVariables::wfPonyDocsGetVariableValueSwitch';
+$wgHooks['MagicWordwgVariableIDs'][] = 'PonyDocsVariables::wfPonyDocsMagicWordwgVariableIDs';
 
-function wfPonyDocsGetVariableValueSwitch( &$parser, &$cache, &$magicWordId, &$ret ) {
-	$wiki = PonyDocsWiki::getInstance();
-	switch ( $magicWordId ) {
-		case 'PonyDocs_Product':
-			$product = $wiki->getCurrentProduct();
-			if ( $product ) {
-				$ret = $product->getLongName( TRUE );
-			}
-			break;
-		case 'PonyDocs_Version':
-			$version = $wiki->getCurrentVersion();
-			if ( $version ) {
-				$ret = $version->getVersionLongName();
-			}
-			break;
-		case 'PonyDocs_Manual':
-			$manual = $wiki->getCurrentManual();
-			if ( $manual ) {
-				$ret = $manual->getLongName();
-			}
-			break;
-	}
-
-	return TRUE;
-}
-
-/**
- * Step 6: register wiki markup words associated with
- *         MAG_NIFTYVAR as a variable and not some
- *         other type of magic word
- */
-function wfPonyDocsMagicWordwgVariableIDs( &$customVariableIds ) {
-	$customVariableIds[] = 'PonyDocs_Product';
-	$customVariableIds[] = 'PonyDocs_Version';
-	$customVariableIds[] = 'PonyDocs_Manual';
-	$customVariableIds[] = 'PonyDocs_Topic';
-
-	return TRUE;
-}
 /**
  * Hooks
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
