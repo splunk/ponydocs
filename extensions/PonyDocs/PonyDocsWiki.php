@@ -36,6 +36,7 @@ class PonyDocsWiki {
 	 * @return PonyDocsWiki
 	 */
 	static public function &getInstance() {
+		error_log(__METHOD__);
 		if ( !isset( self::$instance ) ) {
 			self::$instance = new PonyDocsWiki();
 		}
@@ -53,6 +54,7 @@ class PonyDocsWiki {
 	 * 
 	 */
 	private function __construct() {
+		error_log(__METHOD__);
 		// Normalize path
 		$path = $this->getPath();
 

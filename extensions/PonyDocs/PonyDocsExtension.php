@@ -74,12 +74,9 @@ $wgExtensionCredits['variable'][] = array(
 $wgRevision = '$Revision: 207 $';
 
 /**
- * Register article hooks using side-effects in constructor. *SIGH*
- * TODO: URL logic should move to PonyDocsWiki, 
- *       which can be instantiated sooner if we can't wait for egPonyDocsSetup() to register article hooks
- *       $wgPonyDocs is unused, so it can be removed
+ * Register article hooks using side-effects in constructor. This should move to PonyDocsWiki
  */
-$wgPonyDocs = new PonyDocsExtension();
+$ponydocs = new PonyDocsExtension();
 
 /**
  * Register a module for our scripts and css

@@ -249,6 +249,7 @@ class SpecialRenameVersion extends SpecialPage
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
 	public function execute() {
+		error_log(__METHOD__);
 		global $wgOut, $wgArticlePath, $wgScriptPath;
 		global $wgUser;
 
@@ -258,7 +259,7 @@ class SpecialRenameVersion extends SpecialPage
 		$wgOut->setPagetitle( 'Documentation Rename Version' );
 
 		$forceProduct = PonyDocsProduct::GetSelectedProduct();
-		$ponydocs = PonyDocsWiki::getInstance( $forceProduct );
+		$ponydocs = PonyDocsWiki::getInstance();
 		$products = $ponydocs->getProductsForTemplate();
 
 		// Security Check

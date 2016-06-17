@@ -18,6 +18,8 @@ if( !defined( 'MEDIAWIKI' ))
 /**
  * The primary purpose of this class is as a simple container for any defined hook or extension functions.
  * They will be implemented as static methods.  Currently there is no other use for this class.
+ * TODO: Move this into PonyDocsWiki
+ *       We should at least put all the constructors with side-effects into one place, plus this has URL logic
  */
 class PonyDocsExtension 
 {
@@ -1338,10 +1340,11 @@ EOJS;
 	 */
 	static public function onUnknownAction( $action, &$article )
 	{
+		error_log(__METHOD__);
 		global $wgRequest, $wgParser, $wgTitle;
 		global $wgHooks;
 
-		$ponydocs  = PonyDocsWiki::getInstance( );
+		$ponydocs  = PonyDocsWiki::getInstance();
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**

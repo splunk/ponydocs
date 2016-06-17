@@ -36,6 +36,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 * Called when an unknown action occurs on url.  We are only interested in pdfbook action.
 	 */
 	function onUnknownAction($action, $article) {
+		error_log(__METHOD__);
 		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
 		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
 
@@ -88,7 +89,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		$productName = $pieces[1];
-		$ponydocs = PonyDocsWiki::getInstance($productName);
+		$ponydocs = PonyDocsWiki::getInstance();
 		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
 		if ($pProduct === NULL) { // product wasn't valid
 			wfProfileOut( __METHOD__ );
