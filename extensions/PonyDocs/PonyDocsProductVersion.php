@@ -109,6 +109,7 @@ class PonyDocsProductVersion {
 		$this->vStatus = strtolower( $versionStatus );
 		$this->vStatusCode = self::StatusToInt( $this->vStatus );
 		$this->vLongName = $versionLongName;
+		$this->vLongName = strlen( $versionLongName ) ? $versionLongName : $versionShortName;
 	}
 
 	/**
@@ -132,20 +133,20 @@ class PonyDocsProductVersion {
 	}
 
 	/**
-	 * Return the name of the version.
-	 *
-	 * @return string Name of version.
-	 */
-	public function getVersionName() {
-		return $this->vShortName;
-	}
-	
-	/**
 	 * Return the short name of the version.
 	 *
 	 * @return string Short Name of version.
 	 */
 	public function getVersionShortName() {
+		return $this->vShortName;
+	}
+
+	/**
+	 * Return the short name of the version.
+	 *
+	 * @return string Short Name of version.
+	 */
+	public function getVersionName() {
 		return $this->vShortName;
 	}
 
