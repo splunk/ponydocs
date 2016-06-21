@@ -273,7 +273,7 @@ class PonyDocsTemplate extends QuickTemplate {
 												// do quick manip
 												$found = FALSE;
 												for ( $i =( count( $this->data['versions'] ) - 1 ); $i >= 0; $i-- ) {
-													$this->data['versions'][$i]['label'] = $this->data['versions'][$i]['name'];
+													$this->data['versions'][$i]['label'] = $this->data['versions'][$i]['longName'];
 													if ( !$found && $this->data['versions'][$i]['status'] == "released" ) {
 														$this->data['versions'][$i]['label'] .= " (latest release)";
 														$found = TRUE;
@@ -315,9 +315,11 @@ class PonyDocsTemplate extends QuickTemplate {
 											<?php
 											if ( sizeof($this->data['manualtoc'] ) ) { 
 												$pdfLink = str_replace( '$1', '', $wgArticlePath ) . 'index.php?title=' . $wgTitle->__toString() . '&action=pdfbook&version=' .$this->data['selectedVersion'];
+												$topicLink = $pdfLink . '&topic=1';
 												?>
 												<p>
-													<a href="<?php echo $pdfLink; ?>">Pdf Version</a>
+													<a href="<?php echo $pdfLink; ?>">Manual as PDF</a>
+													<a href="<?php echo $topicLink; ?>">Topic as PDF</a>
 												</p>
 												<?php
 												$inUL = FALSE;

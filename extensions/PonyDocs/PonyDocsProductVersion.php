@@ -109,6 +109,7 @@ class PonyDocsProductVersion {
 		$this->vStatus = strtolower( $versionStatus );
 		$this->vStatusCode = self::StatusToInt( $this->vStatus );
 		$this->vLongName = $versionLongName;
+		$this->vLongName = strlen( $versionLongName ) ? $versionLongName : $versionShortName;
 	}
 
 	/**

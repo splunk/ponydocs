@@ -2148,6 +2148,29 @@ EOJS;
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
+		// Okay, article is in doc namespace
+
+		// Now we need to remove any pdf books for this topic.
+		// Since the person is editing the article, it's safe to say that the 
+		// version and manual can be fetched from the classes and not do any 
+		// manipulation on the article itself.
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
+		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
+
+		if($manual != null) {
+			// Then we are in the documentation namespace, but we're not part of 
+			// manual.
+			// Clear any PDF for this manual
+			$topicName = $topic->getTopicName();
+			$topicVersions = $topic->getProductVersions();	
+			foreach( $topicVersions as $key => $version ) {
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );				
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName(), $topicName );
+			}				
+			
+		}
 		
 		// Clear cache entries for each version on the Topic
 		if ( $manual ) {
