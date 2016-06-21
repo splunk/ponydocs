@@ -31,6 +31,7 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsRenameVersionEngine.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTOC.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsVariables.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");

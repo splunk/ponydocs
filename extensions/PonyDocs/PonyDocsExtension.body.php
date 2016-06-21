@@ -1394,33 +1394,6 @@ EOJS;
 			die();
 		}
 
-		/**
-		 * Our custom print action -- 'print' exists so we need to use our own.  Require that 'type' is set to 'topic' for the
-		 * current topic or 'manual' for entire current manual.  The 'title' param should be set as well.  Output a print
-		 * ready page.
-		 */
-		else if( !strcmp( $action, 'doprint' ))
-		{
-			$type = 'topic';
-			if( $wgRequest->getVal( 'type' ) || strlen( $wgRequest->getVal( 'type' )))
-			{
-				if( !strcasecmp( $wgRequest->getVal( 'type' ), 'topic' ) && !strcasecmp( $wgRequest->getVal( 'type' ), 'manual' ))
-				{
-					// Invalid!
-				}
-				$type = strtolower( $wgRequest->getVal( 'type' ));
-			}
-
-			if( !strcmp( $type, 'topic' ))
-			{
-				$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' )));
-				$c = $article->getContent();
-
-				die();
-			}
-
-			die( "Print!" );
-		}
 		return true;
 	}
 
