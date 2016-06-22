@@ -36,7 +36,6 @@ class PonyDocsWiki {
 	 * @return PonyDocsWiki
 	 */
 	static public function &getInstance() {
-		error_log(__METHOD__);
 		if ( !isset( self::$instance ) ) {
 			self::$instance = new PonyDocsWiki();
 		}
@@ -51,16 +50,16 @@ class PonyDocsWiki {
 	 * - Initialze manuals list for the requested product as a static value in PonyDocsProductManual
 	 * - Determine the type of page we're on from the URL. All other code that parses URL or title should be replaced
 	 * - Set class variables for current product, version, and manual
-	 * 
 	 */
 	private function __construct() {
-		error_log(__METHOD__);
 		// Normalize path
 		$path = $this->getPath();
+		error_log("path: $path");
 
 		if ( $this->isPonyDocsPath( $path ) ) {
 			// We need to extract the product name first and initialize manuals and versions before we can run the path typer
 			$this->setProductFromPath( $path );
+			error_log(PonyDocsProduct::GetSelectedProduct());
 			$this->currentProduct = PonyDocsProduct::GetProductByShortName( PonyDocsProduct::GetSelectedProduct() );
 			PonyDocsProductVersion::LoadVersionsForProduct( $this->currentProduct->getShortName(), TRUE );
 			PonyDocsProductManual::LoadManualsForProduct( $this->currentProduct->getShortName(), TRUE );
@@ -80,7 +79,7 @@ class PonyDocsWiki {
 		$path = preg_replace("#^/$wgScriptPath#", '', $path);
 		
 		if ( strpos( $path, 'index.php' ) === 0 ) {
-			$queryParts = parse_str( $_SERVER['QUERY_STRING'] );
+			parse_str( $_SERVER['QUERY_STRING'], $queryParts );
 			$path = $queryParts['title'];
 		} 
 

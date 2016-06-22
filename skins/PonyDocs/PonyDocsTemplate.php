@@ -22,7 +22,6 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	function execute() {
-		error_log(__METHOD__);
 		global $action, $IP, $wgArticlePath, $wgContLang, $wgExtraNamespaces, $wgRequest, $wgRevision, $wgTitle, $wgUser;
 
 		PonyDocsProduct::LoadProducts();
@@ -617,7 +616,6 @@ class PonyDocsTemplate extends QuickTemplate {
 	}
 
 	public function prepareDocumentation() {
-		error_log(__METHOD__);
 		global $wgOut, $wgParser, $wgScriptPath, $wgTitle, $wgUser;
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!

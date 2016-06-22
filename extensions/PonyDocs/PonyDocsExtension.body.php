@@ -1341,11 +1341,8 @@ EOJS;
 	 * @param Article $article
 	 * @return boolean|string
 	 */
-	static public function onUnknownAction( $action, &$article )
-	{
-		error_log(__METHOD__);
-		global $wgRequest, $wgParser, $wgTitle;
-		global $wgHooks;
+	static public function onUnknownAction( $action, &$article ) {
+		global $wgHooks, $wgParser, $wgRequest, $wgTitle;
 
 		$ponydocs  = PonyDocsWiki::getInstance();
 		$dbr = wfGetDB( DB_SLAVE );
