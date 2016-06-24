@@ -98,7 +98,7 @@ class SpecialDocumentLinks extends SpecialPage {
 			// Get the latest released version of this product
 			$latestVersionObj = PonyDocsProductVersion::GetLatestReleasedVersion($titlePieces[1]);
 			if ( is_object( $latestVersionObj ) ) {
-				$latestVersion = $latestVersionObj->getVersionName();
+				$latestVersion = $latestVersionObj->getVersionShortName();
 			} else {
 				error_log('WARNING [PonyDocs] [' . __CLASS__ . '] Unable to find latest released version of ' . $titlePieces[1]);
 			}
@@ -114,7 +114,7 @@ class SpecialDocumentLinks extends SpecialPage {
 					$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($titleNoVersion, NULL, $ver);
 
 					// Compare this version with latest version. If they're the same, add the URL with "latest" too.
-					$thisVersion = $ver->getVersionName();
+					$thisVersion = $ver->getVersionShortName();
 					if ($thisVersion == $latestVersion) {
 						$titleLatestVersion = 
 							$titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
@@ -202,11 +202,19 @@ class SpecialDocumentLinks extends SpecialPage {
 						// If there are no valid versions for this product/user, then skip the product name header.
 						if (! count($fromProductVersions)) {
 							continue;
-						} ?>
-						<h2><?php echo $fromProduct; ?></h2>
-						<?php
-						foreach ($fromProductVersions as $fromProductVersionObj) {
-							$fromProductVersionName = $fromProductVersionObj->getVersionName();
+						}
+						$html = '';
+						foreach ($fromProductVersions as $key => $fromProductVersionObj) {
+							$fromProductVersionName = $fromProductVersionObj->getVersionShortName();
+							//if it's link from other products and not in latest version then skip it
+							if ($fromProduct != $currentProduct &&  $fromProductVersionName != $latestVersion ) {
+								continue;
+							} else {
+								//to show productName only once, this is cause we need to check latest version
+								if ($key == 0) {
+									$html .= "<h2>$fromProduct</h2>";
+								}
+							}
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
 								// Expand containers of incoming links from the current Product and Version
@@ -216,25 +224,24 @@ class SpecialDocumentLinks extends SpecialPage {
 								if (($currentProduct != $fromProduct || $currentVersion == $fromProductVersionName)
 									&& ! $collapseAll) {
 									$selected = 'selected';
-								} ?>
-								<h3 class="doclinks-collapsible <?php print $selected; ?>">
-									<?php echo $fromProduct . ' ' . $fromProductVersionName; ?>
-								</h3>
-								<ul>
+								}
+								$html .= "<h3 class='doclinks-collapsible $selected'>"
+										. $fromProduct . " " . $fromProductVersionName
+										. " </h3>"
+										. "<ul> ";
+								?>
 								<?php
 								foreach ($fromVersions[$fromProductVersionName] as $linkAry) {
-									?>
-									<li>
-										<a href="<?php echo str_replace('$1', $linkAry['from_link'], $wgArticlePath); ?>">
-											<?php echo $linkAry['display_url']; ?>
-										</a>
-									</li>
-								<?php
-								} ?>
-								</ul>
-								<?php
+									$html .= "<li>"
+											. "<a href='" . str_replace('$1', $linkAry['from_link'], $wgArticlePath) . "'>"
+											. $linkAry['display_url']
+											. "</a>"
+											. "</li>";
+								}
+								$html .= "</ul>";
 							}
 						}
+						echo $html;
 					} else { ?>
 						<h2><?php echo $fromProduct; ?> </h2>
 						<h3 class="doclinks-collapsible selected">Latest</h3>
