@@ -214,20 +214,30 @@ class SpecialLatestDoc extends SpecialPage {
 						</p>
 						<ul id="suggestions">
 						<?php
-						foreach( $primarySuggestions as $suggestion ) {
+						foreach ( $primarySuggestions as $suggestion ) {
 							?>
-							<li><?php echo $suggestion['product'];?> &raquo; <?php echo ($versionList[$suggestion['version']]->getVersionLongName()) ? $versionList[$suggestion['version']]->getVersionLongName() : $suggestion['version']; ?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
-							<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+							<li>
+								<?php echo $suggestion['product'];?> &raquo;
+								<?php echo ($versionList[$suggestion['version']]->getVersionLongName()); ?> &raquo;
+								<?php echo $suggestion['manual'];?> &raquo;
+								<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>">
+									<?php echo $suggestion['title'];?>
+								</a>
+							</li>
 							<?php
 						}
-						if( count( $suggestions ) )
-						{
-							foreach( $suggestions as $suggestion ) {
+						if ( count( $suggestions ) ) {
+							foreach ( $suggestions as $suggestion ) {
 								?>
-									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo ($versionList[$suggestion['version']]->getVersionLongName()) ? $versionList[$suggestion['version']]->getVersionLongName() : $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
-									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+								<li style="display: none;">
+									<?php echo $suggestion['product'];?> &raquo;
+									<?php echo ($versionList[$suggestion['version']]->getVersionLongName());?> &raquo;
+									<?php echo $suggestion['manual'];?> &raquo; 
+									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>">
+										<?php echo $suggestion['title'];?>
+									</a>
+								</li>
 								<?php
-
 							}
 						}
 						?>

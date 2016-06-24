@@ -38,7 +38,8 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	function onUnknownAction($action, $article) {
 		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
 		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
-
+		
+		$justThisTopic = (isset($_GET['topic']) && $_GET['topic'] ==1)? true : false;
 		// We don't do any processing unless it's pdfbook
 		if ($action != 'pdfbook') {
 			return true;
@@ -97,17 +98,19 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 		$productLongName = $pProduct->getLongName();
 		
-		if (PonyDocsProductManual::isManual($productName, $pieces[2])) {
+		if ( PonyDocsProductManual::isManual( $productName, $pieces[2] ) ) {
 			$pManual = PonyDocsProductManual::GetManualByShortName($productName, $pieces[2]);
 		}
 
-		if ( isset($_GET['version']) && PonyDocsProductVersion::IsVersion($productName, $_GET['version'])) {
+		if ( isset( $_GET['version'] ) && PonyDocsProductVersion::IsVersion( $productName, $_GET['version'] ) ) {
 			$versionText = $_GET['version'];
 		} else {
 			$versionText = PonyDocsProductVersion::GetSelectedVersion($productName);
 		}
+		
+		$topic = NULL;
 
-		if (!empty($pManual)) {
+		if ( !$justThisTopic ) {
 			// We should always have a pManual, if we're printing from a TOC
 			$v = PonyDocsProductVersion::GetVersionByName($productName, $versionText);
 
@@ -124,12 +127,37 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 				// No more processing
 				return false;
 			}
-		} else {
+		} else if ( $justThisTopic ) {
+			$topic = new PonyDocsTopic($article);
+			$v = PonyDocsProductVersion::GetVersionByName($productName, $versionText);
+			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $topic->getTopicName()
+					. "-book.pdf";
+			// Check first to see if this PDF has already been created and is up to date.  If so, serve it to the user and stop 
+			// execution.
+			if (file_exists($pdfFileName)) {
+                                //die('file exist');
+				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\""
+					. $wgUser->getName() . "\" product=\"" . addcslashes( $productName, '"' ) . "\" version=\"" . $versionText ."\" "
+					. " manual=\"" . addcslashes( $topic->getTopicName(), '"'  ) . "\"");
+				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $topic->getTopicName());
+				// No more processing
+				return false;
+			}
+		}else {
 			error_log("ERROR [PonyDocsPdfBook::onUnknownAction] " . php_uname('n')
 				. ": User attempted to print a pdfbook from a non TOC page with path:" . $wgTitle->__toString());
 		}
 
-		$html = self::getManualHTML($pProduct, $pManual, $v);
+		$pdfName = '';
+		if ( $justThisTopic ) {
+			$html = self::getTopicHTML($pProduct, $article, $v);
+			$title = $article->getTitle();
+			$pdfName = $title->getPrefixedText();
+			$pdfName = str_replace(':', ' ', $pdfName);
+		} else {
+			$html = self::getManualHTML($pProduct, $pManual, $v);
+			$pdfName = $pManual->getLongName();
+		}
 
 		// HTMLDOC does not care for utf8. 
 		$html = utf8_decode("$html\n");
@@ -143,30 +171,47 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		// Okay, create the title page
 		$titlepagefile = "$wgUploadDirectory/" .uniqid('ponydocs-pdf-book-title');
 		$fh = fopen($titlepagefile, 'w+');
-
-		$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v);
+		if ( $justThisTopic ) {
+			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
+		}else {
+			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
+		}
 
 		fwrite($fh, $coverPageHTML);
 		fclose($fh);
 
-		$format = 'manual'; 	/* @todo Modify so single topics can be printed in pdf */
+		if ( $justThisTopic ) {
+			$format = 'single'; 
+		} else {
+			$format = 'manual'; 	/* @todo Modify so single topics can be printed in pdf */
+		}
+
 		$footer = $format == 'single' ? '...' : '.1.';
 		$toc = $format == 'single' ? '' : " --toclevels $levels";
 
 		// Send the file to the client via htmldoc converter
 		$wgOut->disable();
-		$cmd  = " --left $x_margin --right $x_margin --top $y_margin --bottom $y_margin";
-		$cmd .= " --header ... --footer $footer --tocfooter .i. --quiet --jpeg --color";
-		$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
-		$cmd .= "$toc --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
-		$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > $pdfFileName";
+		if ( $justThisTopic ) {
+			$cmd  = " --left $x_margin --right $x_margin --top $y_margin --bottom $y_margin";
+			$cmd .= " --header ... --footer $footer --quiet --jpeg --color";
+			$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
+			$cmd .= " --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
+			$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --webpage --no-numbered $cmd $file > $pdfFileName";
+		}else {
+			$cmd  = " --left $x_margin --right $x_margin --top $y_margin --bottom $y_margin";
+			$cmd .= " --header ... --footer $footer --tocfooter .i. --quiet --jpeg --color";
+			$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
+			$cmd .= "$toc --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
+			$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > $pdfFileName";
+		}
+
 
 		putenv("HTMLDOC_NOCGI=1");
 
 		$output = array();
 		$returnVar = 1;
 		exec($cmd, $output, $returnVar);
-		if($returnVar != 0) { // 0 is success
+		if ($returnVar != 0) { // 0 is success
 			error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": Failed to run htmldoc (" . $returnVar . ") Output is as follows: " . implode("-", $output));
 			print("Failed to create PDF.  Our team is looking into it.");
 		}
@@ -184,8 +229,8 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
-			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $pManual->getLongName() . "\"");
-		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pManual->getLongName());
+			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . addcslashes( $pdfName, '"' ) . "\"");
+		PonyDocsPdfBook::servePdf( $pdfFileName, $productName, $versionText, $pdfName, $topic );
 		// No more processing
 		return false;
 	}
@@ -194,11 +239,20 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 * Serves out a PDF file to the browser
 	 *
 	 * @param $fileName string The full path to the PDF file.
+	 * @param $product string The product name.
+	 * @param $version string The product version.
+	 * @param $manual string The manual name.
+	 * @param $isTopic string is it a topic or a manual.
+	 * @param $topic string topic object to get the topic name.
 	 */
-	static public function servePdf($fileName, $product, $version, $manual) {
+	static public function servePdf( $fileName, $product, $version, $manual, $topic = NULL ) {
 		if (file_exists($fileName)) {
 			header("Content-Type: application/pdf");
-			header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");
+			if ( is_object( $topic ) ) {
+				header("Content-Disposition: attachment; filename=\"$product-$version-{$topic->getTopicName()}.pdf\"");			
+			} else {
+				header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");			
+			}
 			readfile($fileName);
 			die();				// End processing right away.
 		} else {
@@ -214,11 +268,20 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 *
 	 * @param $manual string The short name of the manual remove
 	 * @param $version string The version of the manual to remove
+	 * @param $topicName string The name of the topic to remove
 	 */
-	static public function removeCachedFile($product, $manual, $version) {
+	static public function removeCachedFile( $product, $manual, $version, $topicName = NULL ) {
 		global $wgUploadDirectory;
 		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
 		@unlink($pdfFileName);
+		
+		if (!empty($topicName)) {
+			$pdfTopicFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $topicName . "-book.pdf";			
+			if (file_exists($pdfTopicFileName)) {
+				@unlink($pdfTopicFileName);
+			}
+		}		
+		
 		if (file_exists($pdfFileName)) {
 			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n')
 				. ": Failed to delete cached pdf file $pdfFileName");
