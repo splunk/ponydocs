@@ -78,6 +78,68 @@ class PonyDocsExtension
 	}
 
 	/**
+	 * Our primary setup function simply handles URL rewrites for aliasing (per spec) and calls our PonyDocsWiki singleton instance
+	 * to ensure it runs the data retrieval functions for versions and manuals and the like. 
+	 */
+	static public function efPonyDocsSetup() {
+		global $wgPonyDocs, $wgScriptPath, $wgArticlePath;
+		// force mediawiki to start session for anonymous traffic
+		if ( session_id() == '' ) {
+			wfSetupSession();
+			if ( PONYDOCS_DEBUG ) {
+				error_log( "DEBUG [" . __METHOD__ . "] started session" );
+			}
+		}
+		// Set selected product from URL
+		if ( preg_match(
+			'/^' . str_replace("/", "\/", $wgScriptPath ) . '\/((index.php\?title=)|)'
+				. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[\/|:]{1}([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)[\/|:]?/i',
+			$_SERVER['PATH_INFO'],
+			$match ) ) {
+			PonyDocsProduct::SetSelectedProduct( $match[3] );
+		}
+
+		// Set selected version from URL
+		// - every time from /-separated title URLs
+		// - only when no selected version already set from :-separated title
+		$currentVersion = PonyDocsProductVersion::GetSelectedVersion( PonyDocsProduct::GetSelectedProduct(), FALSE );
+		if ( preg_match(
+			'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+				. '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'],
+			$match)
+			|| preg_match(
+				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+					. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/[' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC(['
+					. PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i',
+				$_SERVER['PATH_INFO'],
+				$match )
+			|| ( !isset( $currentVersion )
+				&& preg_match(
+					'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
+					. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
+					. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)/i',
+					$_SERVER['PATH_INFO'], $match ) )
+			|| ( !isset($currentVersion )
+				&& preg_match(
+					'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
+						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
+						. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+:[^:]+:([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS
+						. ']+)/i', $_SERVER['PATH_INFO'], $match ) ) ) {
+			$result = PonyDocsProductVersion::SetSelectedVersion( $match[3], $match[4] );
+			if ( is_null( $result ) ) {
+				// this version isn't available to this user; go away
+				$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+				if ( PONYDOCS_DEBUG ) {
+					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+				}
+				header( "Location: " . $defaultRedirect );
+				exit;
+			}
+		}
+		PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
+	}
+
+	/**
 	 * Method used to take a Title object that is ALIASED and extract the real topic it refers to.  These are of
 	 * the form:
 	 * 
