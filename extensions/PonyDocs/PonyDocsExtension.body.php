@@ -42,14 +42,6 @@ class PonyDocsExtension
 			$_SERVER['PATH_INFO'],
 			$match ) ) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
-		// <namespace>:<product>:<manual>:<topic>
-		// Register a hook to map this title to the latest version if no Version specified in URL
-		} elseif (
-			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-				. ':([^:]+):([^:]+):([^:]+)$/i',
-			$_SERVER['PATH_INFO'],
-			$match ) ) {
-			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
 		}
 	}
 
@@ -335,137 +327,24 @@ class PonyDocsExtension
 	 * @param Article $article
 	 * @return boolean 
 	 */
-	static public function onArticleFromTitle( &$title, &$article )
-	{
+	static public function onArticleFromTitle( &$title, &$article )	{
 		$newTitleStr = PonyDocsExtension::RewriteTitle( $title );
 
-		if( $newTitleStr !== false )
-		{
+		if ( $newTitleStr !== FALSE ) {
 			$title = Title::newFromText( $newTitleStr );
 			
 			$article = new Article( $title );
-			$article->loadContent( );
+			$article->loadContent();
 
-			if( !$article->exists( ))
-				$article = null;
-		}
-
-		return true;
-	}
-
-	static public function onArticleFromTitle_NoVersion( &$title, &$article ) {
-		global $wgArticlePath;
-
-		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-
-		// If this article doesn't have a valid manual, don't display the article
-		$articleMetadata = PonyDocsArticleFactory::getArticleMetadataFromTitle($title->__toString());
-		if (!PonyDocsProductManual::IsManual($articleMetadata['product'], $articleMetadata['manual'])) {
-			$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
-			return false;
-		}
-
-		$dbr = wfGetDB( DB_SLAVE );
-
-		$res = $dbr->select(
-			'categorylinks',
-			'cl_to', 
-			array(
-				'cl_to LIKE "V:%:%"',
-				'cl_type = "page"',
-				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title->getText() ) ) . ":%'",
-			),
-			__METHOD__
-		);
-
-		if( !$res->numRows() ) {
-			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
-			header( "Location: " . $defaultRedirect );
-			exit( 0 );
-		}
-
-		/**
-		 * First create a list of versions to which the current user has access to.
-		 */
-		$versionList = array_reverse( PonyDocsVersion::GetVersions( true ));
-		$versionNameList = array( );
-		foreach ( $versionList as $pV ) {
-			$versionNameList[] = $pV->getName();
-		}
-
-		/**
-		 * Create a list of existing versions for this topic.  The list contains PonyDocsVersion instances.  Only store
-		 * UNIQUE instances and valid pointers.  Once done, sort them so that the LATEST version is at the front of
-		 * the list (index 0).
-		 */
-		$existingVersions = array( );
-		while ( $row = $dbr->fetchObject( $res ) ) {
-			if ( preg_match( '/^V:(.*)/i', $row->cl_to, $vmatch ) ) {
-				$pVersion = PonyDocsVersion::GetVersionByName( $vmatch[1] );
-				if ( $pVersion && !in_array( $pVersion, $existingVersions ) ) {
-					$existingVersions[] = $pVersion;
-				}
+			if ( !$article->exists() ) {
+				$article = NULL;
 			}
 		}
 
-		usort( $existingVersions, 'PonyDocs_versionCmp' );
-		$existingVersions = array_reverse( $existingVersions );
-
-		/**
-		 * Now filter out versions the user does not have access to from the top;  once we find the version for this topic
-		 * to which the user has access, create our Article object and replace our title (to not redirect) and return true.
-		 */
-		foreach( $existingVersions as $pV ) {
-			if ( in_array( $pV->getName(), $versionNameList ) ) {
-				/**
-				 * Look up topic name and redirect to URL.
-				 */
-				$res = $dbr->select(
-					array('categorylinks'),
-					'cl_from' ,
-					array(
-						"cl_to = 'V:" . $pV->getName() . "'",
-						'cl_type = "page"',
-						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $title->getText() ) ) . ":%'",
-					),
-					__METHOD__
-				);
-
-				if ( !$res->numRows() ) {
-					if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
-					header( "Location: " . $defaultRedirect );
-					exit( 0 );
-				}
-
-				$row = $dbr->fetchObject( $res );
-				$title = Title::newFromId( $row->cl_from );
-				$article = new Article( $title );
-				$article->loadContent( );
-
-				if ( !$article->exists() ) {
-					$article = NULL;
-				} else {
-					// Without this we lose SplunkComments and version switcher.
-					// Probably we can replace with a RequestContext in the future...
-					$wgTitle = $title;
-				}
-					
-				return TRUE;
-			}
-		}
-
-		/**
-		 * Invalid redirect -- go to Main_Page or something.
-		 */
-		if ( PONYDOCS_DEBUG ) {
-			error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
-		}
-		header( "Location: " . $defaultRedirect );
-		exit( 0 );
+		return TRUE;
 	}
 
-	static public function onArticleFromTitle_New( &$title, &$article )
-	{
+	static public function onArticleFromTitle_New( &$title, &$article ) {
 		global $wgScriptPath;
 		global $wgArticlePath, $wgTitle, $wgOut, $wgHooks;
 
@@ -478,8 +357,12 @@ class PonyDocsExtension
 		 * $matches[3] = manual
 		 * $matches[4] = topic
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', $title->__toString( ), $matches ))
-			return false;
+		if ( !preg_match(
+			'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', 
+			$title->__toString(),
+			$matches ) ) {
+			return FALSE;
+		}
 
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 

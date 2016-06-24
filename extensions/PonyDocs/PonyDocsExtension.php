@@ -187,11 +187,9 @@ $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
 $wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
 $wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
+$wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
 $wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
 $wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
 $wgHooks['UnknownAction'][] = 'PonyDocsZipExport::onUnknownAction';
 $wgHooks['UnknownAction'][] = 'PonyDocsExtension::onUnknownAction';
 $wgHooks['userCan'][] = 'PonyDocsExtension::onUserCan';
-
-// Add version field to edit form
-$wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
