@@ -142,15 +142,6 @@ class PonyDocsProductVersion {
 	}
 
 	/**
-	 * Return the short name of the version.
-	 *
-	 * @return string Short Name of version.
-	 */
-	public function getVersionName() {
-		return $this->vShortName;
-	}
-
-	/**
 	 * Return the status of the version (released, unreleased, or preview).
 	 *
 	 * @return string Status string.
