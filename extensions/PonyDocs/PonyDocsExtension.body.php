@@ -2158,7 +2158,7 @@ EOJS;
 			$topicVersions = $topic->getProductVersions();	
 			foreach( $topicVersions as $key => $version ) {
 				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );				
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName(), $topicName );
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName(), $topicName );
 			}				
 			
 		}
