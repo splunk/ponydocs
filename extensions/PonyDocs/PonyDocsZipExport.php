@@ -105,7 +105,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 		$html = self::getManualHTML($pProduct, $pManual, $v);
 
-		$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, false);
+		$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, false, $title);
 
 
 		// Make a temporary directory to store our archive contents.
