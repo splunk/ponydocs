@@ -15,7 +15,7 @@ abstract class PonyDocsBaseExport {
 	 *
 	 * @return string HTML String representation of cover page
 	 */
-	public function getCoverPageHTML($product, $manual, $version, $htmldoc = true, $title)
+	public function getCoverPageHTML($product, $manual, $version, $htmldoc = true, $title = NULL)
 	{
 		global $wgServer, $wgStylePath;
 		$image_path	= $wgServer . $wgStylePath . PONYDOCS_PDF_TITLE_IMAGE_PATH;
@@ -37,13 +37,17 @@ overflow-x: hidden;
 </head>
 <body>
 EOT;
-		$h1 = PonyDocsTopic::FindH1ForTitle($title->__toString());
+		$h2 = '';
+		if (!empty($title)) }
+			$h2 = PonyDocsTopic::FindH1ForTitle($title->__toString());
+			$h2 = '<h2>' . htmlspecialchars( $h2 ) . '</h2>'
+		}
 		
 		if ($htmldoc) {
 			$titleText  .= '<table height="100%" width="100%"><tr><td valign="top" height="50%">'
 				. '<center><img src="' . $image_path .  '" width="1024"></center>'
 				. '<h1>' . $product->getLongName() . ' ' . $manual->getLongName() . ' ' . $version->getVersionLongName() . '</h1>'
-				. '<h2>' . htmlspecialchars( $h1 ) . '</h2>'
+				. $h2
 				. 'Generated: ' . date('n/d/Y g:i a', time())
 				. '</td></tr><tr><td height="50%" width="100%" align="left" valign="bottom"><font size="2">'
 				. PONYDOCS_PDF_COPYRIGHT_MESSAGE
@@ -51,8 +55,8 @@ EOT;
 		} else {
 			// Render a none table format version.
 			$titleText .= '<img src="' . $image_path . '" width="1024">'
-				. '<h1 style="font-size: 32pt;">' . $product->getLongName() . ' ' . $manual->getLongName() . ' ' . $version->getVersionLongName() . '</h1>'
-				. '<h2 style="font-size: 32pt;">' . htmlspecialchars( $h1 ) . '</h2>'
+				. '<h1 style="font-size: 32pt;">' . $product->getLongName() . ' ' . $version->getVersionLongName() . '</h1>'
+				. '<h2 style="font-size: 32pt;">' . $manual->getLongName() . '</h2>'
 				. '<h3 style="font-size: 24pt; font-weight: normal;">Generated: ' . date('n/d/Y g:i a', time())
 				. '</h3></body></html>';
 		}
