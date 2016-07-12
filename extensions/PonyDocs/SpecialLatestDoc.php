@@ -209,7 +209,7 @@ class SpecialLatestDoc extends SpecialPage {
 						$tempSuggArr = $primarySuggestions;
 						$suggFirstEle = array_pop( $tempSuggArr );
 						if ( !empty( $suggFirstEle['title'] ) ) {
-								$searchTerm = $suggFirstEle['title'];
+								$searchTerm = urlencode( $suggFirstEle['title'] );
 						}
 					?>
 					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $searchTerm ?>">Search</a></li>
