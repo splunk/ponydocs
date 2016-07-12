@@ -27,7 +27,9 @@ class PonyDocsExtension
 	protected static $speedProcessingEnabled;
 
 	/**
-	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
+	 * Set up some hooks based on URL path
+	 * TODO: URL logic should move to PonyDocsWiki
+	 * TODO: Hook registration should move to the bottom of PonyDocsExtension.php
 	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
@@ -1330,12 +1332,10 @@ EOJS;
 	 * @param Article $article
 	 * @return boolean|string
 	 */
-	static public function onUnknownAction( $action, &$article )
-	{
-		global $wgRequest, $wgParser, $wgTitle;
-		global $wgHooks;
+	static public function onUnknownAction( $action, &$article ) {
+		global $wgHooks, $wgParser, $wgRequest, $wgTitle;
 
-		$ponydocs  = PonyDocsWiki::getInstance( );
+		$ponydocs  = PonyDocsWiki::getInstance();
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -1382,33 +1382,6 @@ EOJS;
 			die();
 		}
 
-		/**
-		 * Our custom print action -- 'print' exists so we need to use our own.  Require that 'type' is set to 'topic' for the
-		 * current topic or 'manual' for entire current manual.  The 'title' param should be set as well.  Output a print
-		 * ready page.
-		 */
-		else if( !strcmp( $action, 'doprint' ))
-		{
-			$type = 'topic';
-			if( $wgRequest->getVal( 'type' ) || strlen( $wgRequest->getVal( 'type' )))
-			{
-				if( !strcasecmp( $wgRequest->getVal( 'type' ), 'topic' ) && !strcasecmp( $wgRequest->getVal( 'type' ), 'manual' ))
-				{
-					// Invalid!
-				}
-				$type = strtolower( $wgRequest->getVal( 'type' ));
-			}
-
-			if( !strcmp( $type, 'topic' ))
-			{
-				$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' )));
-				$c = $article->getContent();
-
-				die();
-			}
-
-			die( "Print!" );
-		}
 		return true;
 	}
 
@@ -1424,7 +1397,7 @@ EOJS;
 	 */
 	static public function onParserBeforeStrip( &$parser, &$text )
 	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgPonyDocs, $action;
+		global $action, $wgTitle, $wgArticlePath, $wgOut, $action;
 
 		$dbr = wfGetDB( DB_SLAVE );
 		if(empty($wgTitle)) {
