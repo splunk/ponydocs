@@ -51,7 +51,7 @@ EOT;
 		} else {
 			// Render a none table format version.
 			$titleText .= '<img src="' . $image_path . '" width="1024">'
-				. '<h1 style="font-size: 32pt;">' . $product->getLongName() . ' ' . $manual->getLongName() . ' ' . $version->getVersionShortName() . '</h1>'
+				. '<h1 style="font-size: 32pt;">' . $product->getLongName() . ' ' . $manual->getLongName() . ' ' . $version->getVersionName() . '</h1>'
 				. '<h2 style="font-size: 32pt;">' . htmlspecialchars( $h1 ) . '</h2>'
 				. '<h3 style="font-size: 24pt; font-weight: normal;">Generated: ' . date('n/d/Y g:i a', time())
 				. '</h3></body></html>';
