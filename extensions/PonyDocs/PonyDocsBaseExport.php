@@ -15,7 +15,7 @@ abstract class PonyDocsBaseExport {
 	 *
 	 * @return string HTML String representation of cover page
 	 */
-	public function getCoverPageHTML($product, $manual, $version, $htmldoc = true, $title = NULL )
+	public function getCoverPageHTML($product, $manual, $version, $htmldoc = true, $title = NULL)
 	{
 		global $wgServer, $wgStylePath;
 		$image_path	= $wgServer . $wgStylePath . PONYDOCS_PDF_TITLE_IMAGE_PATH;
@@ -37,9 +37,10 @@ overflow-x: hidden;
 </head>
 <body>
 EOT;
+		$h2 = '';
 		if (!empty($title)) {
 			$h2 = PonyDocsTopic::FindH1ForTitle($title->__toString());
-			$h2 = '<h2>' . htmlspecialchars($h2) . '</h2>';
+			$h2 = '<h2>' . htmlspecialchars( $h2 ) . '</h2>';
 		}
 		
 		if ($htmldoc) {
