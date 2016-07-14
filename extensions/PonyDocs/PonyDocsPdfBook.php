@@ -174,7 +174,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		if ( $justThisTopic ) {
 			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
 		}else {
-			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
+			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true);
 		}
 
 		fwrite($fh, $coverPageHTML);
