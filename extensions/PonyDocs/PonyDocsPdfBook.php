@@ -89,7 +89,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		$productName = $pieces[1];
-		$ponydocs = PonyDocsWiki::getInstance($productName);
+		$ponydocs = PonyDocsWiki::getInstance();
 		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
 		if ($pProduct === NULL) { // product wasn't valid
 			wfProfileOut( __METHOD__ );

@@ -29,7 +29,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		PonyDocsProductVersion::LoadVersionsForProduct( $this->data['selectedProduct'] );
 		PonyDocsProductManual::LoadManualsForProduct( $this->data['selectedProduct'] );
 
-		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
+		$ponydocs = PonyDocsWiki::getInstance();
 
 		$this->data['products'] = $ponydocs->getProductsForTemplate();
 		$this->data['versions'] = $ponydocs->getVersionsForProduct( $this->data['selectedProduct'] );
@@ -273,7 +273,7 @@ class PonyDocsTemplate extends QuickTemplate {
 												// do quick manip
 												$found = FALSE;
 												for ( $i =( count( $this->data['versions'] ) - 1 ); $i >= 0; $i-- ) {
-													$this->data['versions'][$i]['label'] = $this->data['versions'][$i]['name'];
+													$this->data['versions'][$i]['label'] = $this->data['versions'][$i]['longName'];
 													if ( !$found && $this->data['versions'][$i]['status'] == "released" ) {
 														$this->data['versions'][$i]['label'] .= " (latest release)";
 														$found = TRUE;
@@ -622,7 +622,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
 		 */
-		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
+		$ponydocs = PonyDocsWiki::getInstance();
 		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] );
 
 		/**
@@ -666,7 +666,9 @@ class PonyDocsTemplate extends QuickTemplate {
 					. ' where status is released, unreleased, or preview.'
 					. ' Valid chars in version short name are A-Z, 0-9, period, comma, and dash.</i></span>' );
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>* Use {{#versiongroup:name|message}} to set a banner'
-					. ' message that will appear on every topic in every version following the versiongroup.</i></span>' );
+					. ' message that will appear on every topic in every version following the versiongroup.'
+					. ' End a version group with an empty tag {{#versiongroup:}}'
+					. '</i></span>');
 			} elseif ( !strcmp( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $this->data['selectedProduct']
 				. PONYDOCS_PRODUCTMANUAL_SUFFIX,
 				$wgTitle->__toString() ) ) {
@@ -703,13 +705,19 @@ class PonyDocsTemplate extends QuickTemplate {
 					. '* Optionally start this page with {{#manualDescription:Manual Description.}}'
 					. ' followed by two line-breaks to set a manual description for the Manual this TOC belongs to.'
 					. '</i></span>' );
+				$wgOut->addHTML('<br><span class="' . $helpClass . '"><i>'
+					. '* If there is no manualDescription tag, please leave one blank line at the top of the page,'
+					. ' or else Topic autocreation will fail.'
+					. '</i></span>');
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'
 					. '* Topics are grouped into sections by section headers.'
 					. ' Any line without markup is considered a section header.'
-					. ' A section header is required before the the first topic tag.</i></span>');
+					. ' A section header is required before the the first Topic tag.'
+					. ' There cannot be an empty line between a section header and its first Topic.'
+					. '</i></span>');
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '"><i>'
 					. '* Topic tags must be part of an unordered list.'
-					. ' Use {{#topic:Display Name}} after a * (list item markup) to create topics.</i></span>' );
+					. ' Use {{#topic:Display Name}} after a * (list item markup) to create Topics.</i></span>' );
 			} elseif ( sizeof( $pieces ) >= 2 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ) ) {
 				$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
 				if( $pManual ) {
