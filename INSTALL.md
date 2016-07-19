@@ -197,8 +197,12 @@ a one-line change.
 	define( 'PONYDOCS_CRAWLER_ADDRESS', "192.168.1.1" );
 	define( 'PONYDOCS_CRAWLER_USERAGENT_REGEX', "/foo-spider/" );
 
+	// Should Ponydocs replace the latest version with 'latest' when generating links?
+	define( "PONYDOCS_USE_LATEST" , FALSE );
+
 	require_once("$IP/extensions/PonyDocs/PonyDocsExtension.php");
 	require_once("$IP/skins/PonyDocs/PonyDocs.php");
+
 	#################  PONYDOCS END #################
 	```
 
