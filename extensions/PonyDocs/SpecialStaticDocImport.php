@@ -43,7 +43,7 @@ class SpecialStaticDocImport extends SpecialPage {
 
 		$productName = isset( $parts[0] ) ? $parts[0] : PonyDocsProduct::GetSelectedProduct();
 		$manualName = isset( $parts[1] ) ? $parts[1] : NULL;
-		
+
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
 		$groups = $wgUser->getGroups();
@@ -57,11 +57,15 @@ class SpecialStaticDocImport extends SpecialPage {
 
 		if ( !is_null( $manualName ) ) {
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
+			if ( is_null( $manual ) ) {
+				$wgOut->addHTML( '<p>Sorry, but the manual is not available for name - ' . $manualName .'.</p>' );
+				return;
+			}
 			$manualLongName = $manual->getLongName();
 		} else {
 			$manual = NULL;
 		}
-		
+
 		$wgOut->setPagetitle( 'Static Documentation Import Tool' );
 
 		$h2 = "Static Documentation Import for $productLongName";
@@ -84,15 +88,15 @@ class SpecialStaticDocImport extends SpecialPage {
 
 	/**
 	 * Validate that the product, and manual if any, are static
-	 * 
+	 *
 	 * @global OutputPage $wgOut
 	 * @param PonyDocsProduct $product
 	 * @param mixed $manual PonyDocsManual or NULL
-	 * @return boolean 
+	 * @return boolean
 	 */
 	private function validateProductAndManualAreStatic( $product, $manual ) {
 		global $wgOut;
-		
+
 		$valid = TRUE;
 		if ( is_null( $manual ) && !$product->isStatic() ) {
 			$wgOut->addHTML( "<h3>{$product->getLongName()} is not defined as a static product.</h3>" );
@@ -106,13 +110,13 @@ class SpecialStaticDocImport extends SpecialPage {
 				. " below and follow the instructions.</p>" );
 			$valid = FALSE;
 		}
-		
+
 		return $valid;
 	}
 
 	/**
 	 * Show the form that allows importing a new static product or manual zip file
-	 * 
+	 *
 	 * @global OutputPage $wgOut
 	 * @param PonyDocsProduct $product
 	 * @param mixed $manual PonyDocsManual or NULL
@@ -164,7 +168,7 @@ class SpecialStaticDocImport extends SpecialPage {
 				. "links below.\n" );
 		}
 	}
-	
+
 	/**
 	 *
 	 * @global OutputPage $wgOut
@@ -174,13 +178,13 @@ class SpecialStaticDocImport extends SpecialPage {
 	 */
 	private function processImportForm( $action, $product, $manual ) {
 		global $wgOut, $wgUser;
-		
+
 		$importer = new PonyDocsStaticDocImporter( PONYDOCS_STATIC_DIR );
 
 		if ( isset( $_POST['version'] ) && isset( $_POST['product'] )
 			&& ( is_null( $manual ) || isset( $_POST['manual'] ) ) ) {
 			switch ($action) {
-				case "add":				
+				case "add":
 					if ( PonyDocsProductVersion::IsVersion( $_POST['product'], $_POST['version'] ) ) {
 						$wgOut->addHTML( '<h3>Results of Import</h3>' );
 						// Okay, let's make sure we have file provided
@@ -241,10 +245,10 @@ class SpecialStaticDocImport extends SpecialPage {
 			$this->clearProductCache($_POST['product'], $_POST['version']);
 		}
 	}
-	
+
 	/**
 	 * Clear NAVDATA cache by product and version
-	 * @param string $product 
+	 * @param string $product
 	 * @param string $version
 	 */
 	private function clearProductCache( $productName, $versionName ) {
@@ -257,7 +261,7 @@ class SpecialStaticDocImport extends SpecialPage {
 
 	/**
 	 * Show existing versions and remove form
-	 * 
+	 *
 	 * @global OutputPage $wgOut
 	 * @param PonyDocsProduct $product
 	 * @param mixed $manual PonyDocsManual or NULL
@@ -269,7 +273,7 @@ class SpecialStaticDocImport extends SpecialPage {
 		if ( !is_null( $manual ) ) {
 			$manualName = $manual->getShortName();
 		}
-		
+
 		// Display existing versions
 		$wgOut->addHTML( '<h3>Existing Content</h3>' );
 		if ( is_null( $manual ) ) {
@@ -305,13 +309,13 @@ class SpecialStaticDocImport extends SpecialPage {
 	 * List of links for the bottom of the page
 	 * @global string $wgArticlePath
 	 * @global OutputPage $wgOut
-	 * @param PonyDocsProduct $productName 
+	 * @param PonyDocsProduct $productName
 	 */
 	private function showHelpfulLinks( $productName ) {
 		global $wgArticlePath, $wgOut;
-		
+
 		$wgOut->addHTML( '<h2>Other Useful Management Pages</h2>'
-			. '<a href="' 
+			. '<a href="'
 				. str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
 					PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath )
 				. '">Version Management</a> - Define and update available ' . $productName . ' versions.<br />'
