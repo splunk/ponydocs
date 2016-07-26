@@ -28,8 +28,9 @@ class PonyDocsExtension {
 
 	/**
 	 * Set up some hooks based on URL path
-	 * TODO: URL logic should move to PonyDocsWiki
-	 * TODO: Hook registration should move to the bottom of PonyDocsExtension.php
+	 * TODO: PonyDocsWiki should be instantiated here, because we have URL logic here.
+	 * Unless! We want to move the hook assignment to efPonyDocsSetup, but I'm not sure that will work...we should check
+	 * when hooks are called...
 	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;

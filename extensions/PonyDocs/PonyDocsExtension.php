@@ -171,11 +171,6 @@ foreach ( $ponyDocsProductsList as $product ) {
  * Setup
  */
 
-$wgExtensionFunctions[] = 'efPonyDocsSetup';
-
-/**
- * Register the setup function for the extension.
- */
 $wgExtensionFunctions[] = 'PonyDocsExtension::efPonyDocsSetup';
 
 /**
