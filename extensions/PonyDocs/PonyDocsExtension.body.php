@@ -567,7 +567,7 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Hook for ArticleFromTitle.
+	 * Implement ArticleFromTitle hook
 	 * Using the URL, find a matching MW page and override the Article set by the Title. This is where the magic happens.
 	 *
 	 * @param Title $title
@@ -609,44 +609,46 @@ class PonyDocsExtension {
 		$manualName = $matches[3];
 		$topicName = $matches[4];
 
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$product = PonyDocsProduct::GetProductByShortName( $productName );
 
 		// If we don't have a valid product, display 404
-		if (!($product instanceof PonyDocsProduct)) {
+		if ( !( $product instanceof PonyDocsProduct ) ) {
 			$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
-			return false;
+			return FALSE;
 		}
 
 		// If this article doesn't have a valid manual, don't display the article
-		if (!PonyDocsProductManual::IsManual($productName, $manualName)) {
+		if ( !PonyDocsProductManual::IsManual( $productName, $manualName ) ) {
 			$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
-			return false;
+			return FALSE;
 		}
 
 		// If this is a static product return because that should be handled by another function
-		if ($product->isStatic()) {
-			return true;
+		if ( $product->isStatic() ) {
+			return TRUE;
 		}
-		$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion($productName);
+		$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 
 		$version = '';
-		PonyDocsProductVersion::LoadVersionsForProduct($productName);
+		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
 
-		if( !strcasecmp( 'latest', $versionName ))
-		{
+		if ( !strcasecmp( 'latest', $versionName ) ) {
 			/**
 			 * This will be a DESCENDING mapping of version name to PonyDocsVersion object and will ONLY contain the
 			 * versions available to the current user (i.e. LoadVersions() only loads the ones permitted).
 			 */
-			$releasedVersions = PonyDocsProductVersion::GetReleasedVersions($productName, true);
+			$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName, TRUE );
 			
-			if (empty($releasedVersions)) return false;
+			if ( empty( $releasedVersions ) ) {
+			return FALSE;
+			}
 			
 			$versionList = array_reverse( $releasedVersions );
 			
-			$versionNameList = array( );
-			foreach( $versionList as $pV )
-				$versionNameList[] = $pV->getVersionShortName( );
+			$versionNameList = array();
+			foreach ( $versionList as $pV ) {
+				$versionNameList[] = $pV->getVersionShortName();
+			}
 
 			/**
 			 * Now get a list of version names to which the current topic is mapped in DESCENDING order as well
@@ -668,56 +670,57 @@ class PonyDocsExtension {
 				__METHOD__
 			);
 
-			if( !$res->numRows( ))
-			{
+			if ( !$res->numRows() )	{
 				/**
 				 * What happened here is we requested a topic that does not exist or is not linked to any version.
 				 * Perhaps setup a default redirect, Main_Page or something?
 				 */
-				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+				if ( PONYDOCS_DEBUG ) {
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
+				}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
 
 			/**
-			 * Based on our list, get the PonyDocsVersion for each version tag and store in an array.  Then pass this array
-			 * to our custom sort function via usort() -- the ending result is a sorted list in $existingVersions, with the
+			 * Based on our list, get the PonyDocsVersion for each version tag and store in an array.
+			 * Then pass this array to our custom sort function via usort()
+			 * The ending result is a sorted list in $existingVersions, with the
 			 * LATEST version at the front.
 			 * 
 			 * @FIXME:  GetVersionByName is missing some versions?
 			 */
 			$existingVersions = array( );
-			while( $row = $dbr->fetchObject( $res ))
-			{
-				if( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ))
-				{
+			while ( $row = $dbr->fetchObject( $res ) ) {
+				if ( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ) ) {
 					$pVersion = PonyDocsProductVersion::GetVersionByName( $vmatch[1], $vmatch[2] );
-					if( $pVersion && !in_array( $pVersion, $existingVersions ))
+					if ( $pVersion && !in_array( $pVersion, $existingVersions ) ) {
 						$existingVersions[] = $pVersion;
+					}
 				}
 			}
  
 			usort( $existingVersions, "PonyDocs_ProductVersionCmp" );
 			$existingVersions = array_reverse( $existingVersions );
 
-			// Okay, iterate through existingVersions.  If we can't see that 
-			// any of them belong to our latest released version, redirect to 
-			// our latest handler.
-			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion($productName)->getVersionShortName();
-			$found = false;
-			foreach($existingVersions as $docVersion) {
-				if($docVersion->getVersionShortName() == $latestReleasedVersion) {
-					$found = true;
+			// Okay, iterate through existingVersions.
+			// If we can't see that any of them belong to our latest released version, redirect to our latest handler.
+			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName )->getVersionShortName();
+			$found = FALSE;
+			foreach ( $existingVersions as $docVersion ) {
+				if ( $docVersion->getVersionShortName() == $latestReleasedVersion ) {
+					$found = TRUE;
 					break;
 				}
 			}
-			if(!$found) {
-				if (PONYDOCS_DEBUG) {
-					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__
-						. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title");
+			
+			if ( !$found ) {
+				if ( PONYDOCS_DEBUG ) {
+					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
+						. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title" );
 				}
-				header("Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", true, 302);
-				exit(0);
+				header( "Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", TRUE, 302 );
+				exit( 0 );
 			}
 
 			/**
@@ -725,17 +728,14 @@ class PonyDocsExtension {
 			 * our resulting $existingVersions and see if each is in_array( $versionNameList );  if its NOT, continue looping.
 			 * Once we hit one, redirect.  if we exhaust our list, go to the main page or something.
 			 */
-			foreach( $existingVersions as $pV )
-			{
-				if( in_array( $pV->getVersionShortName( ), $versionNameList ))
-				{
+			foreach ( $existingVersions as $pV ) {
+				if ( in_array( $pV->getVersionShortName(), $versionNameList ) ) {
 					/**
 					 * Look up topic name and redirect to URL.
 					 */
 
 					$res = $dbr->select(
-						
-						array('categorylinks', 'page'),
+						array( 'categorylinks', 'page' ),
 						'page_title' ,
 						array(
 							'cl_from = page_id',
@@ -748,7 +748,7 @@ class PonyDocsExtension {
 						__METHOD__
 					);
 
-					if( !$res->numRows() ) {
+					if ( !$res->numRows() ) {
 						if ( PONYDOCS_DEBUG ) {
 							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 						}
@@ -779,21 +779,22 @@ class PonyDocsExtension {
 			/**
 			 * Invalid redirect -- go to Main_Page or something.
 			 */
-			if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			if (PONYDOCS_DEBUG) {
+				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
+			}
 			header( "Location: " . $defaultRedirect );
 			exit( 0 );
-		}
-		else
-		{
+		} else {
 			/**
 			 * Ensure version specified in aliased URL is a valid version -- if it is not we just need to do our default
 			 * redirect here.
 			 */
 
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
-			if( !$version )
-			{
-				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");}
+			if ( !$version ) {
+				if ( PONYDOCS_DEBUG ) {
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");
+				}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
 			}
@@ -803,7 +804,7 @@ class PonyDocsExtension {
 			 * is the URL to redirect to.  
 			 */
 			$res = $dbr->select(
-				array('categorylinks', 'page'),
+				array( 'categorylinks', 'page' ),
 				'page_title' ,
 				array(
 					'cl_from = page_id',
@@ -816,13 +817,12 @@ class PonyDocsExtension {
 				__METHOD__
 			);
 
-			if( !$res->numRows( ))
-			{
+			if ( !$res->numRows() ) {
 				/**
 				 * Handle invalid redirects?
 				 */
 				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
-				return false;
+				return FALSE;
 			}
 
 			$row = $dbr->fetchObject( $res );
@@ -831,7 +831,7 @@ class PonyDocsExtension {
 			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionSelectedName );
 
 			$article = new Article( $title );
-			$article->loadContent( );
+			$article->loadContent();
 
 			if ( !$article->exists() ) {
 				$article = NULL;
@@ -848,86 +848,93 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Hook function which
-	 * - Sets the version correctly when editing a topic
-	 * - Redirects to the first topic in a manual if the user requested a bare manual URL
+	 * 
+	 * Implement ArticleFromtitle Hook
+	 * - Set the version correctly when editing a topic
+	 * - Redirect to the first topic in a manual if the user requested a bare manual URL
 	 * - Redirect to the landing page when there are no available versions
 	 */
 	static public function onArticleFromTitleQuickLookup(&$title, &$article) {
 		global $wgScriptPath;
-		if(preg_match('/&action=edit/', $_SERVER['PATH_INFO'])) {
+		if ( preg_match( '/&action=edit/', $_SERVER['PATH_INFO'] ) ) {
 			// Check referrer and see if we're coming from a doc page.
 			// If so, we're editing it, so we should force the version 
 			// to be from the referrer.
-			if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
+			if ( preg_match('/^' . str_replace("/",
+				"\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', 
+				$_SERVER['HTTP_REFERER'], $match ) ) {
 				$targetProduct = $match[1];
 				$targetVersion = $match[3];
-				if($targetVersion == "latest") {
-					PonyDocsProductVersion::SetSelectedVersion($targetProduct, PonyDocsProductVersion::GetLatestReleasedVersion($targetProduct)->getVersionShortName());
+				if ( $targetVersion == "latest" ) {
+					PonyDocsProductVersion::SetSelectedVersion($targetProduct,
+						PonyDocsProductVersion::GetLatestReleasedVersion( $targetProduct )->getVersionShortName() );
 				}
 				else {
-					PonyDocsProductVersion::SetSelectedVersion($targetProduct, $targetVersion);
+					PonyDocsProductVersion::SetSelectedVersion( $targetProduct, $targetVersion );
 				}
 			}
 		}
 
 		// Match a URL like /Documentation/PRODUCT
-		if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)$/i', $_SERVER['PATH_INFO'], $match)) {
+		if ( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)$/i', $_SERVER['PATH_INFO'], $match ) ) {
 			$targetProduct = $match[1];
-			$version = PonyDocsProductVersion::GetVersions($targetProduct, TRUE);
+			$version = PonyDocsProductVersion::GetVersions( $targetProduct, TRUE );
 			//check for product not found
-			if (empty($version)) {
+			if ( empty( $version ) ) {
 				PonyDocsExtension::redirectToLandingPage();
-				return true;
+				return TRUE;
 			}
 		}
 
 		// Matches a URL like /Documentation/PRODUCT/VERSION/MANUAL
 		// TODO: Should match PONYDOCS_PRODUCTMANUAL_LEGALCHARS instead of \w at the end
-		if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		if ( preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
 			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/(\w+)\/?$/i',
-			$_SERVER['PATH_INFO'], $match)) {
+			$_SERVER['PATH_INFO'], $match ) ) {
 			$targetProduct = $match[1];
 			$targetVersion = $match[2];
 			$targetManual = $match[3];
 
-			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
+			$p = PonyDocsProduct::GetProductByShortName( $targetProduct );
 
-			if (!($p instanceof PonyDocsProduct)) {
+			if ( !( $p instanceof PonyDocsProduct ) ) {
 				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
-				return false;
+				return FALSE;
 			}
 
 			// User wants to find first topic in a requested manual.
 			// Load up versions
-			PonyDocsProductVersion::LoadVersionsForProduct($targetProduct);
+			PonyDocsProductVersion::LoadVersionsForProduct( $targetProduct );
 
 			// Determine version
-			if($targetVersion == '') {
+			if ( $targetVersion == '' ) {
 				// No version specified, use the user's selected version
-				$ver = PonyDocsProductVersion::GetVersionByName($targetProduct, PonyDocsProductVersion::GetSelectedVersion($targetProduct));
-			}
-			else if(strtolower($targetVersion) == "latest") {
+				$ver = PonyDocsProductVersion::GetVersionByName(
+					$targetProduct, PonyDocsProductVersion::GetSelectedVersion( $targetProduct ) );
+			} elseif ( strtolower($targetVersion) == "latest" ) {
 				// User wants the latest version.
-				$ver = PonyDocsProductVersion::GetLatestReleasedVersion($targetProduct);
-			}
-			else {
+				$ver = PonyDocsProductVersion::GetLatestReleasedVersion( $targetProduct );
+			} else {
 				// Okay, they want to get a version by a specific name
-				$ver = PonyDocsProductVersion::GetVersionByName($targetProduct, $targetVersion);
+				$ver = PonyDocsProductVersion::GetVersionByName( $targetProduct, $targetVersion );
 			}
-			if(!$ver) {
-				if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
-				header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
+			
+			if ( !$ver ) {
+				if ( PONYDOCS_DEBUG ) {
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
+				}
+				header( 'Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
 				die();
 			}
+
 			// Okay, the version is valid, let's set the user's version.
-			PonyDocsProductVersion::SetSelectedVersion($targetProduct, $ver->getVersionShortName());
-			PonyDocsProductManual::LoadManualsForProduct($targetProduct);
-			$manual = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
+			PonyDocsProductVersion::SetSelectedVersion( $targetProduct, $ver->getVersionShortName() );
+			PonyDocsProductManual::LoadManualsForProduct( $targetProduct );
+			$manual = PonyDocsProductManual::GetManualByShortName( $targetProduct, $targetManual );
 			if ( !$manual ) {
 				// Rewrite to Main documentation
-				if (PONYDOCS_DEBUG) {
+				if ( PONYDOCS_DEBUG ) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/"
 						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
 				}
@@ -935,24 +942,27 @@ class PonyDocsExtension {
 				die();
 			} elseif ( !$manual->isStatic() ) {
 				// Get the TOC out of here! heehee
-				$toc = new PonyDocsTOC($manual, $ver, $p);
-				list($toc, $prev, $next, $start) = $toc->loadContent();
+				$toc = new PonyDocsTOC( $manual, $ver, $p );
+				list( $toc, $prev, $next, $start ) = $toc->loadContent();
 				//Added empty check for WEB-10038
-				if (empty($toc)) {
+				if ( empty( $toc ) ) {
 					PonyDocsExtension::redirectToLandingPage();
 					return FALSE;
 				}
-				foreach($toc as $entry) {
-					if(isset($entry['link']) && $entry['link'] != "") {
+				
+				foreach ( $toc as $entry ) {
+					if ( isset( $entry['link'] ) && $entry['link'] != "" ) {
 						// We found the first article in the manual with a link.  
 						// Redirect to it.
-						if (PONYDOCS_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link']);}
-						header("Location: " . $entry['link']);
+						if ( PONYDOCS_DEBUG ) {
+							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link'] );
+						}
+						header( "Location: " . $entry['link'] );
 						die();
 					}
 				}
 				//Replace die with a warning log and redirect
-				error_log("WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl());
+				error_log( "WARNING [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . PonyDocsExtension::getDefaultUrl() );
 				PonyDocsExtension::redirectToLandingPage();
 				return FALSE;
 			}
@@ -961,7 +971,9 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Hook function to retrieve data for static article
+	 * Implement ArticleFromTitle Hook
+	 * Retrieve data for static Topics
+	 * 
 	 * @param Title $title Mediawiki title object passed from core
 	 * @param Article $article Mediawiki article object passed from core
 	 * @return boolean
