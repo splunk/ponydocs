@@ -39,7 +39,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
 		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
 		
-		$justThisTopic = (isset($_GET['topic']) && $_GET['topic'] ==1)? true : false;
+		$justThisTopic = (isset($_GET['topic']) && $_GET['topic'] == 1) ? TRUE : FALSE;
 		// We don't do any processing unless it's pdfbook
 		if ($action != 'pdfbook') {
 			return true;
@@ -89,7 +89,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		$productName = $pieces[1];
-		$ponydocs = PonyDocsWiki::getInstance($productName);
+		$ponydocs = PonyDocsWiki::getInstance();
 		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
 		if ($pProduct === NULL) { // product wasn't valid
 			wfProfileOut( __METHOD__ );
@@ -174,7 +174,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		if ( $justThisTopic ) {
 			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
 		}else {
-			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true, $title);
+			$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, true);
 		}
 
 		fwrite($fh, $coverPageHTML);
@@ -241,15 +241,14 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 * @param $fileName string The full path to the PDF file.
 	 * @param $product string The product name.
 	 * @param $version string The product version.
-	 * @param $manual string The manual name.
-	 * @param $isTopic string is it a topic or a manual.
-	 * @param $topic string topic object to get the topic name.
+	 * @param $manual string The manual name.	 
+	 * @param $topic Object topic object to get the topic name.
 	 */
 	static public function servePdf( $fileName, $product, $version, $manual, $topic = NULL ) {
 		if (file_exists($fileName)) {
 			header("Content-Type: application/pdf");
 			if ( is_object( $topic ) ) {
-				header("Content-Disposition: attachment; filename=\"$product-$version-{$topic->getTopicName()}.pdf\"");			
+				header("Content-Disposition: attachment; filename=\"$product-$version-$manual-{$topic->getTopicName()}.pdf\"");			
 			} else {
 				header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");			
 			}

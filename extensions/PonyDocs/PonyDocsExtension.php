@@ -32,6 +32,7 @@ require_once( "$IP/extensions/PonyDocs/PonyDocsRenameVersionEngine.php");
 require_once( "$IP/extensions/PonyDocs/PonyDocsStaticDocImporter.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTOC.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsTopic.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocsVariables.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsZipExport.php");
 require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
@@ -44,10 +45,61 @@ require_once( "$IP/extensions/PonyDocs/SpecialStaticDocServer.php");
 require_once( "$IP/extensions/PonyDocs/SpecialTOCList.php" );
 require_once( "$IP/extensions/PonyDocs/SpecialTopicList.php" );
 
+/**
+ * Setup credits for this extension to appear in the credits page of wiki.
+ * TODO: Fix for github
+ */
+$wgExtensionCredits['other'][] = array(
+	'name' => 'PonyDocs Customized MediaWiki', 
+	'author' => 'Splunk',
+	'svn-date' => '$LastChangedDate$',
+	'svn-revision' => '$LastChangedRevision: 207 $',
+	'url' => 'http://docs.splunk.com',
+	'description' => 'Provides custom support for product documentation'
+);
+
+$wgExtensionCredits['variable'][] = array(
+	'name' => 'PonyDocsMagic',
+	'author' => 'Splunk',
+	'version' => '1.0',
+	'svn-date' => '$LastChangedDate$',
+	'svn-revision' => '$LastChangedRevision: 207 $',
+	'url' => 'http://docs.splunk.com',
+	'description' => 'Provides product, version, manual, and topic variables for PonyDocs',
+);
+
+/**
+ * SVN revision #. This requires we enable this property in svn for this file:
+ * svn propset ?:? "Revision" <file>
+ * TODO: fix for github
+ */
+$wgRevision = '$Revision: 207 $';
+
+/**
+ * Register article hooks using side-effects in constructor.
+ * TODO: hook registration should move to the bottom of this file, URL logic should move to PonyDocsWiki
+ */
+$ponydocs = new PonyDocsExtension();
+
+/**
+ * Register a module for our scripts and css
+ */
+$wgResourceModules['ext.PonyDocs'] = array(
+	'scripts' => 'js/docs.js',
+	'dependencies' => 'jquery.json',
+	'localBasePath' => __DIR__,
+	'remoteExtPath' => 'PonyDocs',
+	'position' => 'top',
+);
+
 // check for empty product list
 if ( !isset ( $ponyDocsProductsList ) || sizeof( $ponyDocsProductsList ) == 0) {
 	$ponyDocsProductsList[] = PONYDOCS_DEFAULT_PRODUCT;
 }
+
+/**
+ * User Rights
+ */
 
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
@@ -94,7 +146,6 @@ $editorPerms = array(
 );
 	
 foreach ( $ponyDocsProductsList as $product ) {
-	
 	// check for empty product
 	if ( $product == '' ) {
 		// allow for existing product-less base groups
@@ -117,21 +168,10 @@ foreach ( $ponyDocsProductsList as $product ) {
 }
 
 /**
- * Setup credits for this extension to appear in the credits page of wiki.
+ * Setup
  */
-$wgExtensionCredits['other'][] = array(
-	'name' => 'PonyDocs Customized MediaWiki', 
-	'author' => 'Splunk',
-	'svn-date' => '$LastChangedDate$',
-	'svn-revision' => '$LastChangedRevision: 207 $',
-	'url' => 'http://www.splunk.com',
-	'description' => 'Provides custom support for product documentation' );
 
-/**
- * SVN revision #. This requires we enable this property in svn for this file:
- * svn propset ?:? "Revision" <file>
- */
-$wgRevision = '$Revision: 207 $';
+$wgExtensionFunctions[] = 'efPonyDocsSetup';
 
 /**
  * Register the setup function for the extension.
@@ -173,7 +213,15 @@ $wgResourceModules['ext.PonyDocs'] = array(
 );
 
 /**
- * Setup other 'hooks'
+ * Variables
+ */
+
+$wgExtensionMessagesFiles['PonyDocsMagic'] = __DIR__ . '/PonyDocs.i18n.magic.php';
+$wgHooks['ParserGetVariableValueSwitch'][] = 'PonyDocsVariables::wfPonyDocsGetVariableValueSwitch';
+$wgHooks['MagicWordwgVariableIDs'][] = 'PonyDocsVariables::wfPonyDocsMagicWordwgVariableIDs';
+
+/**
+ * Hooks
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
  */
 

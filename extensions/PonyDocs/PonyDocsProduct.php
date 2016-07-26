@@ -100,10 +100,11 @@ class PonyDocsProduct
 
 	/**
 	 * Getter for long name
+	 * Strip forbidden tags from long name
 	 * @return string
 	 */
 	public function getLongName() {
-		return $this->mLongName;
+		return strip_tags($this->mLongName, '<del><em><ins><strong><sub><sup>');
 	}
 
 	/**

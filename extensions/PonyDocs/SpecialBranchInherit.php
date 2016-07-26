@@ -453,6 +453,7 @@ class SpecialBranchInherit extends SpecialPage
 	 */
 	public function execute( )
 	{
+		error_log(__METHOD__);
 		global $wgOut, $wgArticlePath, $wgScriptPath;
 		global $wgUser;
 
@@ -471,7 +472,7 @@ class SpecialBranchInherit extends SpecialPage
 			$forceManual = $match[2];
 		} else {
 			$forceProduct = PonyDocsProduct::GetSelectedProduct();
-			$ponydocs = PonyDocsWiki::getInstance( $forceProduct );
+			$ponydocs = PonyDocsWiki::getInstance();
 			$products = $ponydocs->getProductsForTemplate( );
 		}
 

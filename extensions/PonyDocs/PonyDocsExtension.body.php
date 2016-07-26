@@ -27,7 +27,9 @@ class PonyDocsExtension {
 	protected static $speedProcessingEnabled;
 
 	/**
-	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
+	 * Set up some hooks based on URL path
+	 * TODO: URL logic should move to PonyDocsWiki
+	 * TODO: Hook registration should move to the bottom of PonyDocsExtension.php
 	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
@@ -461,66 +463,35 @@ class PonyDocsExtension {
 	 */
 	
 	/**
-	 * Our primary setup function simply handles URL rewrites for aliasing (per spec) and calls our PonyDocsWiki singleton instance
-	 * to ensure it runs the data retrieval functions for versions and manuals and the like. 
+	 * Primary setup function 
+	 * - Sets up session for anonymous users
+	 * - Handles URL rewrites for aliasing (per spec)
+	 * - Instantiates a PonyDocsWiki singleton instance which loads versions and manuals for the requested product
 	 */
-	static public function efPonyDocsSetup() {
-		global $wgPonyDocs, $wgScriptPath, $wgArticlePath;
-		// force mediawiki to start session for anonymous traffic
+	function efPonyDocsSetup() {
+		// Start session for anonymous traffic
 		if ( session_id() == '' ) {
 			wfSetupSession();
 			if ( PONYDOCS_DEBUG ) {
 				error_log( "DEBUG [" . __METHOD__ . "] started session" );
 			}
 		}
-		// Set selected product from URL
-		if ( preg_match(
-			'/^' . str_replace("/", "\/", $wgScriptPath ) . '\/((index.php\?title=)|)'
-				. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[\/|:]{1}([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)[\/|:]?/i',
-			$_SERVER['PATH_INFO'],
-			$match ) ) {
-			PonyDocsProduct::SetSelectedProduct( $match[3] );
-		}
 
-		// Set selected version from URL
-		// - every time from /-separated title URLs
-		// - only when no selected version already set from :-separated title
-		$currentVersion = PonyDocsProductVersion::GetSelectedVersion( PonyDocsProduct::GetSelectedProduct(), FALSE );
-		if ( preg_match(
-			'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-				. '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'],
-			$match)
-			|| preg_match(
-				'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-					. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/[' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC(['
-					. PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i',
-				$_SERVER['PATH_INFO'],
-				$match )
-			|| ( !isset( $currentVersion )
-				&& preg_match(
-					'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
-					. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
-					. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)/i',
-					$_SERVER['PATH_INFO'], $match ) )
-			|| ( !isset($currentVersion )
-				&& preg_match(
-					'/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)'
-						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+):['
-						. PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+:[^:]+:([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS
-						. ']+)/i', $_SERVER['PATH_INFO'], $match ) ) ) {
-			$result = PonyDocsProductVersion::SetSelectedVersion( $match[3], $match[4] );
-			if ( is_null( $result ) ) {
-				// this version isn't available to this user; go away
-				$defaultRedirect = PonyDocsExtension::getDefaultUrl();
-				if ( PONYDOCS_DEBUG ) {
-					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
-				}
-				header( "Location: " . $defaultRedirect );
-				exit;
+		// This has the side effect of loading versions and manuals for the product
+		$wiki = PonyDocsWiki::getInstance();
+
+		if ( ( $wiki->getRequestType() == 'Topic' || $wiki->getRequestType() == 'TOC' )
+			&& !PonyDocsProductVersion::GetSelectedVersion( $wiki->getProduct()->getShortName(), FALSE ) ) {
+			// This version isn't available to this user; go away
+			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+			if ( PONYDOCS_DEBUG ) {
+				error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 			}
+			header( "Location: " . $defaultRedirect );
+			exit;
 		}
-		PonyDocsWiki::getInstance( PonyDocsProduct::GetSelectedProduct() );
-	}
+	}	
+	
 
 	/**
 	 * Hooks
@@ -1839,7 +1810,7 @@ EOJS;
 	 */
 	static public function onParserBeforeStrip( &$parser, &$text )
 	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgPonyDocs, $action;
+		global $action, $wgTitle, $wgArticlePath, $wgOut, $action;
 
 		$dbr = wfGetDB( DB_SLAVE );
 		if(empty($wgTitle)) {
@@ -2102,7 +2073,7 @@ EOJS;
 		global $wgRequest, $wgParser, $wgTitle;
 		global $wgHooks;
 
-		$ponydocs  = PonyDocsWiki::getInstance( );
+		$ponydocs  = PonyDocsWiki::getInstance();
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -2149,34 +2120,7 @@ EOJS;
 			die();
 		}
 
-		/**
-		 * Our custom print action -- 'print' exists so we need to use our own.  Require that 'type' is set to 'topic' for the
-		 * current topic or 'manual' for entire current manual.  The 'title' param should be set as well.  Output a print
-		 * ready page.
-		 */
-		else if( !strcmp( $action, 'doprint' ))
-		{
-			$type = 'topic';
-			if( $wgRequest->getVal( 'type' ) || strlen( $wgRequest->getVal( 'type' )))
-			{
-				if( !strcasecmp( $wgRequest->getVal( 'type' ), 'topic' ) && !strcasecmp( $wgRequest->getVal( 'type' ), 'manual' ))
-				{
-					// Invalid!
-				}
-				$type = strtolower( $wgRequest->getVal( 'type' ));
-			}
-
-			if( !strcmp( $type, 'topic' ))
-			{
-				$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' )));
-				$c = $article->getContent();
-
-				die();
-			}
-
-			die( "Print!" );
-		}
-		return true;
+		return TRUE;
 	}
 
 	/**

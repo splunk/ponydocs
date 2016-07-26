@@ -29,7 +29,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		PonyDocsProductVersion::LoadVersionsForProduct( $this->data['selectedProduct'] );
 		PonyDocsProductManual::LoadManualsForProduct( $this->data['selectedProduct'] );
 
-		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
+		$ponydocs = PonyDocsWiki::getInstance();
 
 		$this->data['products'] = $ponydocs->getProductsForTemplate();
 		$this->data['versions'] = $ponydocs->getVersionsForProduct( $this->data['selectedProduct'] );
@@ -622,7 +622,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
 		 */
-		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
+		$ponydocs = PonyDocsWiki::getInstance();
 		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] );
 
 		/**
