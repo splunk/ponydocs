@@ -54,6 +54,7 @@ class SpecialStaticDocImport extends SpecialPage {
 
 		$product = PonyDocsProduct::GetProductByShortName( $productName );
 		$productLongName = $product->getLongName();
+		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
 
 		if ( !is_null( $manualName ) ) {
 			$manual = PonyDocsProductManual::GetManualByShortName( $productName, $manualName );
