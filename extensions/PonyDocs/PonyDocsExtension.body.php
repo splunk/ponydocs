@@ -27,10 +27,11 @@ class PonyDocsExtension {
 	protected static $speedProcessingEnabled;
 
 	/**
-	 * Set up some hooks based on URL path
+	 * Set SERVER['PATH_INFO'] manually
+	 * Set a hook when the path is for a topic
 	 * TODO: PonyDocsWiki should be instantiated here, because we have URL logic here.
-	 * Unless! We want to move the hook assignment to efPonyDocsSetup, but I'm not sure that will work...we should check
-	 * when hooks are called...
+	 * Unless! We want to move the hook assignment to efPonyDocsSetup, but I'm not sure that will work...
+	 * we should check when hooks are called...
 	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
@@ -547,8 +548,7 @@ class PonyDocsExtension {
 	 * @return boolean 
 	 */
 	static public function onArticleFromTitle( &$title, &$article ) {
-		global $wgScriptPath;
-		global $wgArticlePath, $wgTitle, $wgOut, $wgHooks;
+		global $wgHooks, $wgScriptPath, $wgTitle;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -599,12 +599,15 @@ class PonyDocsExtension {
 		if ( $product->isStatic() ) {
 			return TRUE;
 		}
-		$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 
+		$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 		$version = '';
+		// TODO: this should have been done already by PonyDocsWiki
 		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
 
-		if ( !strcasecmp( 'latest', $versionName ) ) {
+		// URL version is 'latest'
+		if ( strcasecmp( 'latest', $versionName ) === 0 ) {
+			// TODO: replace this with existing get latest version method for topic, if there is none we can gate
 			/**
 			 * This will be a DESCENDING mapping of version name to PonyDocsVersion object and will ONLY contain the
 			 * versions available to the current user (i.e. LoadVersions() only loads the ones permitted).
@@ -612,7 +615,7 @@ class PonyDocsExtension {
 			$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName, TRUE );
 			
 			if ( empty( $releasedVersions ) ) {
-			return FALSE;
+				return FALSE;
 			}
 			
 			$versionList = array_reverse( $releasedVersions );
@@ -622,6 +625,7 @@ class PonyDocsExtension {
 				$versionNameList[] = $pV->getVersionShortName();
 			}
 
+			// TODO: $productName should be %, and we should know what category link we're looking for at this point - why are we wildcarding?
 			/**
 			 * Now get a list of version names to which the current topic is mapped in DESCENDING order as well
 			 * from the 'categorylinks' table.
@@ -629,7 +633,6 @@ class PonyDocsExtension {
 			 * DB can't do descending order here, it depends on the order defined in versions page!  So we have to
 			 * do some magic sorting below.	
 			 */
-
 			$res = $dbr->select(
 				'categorylinks',
 				'cl_to',
@@ -655,10 +658,9 @@ class PonyDocsExtension {
 			}
 
 			/**
-			 * Based on our list, get the PonyDocsVersion for each version tag and store in an array.
-			 * Then pass this array to our custom sort function via usort()
-			 * The ending result is a sorted list in $existingVersions, with the
-			 * LATEST version at the front.
+			 * Based on query results, get the PonyDocsVersion for each version tag and store in an array.
+			 * Then pass this array to our custom sort function via usort().
+			 * The ending result is a sorted list in $existingVersions, with the LATEST version at the front.
 			 * 
 			 * @FIXME:  GetVersionByName is missing some versions?
 			 */
@@ -696,9 +698,11 @@ class PonyDocsExtension {
 			}
 
 			/**
-			 * Now we need to filter out any versions which this user has no access to.  The easiest way is to loop through
-			 * our resulting $existingVersions and see if each is in_array( $versionNameList );  if its NOT, continue looping.
-			 * Once we hit one, redirect.  if we exhaust our list, go to the main page or something.
+			 * Now we need to filter out any versions which this user has no access to.
+			 * The easiest way is to loop through our resulting $existingVersions and see if each is in_array( $versionNameList );
+			 * if its NOT, continue looping.
+			 * Once we hit one, redirect.  
+			 * if we exhaust our list, go to the main page or something.
 			 */
 			foreach ( $existingVersions as $pV ) {
 				if ( in_array( $pV->getVersionShortName(), $versionNameList ) ) {
