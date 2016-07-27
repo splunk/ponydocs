@@ -88,6 +88,7 @@ class PonyDocsProduct
 		$this->mDescription = $description;
 		$this->mParent = $parent;
 		$this->mCategories = $categories && $categories != '' ? explode( ',', $categories ) : array();
+		$this->static = $static;
 	}
 
 	/**
