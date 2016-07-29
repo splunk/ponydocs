@@ -551,6 +551,7 @@ class PonyDocsExtension {
 		global $wgHooks, $wgScriptPath, $wgTitle;
 
 		$dbr = wfGetDB( DB_SLAVE );
+		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		/**
 		 * We only care about Documentation namespace for rewrites and they must contain a slash, so scan for it.
@@ -565,8 +566,6 @@ class PonyDocsExtension {
 			$matches ) ) {
 			return FALSE;
 		}
-
-		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		/**
 		 * At this point $matches contains:
@@ -600,172 +599,92 @@ class PonyDocsExtension {
 			return TRUE;
 		}
 
-		$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion( $productName );
-		$version = '';
-		// TODO: this should have been done already by PonyDocsWiki
-		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
-
 		// URL version is 'latest'
 		if ( strcasecmp( 'latest', $versionName ) === 0 ) {
-			// TODO: replace this with existing get latest version method for topic, if there is none we can gate
-			/**
-			 * This will be a DESCENDING mapping of version name to PonyDocsVersion object and will ONLY contain the
-			 * versions available to the current user (i.e. LoadVersions() only loads the ones permitted).
-			 */
-			$releasedVersions = PonyDocsProductVersion::GetReleasedVersions( $productName, TRUE );
-			
-			if ( empty( $releasedVersions ) ) {
+			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName )->getVersionShortName();
+			// If there is no latest version, display 404
+			if ( !$latestReleasedVersion) {
+				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
 				return FALSE;
-			}
+			} 
 			
-			$versionList = array_reverse( $releasedVersions );
-			
-			$versionNameList = array();
-			foreach ( $versionList as $pV ) {
-				$versionNameList[] = $pV->getVersionShortName();
-			}
-
-			// TODO: $productName should be %, and we should know what category link we're looking for at this point - why are we wildcarding?
-			/**
-			 * Now get a list of version names to which the current topic is mapped in DESCENDING order as well
-			 * from the 'categorylinks' table.
-			 *
-			 * DB can't do descending order here, it depends on the order defined in versions page!  So we have to
-			 * do some magic sorting below.	
-			 */
 			$res = $dbr->select(
-				'categorylinks',
-				'cl_to',
+				array( 'categorylinks', 'page' ),
+				'page_title' ,
 				array(
-					'cl_to LIKE "V:%:%"',
+					'cl_from = page_id',
+					'page_namespace = "' . NS_PONYDOCS . '"',
+					"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $latestReleasedVersion->getVersionShortName() ) . "'",
 					'cl_type = "page"',
-					"cl_sortkey LIKE '" 
-						. $dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+					"cl_sortkey LIKE '" . 
+						$dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
 				),
 				__METHOD__
 			);
 
-			if ( !$res->numRows() )	{
-				/**
-				 * What happened here is we requested a topic that does not exist or is not linked to any version.
-				 * Perhaps setup a default redirect, Main_Page or something?
-				 */
+			if ( !$res->numRows() ) {
+				// If there are any older versions of the topic, redirect to special latest doc.
+				
+				// Get all versions for this topic
+				$res2 = $dbr->select(
+					'categorylinks',
+					'cl_to',
+					array(
+						'cl_to LIKE "V:' . $dbr->strencode( $pV->getProductName() ) . ':%"',
+						'cl_type = "page"',
+						"cl_sortkey LIKE '" 
+							. $dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+					),
+					__METHOD__
+				);				
+				
+				// For each version, if any are released, then redirect to special latest doc
+				if ( $res2->numRows() ) {
+					while ( $row = $dbr->fetchObject( $res ) ) {
+						if ( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ) ) {
+							// TODO: Add a new IsReleasedVersion() method
+							if (PonyDocsProductVersion::IsVersion( $vmatch[1], $vmatch[2] )) {
+								if ( PONYDOCS_DEBUG ) {
+									error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
+										. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title" );
+								}
+								header( "Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", TRUE, 302 );
+								exit( 0 );
+							}
+						}
+					}
+				}
+				
+				// The topic doesn't exist in any released version, default redirect.
 				if ( PONYDOCS_DEBUG ) {
-					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
+					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
 				}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
-			}
+			} else {
+				$row = $dbr->fetchObject( $res );
+				$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
 
-			/**
-			 * Based on query results, get the PonyDocsVersion for each version tag and store in an array.
-			 * Then pass this array to our custom sort function via usort().
-			 * The ending result is a sorted list in $existingVersions, with the LATEST version at the front.
-			 * 
-			 * @FIXME:  GetVersionByName is missing some versions?
-			 */
-			$existingVersions = array( );
-			while ( $row = $dbr->fetchObject( $res ) ) {
-				if ( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ) ) {
-					$pVersion = PonyDocsProductVersion::GetVersionByName( $vmatch[1], $vmatch[2] );
-					if ( $pVersion && !in_array( $pVersion, $existingVersions ) ) {
-						$existingVersions[] = $pVersion;
-					}
+				$article = new Article( $title );
+				$article->loadContent();
+
+				PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionShortName() );
+
+				if ( !$article->exists() ) {
+					$article = NULL;
+				} else {
+					// Without this we lose SplunkComments and version switcher.
+					// TODO: replace with a RequestContext
+					$wgTitle = $title;
 				}
+
+				return TRUE;
 			}
- 
-			usort( $existingVersions, "PonyDocs_ProductVersionCmp" );
-			$existingVersions = array_reverse( $existingVersions );
-
-			// Okay, iterate through existingVersions.
-			// If we can't see that any of them belong to our latest released version, redirect to our latest handler.
-			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName )->getVersionShortName();
-			$found = FALSE;
-			foreach ( $existingVersions as $docVersion ) {
-				if ( $docVersion->getVersionShortName() == $latestReleasedVersion ) {
-					$found = TRUE;
-					break;
-				}
-			}
-			
-			if ( !$found ) {
-				if ( PONYDOCS_DEBUG ) {
-					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
-						. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title" );
-				}
-				header( "Location: " . $wgScriptPath . "/Special:SpecialLatestDoc?t=$title", TRUE, 302 );
-				exit( 0 );
-			}
-
-			/**
-			 * Now we need to filter out any versions which this user has no access to.
-			 * The easiest way is to loop through our resulting $existingVersions and see if each is in_array( $versionNameList );
-			 * if its NOT, continue looping.
-			 * Once we hit one, redirect.  
-			 * if we exhaust our list, go to the main page or something.
-			 */
-			foreach ( $existingVersions as $pV ) {
-				if ( in_array( $pV->getVersionShortName(), $versionNameList ) ) {
-					/**
-					 * Look up topic name and redirect to URL.
-					 */
-
-					$res = $dbr->select(
-						array( 'categorylinks', 'page' ),
-						'page_title' ,
-						array(
-							'cl_from = page_id',
-							'page_namespace = "' . NS_PONYDOCS . '"',
-							"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $pV->getVersionShortName() ) . "'",
-							'cl_type = "page"',
-							"cl_sortkey LIKE '" . 
-								$dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
-						),
-						__METHOD__
-					);
-
-					if ( !$res->numRows() ) {
-						if ( PONYDOCS_DEBUG ) {
-							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
-						}
-						header( "Location: " . $defaultRedirect );
-						exit( 0 );
-					}
-
-					$row = $dbr->fetchObject( $res );
-					$title = Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}" );
-
-					$article = new Article( $title );
-					$article->loadContent();
-
-					PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionShortName() );
-
-					if ( !$article->exists() ) {
-						$article = NULL;
-					} else {
-						// Without this we lose SplunkComments and version switcher.
-						// Probably we can replace with a RequestContext in the future...
-						$wgTitle = $title;
-					}
-
-					return TRUE;
-				}
-			}
-
-			/**
-			 * Invalid redirect -- go to Main_Page or something.
-			 */
-			if (PONYDOCS_DEBUG) {
-				error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");
-			}
-			header( "Location: " . $defaultRedirect );
-			exit( 0 );
+		// Specific version in URL
 		} else {
-			/**
-			 * Ensure version specified in aliased URL is a valid version -- if it is not we just need to do our default
-			 * redirect here.
-			 */
-
+			$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion( $productName );
+			
+			// Default redirect if version specified in aliased URL is not a valid version
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if ( !$version ) {
 				if ( PONYDOCS_DEBUG ) {
@@ -776,8 +695,8 @@ class PonyDocsExtension {
 			}
 
 			/**
-			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied.  This
-			 * is the URL to redirect to.  
+			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied. 
+			 * This is the URL to redirect to.  
 			 */
 			$res = $dbr->select(
 				array( 'categorylinks', 'page' ),
@@ -813,7 +732,7 @@ class PonyDocsExtension {
 				$article = NULL;
 			} else {
 				// Without this we lose SplunkComments and version switcher.
-				// Probably we can replace with a RequestContext in the future...
+				// TODO: replace with a RequestContext
 				$wgTitle = $title;
 			}
 

@@ -416,6 +416,7 @@ class PonyDocsProductVersion {
 					$pVersion->setVersionGroup( $currentGroup, $currentGroupMessage );
 				}
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
+					// unreleased versions are only instantiated if the user can accces them
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| PonyDocsCrawlerPassthrough::isAllowedCrawler()
