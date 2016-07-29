@@ -148,7 +148,6 @@ class PonyDocsTopic {
 	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $productName ) {
 		$dbr = wfGetDB( DB_SLAVE );
 		$pathArray = explode(':', $baseTopic);
-		$productName = $pathArray[1];
 		$manualName = $pathArray[2];
 		$topicName = $pathArray[3];
 
