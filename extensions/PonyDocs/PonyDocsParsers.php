@@ -10,7 +10,7 @@ class PonyDocsParsers {
 	 */
 	static public function efManualParserFunction_Setup() {
 		global $wgParser;
-		$wgParser->setFunctionHook( 'manual', 'efManualParserFunction_Render' );
+		$wgParser->setFunctionHook( 'manual', 'PonyDocsParsers::efManualParserFunction_Render' );
 	}
 
 	static public function efManualParserFunction_Magic( &$magicWords, $langCode ) {
@@ -104,8 +104,8 @@ class PonyDocsParsers {
 	 */
 	static public function efVersionParserFunction_Setup() {
 		global $wgParser;
-		$wgParser->setFunctionHook( 'version', 'efVersionParserFunction_Render' );
-		$wgParser->setFunctionHook( 'versiongroup', 'efVersionGroupParserFunction_Render' );
+		$wgParser->setFunctionHook( 'version', 'PonyDocsParsers::efVersionParserFunction_Render' );
+		$wgParser->setFunctionHook( 'versiongroup', 'PonyDocsParsers::efVersionGroupParserFunction_Render' );
 	}
 
 	static public function efVersionParserFunction_Magic( &$magicWords, $langCode ) {
@@ -179,7 +179,7 @@ class PonyDocsParsers {
 	 */
 	static public function efProductParserFunction_Setup() {
 		global $wgParser;
-		$wgParser->setFunctionHook( 'product', 'efProductParserFunction_Render' );
+		$wgParser->setFunctionHook( 'product', 'PonyDocsParsers::efProductParserFunction_Render' );
 	}
 
 	static public function efProductParserFunction_Magic( &$magicWords, $langCode ) {
@@ -255,12 +255,12 @@ class PonyDocsParsers {
 
 	static public function efTopicParserFunction_Setup() {
 		global $wgParser;
-		$wgParser->setFunctionHook( 'topic', 'efTopicParserFunction_Render' );
+		$wgParser->setFunctionHook( 'topic', 'PonyDocsParsers::efTopicParserFunction_Render' );
 	}
 
 	static public function efManualDescriptionParserFunction_Setup() {
 		global $wgParser;
-		$wgParser->setFunctionHook( 'manualDescription', 'efManualDescriptionParserFunction_Render' );
+		$wgParser->setFunctionHook( 'manualDescription', 'PonyDocsParsers::efManualDescriptionParserFunction_Render' );
 	}
 
 	static public function efTopicParserFunction_Magic( &$magicWords, $langCode ) {
