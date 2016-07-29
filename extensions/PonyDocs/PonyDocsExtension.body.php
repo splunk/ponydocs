@@ -601,7 +601,7 @@ class PonyDocsExtension {
 
 		// URL version is 'latest'
 		if ( strcasecmp( 'latest', $versionName ) === 0 ) {
-			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName )->getVersionShortName();
+			$latestReleasedVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 			// If there is no latest version, display 404
 			if ( !$latestReleasedVersion) {
 				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
@@ -614,7 +614,7 @@ class PonyDocsExtension {
 				array(
 					'cl_from = page_id',
 					'page_namespace = "' . NS_PONYDOCS . '"',
-					"cl_to = 'V:" . $dbr->strencode( $pV->getProductName() . ':' . $latestReleasedVersion->getVersionShortName() ) . "'",
+					"cl_to = 'V:" . $dbr->strencode( $productName . ':' . $latestReleasedVersion->getVersionShortName() ) . "'",
 					'cl_type = "page"',
 					"cl_sortkey LIKE '" . 
 						$dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
@@ -624,8 +624,7 @@ class PonyDocsExtension {
 
 			if ( !$res->numRows() ) {
 				// If there are any older versions of the topic, redirect to special latest doc.
-				
-				// Get all versions for this topic
+				// Get all versions for the topic
 				$res2 = $dbr->select(
 					'categorylinks',
 					'cl_to',
@@ -642,8 +641,7 @@ class PonyDocsExtension {
 				if ( $res2->numRows() ) {
 					while ( $row = $dbr->fetchObject( $res ) ) {
 						if ( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ) ) {
-							// TODO: Add a new IsReleasedVersion() method
-							if (PonyDocsProductVersion::IsVersion( $vmatch[1], $vmatch[2] )) {
+							if (PonyDocsProductVersion::IsReleasedVersion( $vmatch[1], $vmatch[2] ) ) {
 								if ( PONYDOCS_DEBUG ) {
 									error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
 										. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title" );
@@ -668,7 +666,7 @@ class PonyDocsExtension {
 				$article = new Article( $title );
 				$article->loadContent();
 
-				PonyDocsProductVersion::SetSelectedVersion( $pV->getProductName(), $pV->getVersionShortName() );
+				PonyDocsProductVersion::SetSelectedVersion( $productName, $latestReleasedVersion->getVersionShortName() );
 
 				if ( !$article->exists() ) {
 					$article = NULL;
