@@ -616,8 +616,7 @@ class PonyDocsExtension {
 					'page_namespace = "' . NS_PONYDOCS . '"',
 					"cl_to = 'V:" . $dbr->strencode( $productName . ':' . $latestReleasedVersion->getVersionShortName() ) . "'",
 					'cl_type = "page"',
-					"cl_sortkey LIKE '" . 
-						$dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+					"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 				),
 				__METHOD__
 			);
@@ -631,8 +630,7 @@ class PonyDocsExtension {
 					array(
 						'cl_to LIKE "V:' . $dbr->strencode( $pV->getProductName() ) . ':%"',
 						'cl_type = "page"',
-						"cl_sortkey LIKE '" 
-							. $dbr->strencode( strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+						"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 					),
 					__METHOD__
 				);				
@@ -686,7 +684,8 @@ class PonyDocsExtension {
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if ( !$version ) {
 				if ( PONYDOCS_DEBUG ) {
-					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName) for product ($productName); redirecting to $defaultRedirect");
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] unable to retrieve version ($versionName)"
+						. " for product ($productName); redirecting to $defaultRedirect");
 				}
 				header( "Location: " . $defaultRedirect );
 				exit( 0 );
@@ -704,8 +703,7 @@ class PonyDocsExtension {
 					'page_namespace = "' . NS_PONYDOCS . '"',
 					"cl_to = 'V:" . $dbr->strencode( $productName . ':' . $versionSelectedName ) . "'",
 					'cl_type = "page"',
-					"cl_sortkey LIKE '" . $dbr->strencode(
-						strtoupper( "$productName:$manualName:$topicName" ) ) . ":%'",
+					"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 				),
 				__METHOD__
 			);
@@ -815,7 +813,8 @@ class PonyDocsExtension {
 			
 			if ( !$ver ) {
 				if ( PONYDOCS_DEBUG ) {
-					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" 
+						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
 				}
 				header( 'Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
 				die();
@@ -1564,7 +1563,8 @@ HEREDOC;
 			$topicVersions = $topic->getProductVersions();	
 			foreach( $topicVersions as $key => $version ) {
 				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );				
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionName(), $topicName );
+				PonyDocsPdfBook::removeCachedFile( 
+					$productName, $manual->getShortName(), $version->getVersionShortName(), $topicName );
 			}				
 			
 		}
