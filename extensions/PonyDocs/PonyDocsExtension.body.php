@@ -2091,7 +2091,8 @@ EOJS;
 
 		/**
 		 * WEB-6031 - Block access to history/diff page for non-employee
-		**/
+		 * @todo: can we use UserRights to handle this instead?
+ 		 **/
 		if ((isset($_REQUEST['action']) && $_REQUEST['action'] == 'history')
 			|| (isset($_REQUEST['diff']))) {
 

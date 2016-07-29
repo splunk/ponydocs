@@ -353,7 +353,8 @@ class PonyDocsWiki {
 					'$1', 
 					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionShortName(),
 					$wgArticlePath ),
-				'longName' => $productVersion->getVersionLongName()
+				'longName' => $productVersion->getVersionLongName(),
+				'productName' => $productVersion->getProductName(),
 			);
 		}
 

@@ -289,8 +289,8 @@ class PonyDocsProduct
 	 */
 	static public function IsProduct( $shortName ) {
 		// We no longer specify to reload the product data, because that's just insanity.
-		PonyDocsProduct::LoadProducts( FALSE );
 		// Should just force our products to load, just in case.
+		PonyDocsProduct::LoadProducts( FALSE );
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $shortName );
 		return isset( self::$sDefinedProductList[$convertedName] );
 	}
