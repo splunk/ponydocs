@@ -344,11 +344,12 @@ class PonyDocsProductVersion {
 	 * @param boolean $reload True to force reload from the wiki page.
 	 * @return array LIST of all versions (not map!).
 	 * 
-	 * TODO: Cache this?
+	 * @todo: Cache this?
+	 * @todo: Throw an exception if $productName is not set
 	 */
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
 		global $wgPonyDocsEmployeeGroup, $wgUser;
-
+		
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */

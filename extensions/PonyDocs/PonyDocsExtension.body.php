@@ -921,10 +921,19 @@ class PonyDocsExtension {
 	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath, $wgHooks, $wgPonyDocsEmployeeGroup;
 
-		$editPonyDocsProduct = $wgRequest->getVal( "ponydocsproduct" );
-		$editPonyDocsVersion = $wgRequest->getVal( "ponydocsversion" );
-		if ( $editPonyDocsVersion != NULL ) {
+		// Set product we're working on from query string
+		// Default to selected product if query string is not set
+		if ( $wgRequest->getVal( "ponydocsproduct" ) ) {
+			$editPonyDocsProduct = $wgRequest->getVal( "ponydocsproduct" );
 			PonyDocsProduct::setSelectedProduct($editPonyDocsProduct);
+		} else {
+			$editPonyDocsProduct = PonyDocsProduct::GetSelectedProduct();
+		}
+		// Likewise for version
+		if ( $wgRequest->getVal( "ponydocsversion" ) ) {
+			$editPonyDocsVersion = $wgRequest->getVal( "ponydocsversion" );
+		} else {
+			$editPonyDocsVersion = PonyDocsProductVersion::GetSelectedVersion( $editPonyDocsProduct );
 			PonyDocsProductVersion::SetSelectedVersion( $editPonyDocsProduct, $editPonyDocsVersion );
 		}
 
