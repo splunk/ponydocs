@@ -628,7 +628,7 @@ class PonyDocsExtension {
 					'categorylinks',
 					'cl_to',
 					array(
-						'cl_to LIKE "V:' . $dbr->strencode( $pV->getProductName() ) . ':%"',
+						'cl_to LIKE "V:' . $dbr->strencode( $productName ) . ':%"',
 						'cl_type = "page"',
 						"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 					),
