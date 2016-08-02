@@ -109,6 +109,7 @@ class PonyDocsProductVersion {
 		$this->vStatus = strtolower( $versionStatus );
 		$this->vStatusCode = self::StatusToInt( $this->vStatus );
 		$this->vLongName = $versionLongName;
+		$this->vLongName = strlen( $versionLongName ) ? $versionLongName : $versionShortName;
 	}
 
 	/**
@@ -131,15 +132,6 @@ class PonyDocsProductVersion {
 		}
 	}
 
-	/**
-	 * Return the name of the version.
-	 *
-	 * @return string Name of version.
-	 */
-	public function getVersionName() {
-		return $this->vShortName;
-	}
-	
 	/**
 	 * Return the short name of the version.
 	 *
@@ -335,7 +327,7 @@ class PonyDocsProductVersion {
 
 	/**
 	 * Loads our version data from the special page.
-	 * These are defined in the form: {{#version:name|status}}
+	 * These are defined in the form: {{#version:shortName|longName|status}}
 	 *
 	 * There is a special parser hook to handle outputting this in a clean form when viewing the page.
 	 * This updates our internal static maps and lists of versions (total and by each state) from this page.

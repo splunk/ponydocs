@@ -27,7 +27,9 @@ class PonyDocsExtension
 	protected static $speedProcessingEnabled;
 
 	/**
-	 * Maybe move all hook registration, etc. into this constructor to keep it clean.
+	 * Set up some hooks based on URL path
+	 * TODO: URL logic should move to PonyDocsWiki
+	 * TODO: Hook registration should move to the bottom of PonyDocsExtension.php
 	 */
 	public function __construct() {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
@@ -1031,45 +1033,39 @@ HEREDOC;
 	 * 
 	 * @deprecated Use PageContentSave hook instead
 	 */
-	static public function onArticleSave_AutoLinks( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags )
-	{
+	static public function onArticleSave_AutoLinks( 
+		&$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
 		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath;
 
 		// Retrieve read/slave handler for fetching from DB.
 		$dbr = wfGetDB( DB_SLAVE );
-
-
-		// Dangerous.  Only set the flag if you know that you should be skipping this processing.  Currently used for branch/inherit.
-		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
-			return true;
-		}
-
-
-		$title = $article->getTitle( );
-
-		// We only perform this in Documentation namespace.
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString( ))) return true;
-
+		$title = $article->getTitle();
 		$missingTopics = array();
 
+		// Dangerous.  Only set the flag if you know that you should be skipping this processing.  Currently used for branch/inherit.
+		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
+			return TRUE;
+		}
+
+		// We only perform this in Documentation namespace.
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
+			return TRUE;
+		}
+		
 		// If this is not a TOC and we don't want to create on article edit, then simply return.
-		if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title) &&
-			!PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT)
-		{
-			return true;
+		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title )
+			&& !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT ) {
+			return TRUE;
 		}
 
 
-		if( preg_match_all( "/\[\[([" . Title::legalChars( ) . "]*)([|]?([^\]]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		//if( preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:._?#!@$+= -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		{
+		if ( preg_match_all( "/\[\[([" . Title::legalChars() . "]*)([|]?([^\]]*))\]\]/", $text, $matches, PREG_SET_ORDER ) ) {
 			/**
 			 * $match[1] = Wiki Link
 			 * $match[3] = Alternate Text
 			 */
 
-			foreach( $matches as $match )
-			{
+			foreach ( $matches as $match ) {
 				/**
 				 * Forms which can exist are as such:
 				 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
@@ -1079,20 +1075,17 @@ HEREDOC;
 				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 				 * So we first need to detect the use of a namespace.
 				 */
-				if( strpos( $match[1], ':' ) !== false )
-				{
+				if ( strpos( $match[1], ':' ) !== FALSE ) {
 					$pieces = explode( ':', $match[1] );
 
-					if( !strcasecmp( $pieces[0], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME))
-					{
+					if ( !strcasecmp( $pieces[0], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) ) {
 						/**
 						 * Handle [[Documentation:Manual:Topic]] referencing selected version -AND-
 						 * [[Documentation:User:HowToFoo]] as an explicit link to a page.
 						 * [[Documentation:Product:Manual:Topic|Some Alternate Text]]
 						 */
-						if( sizeof( $pieces ) == 3 || sizeof( $pieces ) == 4 )
-						{
-							if ( sizeof($pieces) == 3) {
+						if ( sizeof( $pieces ) == 3 || sizeof( $pieces ) == 4 ) {
+							if ( sizeof( $pieces ) == 3 ) {
 								$product = PonyDocsProduct::GetSelectedProduct();
 								$manual = $pieces[1];
 								$topic = $pieces[2];
@@ -1104,19 +1097,19 @@ HEREDOC;
 
 							// if link is to current product, get currect selected version, otherwise we have to guess
 							// and get the latest released version of the linked product
-							if ($product == PonyDocsProduct::GetSelectedProduct())
-							{
+							if ( $product == PonyDocsProduct::GetSelectedProduct() ) {
 								$version = PonyDocsProductVersion::GetSelectedVersion( $product );
 							} else {
-								if (PonyDocsProduct::IsProduct($product))
-								{
+								if ( PonyDocsProduct::IsProduct( $product ) ) {
 									// Need to load the product versions if this topic is for a different product
-									PonyDocsProductVersion::LoadVersionsForProduct($product);
+									PonyDocsProductVersion::LoadVersionsForProduct( $product );
 									
-									$pVersion = PonyDocsProductVersion::GetLatestReleasedVersion($product);
+									$pVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $product );
 									
 									// If there is no available latest released version go to the next match
-									if (!$pVersion) continue;
+									if ( !$pVersion ) {
+										continue;
+									}
 									
 									$version  = $pVersion->getVersionShortName();
 								}
@@ -1139,7 +1132,7 @@ HEREDOC;
 							);
 
 							if ( !$res->numRows() ) {
-								$topicTitle = PONYDOCS_DOCUMENTATION_PREFIX . $sqlMatch . ':' . $version;
+								$topicTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $sqlMatch . ':' . $version;
 								$tempArticle = new Article( Title::newFromText( $topicTitle ) );
 								if ( !$tempArticle->exists() ) {
 									/**
@@ -1169,31 +1162,31 @@ HEREDOC;
 						 * Explicit link of the form:
 						 * [[Documentation:Product:Manual:Topic:Version|Some Alternate Text]]
 						 */
-						} else if( sizeof( $pieces ) == 5 ) {
+						} elseif( sizeof( $pieces ) == 5 ) {
 							$product = $pieces[1];
 							$version = PonyDocsProductVersion::GetSelectedVersion( $product );
 							$version = $pieces[4];
 							$topicTitle = $match[1];
 
-							$tempArticle = new Article( Title::newFromText( $topicTitle ));
-							if( !$tempArticle->exists( ))
-							{
+							$tempArticle = new Article( Title::newFromText( $topicTitle ) );
+							if ( !$tempArticle->exists() ) {
 								/**
 								* Create the new article in the system;  if we have alternate text then set our H1 to this.
 								*/
 								$content = '';
-								if( strlen( $match[3] ))
+								if ( strlen( $match[3] ) ) {
 									$content = '= ' . $match[3] . " =\n";
-								else
+								} else {
 									$content = '= ' . $topicTitle . " =\n";
-
+								}
+								
 								$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
 								$tempArticle->doEdit(
 									$content,
 									'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
 									EDIT_NEW );
-								if (PONYDOCS_DEBUG) {
+								if ( PONYDOCS_DEBUG ) {
 									error_log(
 										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " 
 										. $match[1] . " in " . $title->__toString() );
@@ -1207,19 +1200,18 @@ HEREDOC;
 					} else {
 						$topicTitle = $match[1];
 						$tempTitleForArticle = Title::newFromText( $topicTitle );
-						if (is_object($tempTitleForArticle))
-						{
-							$tempArticle = new Article($tempTitleForArticle);
-							if( !$tempArticle->exists( ))
-							{
+						if ( is_object( $tempTitleForArticle ) ) {
+							$tempArticle = new Article( $tempTitleForArticle );
+							if ( !$tempArticle->exists() ) {
 								/**
 								* Create the new article in the system;  if we have alternate text then set our H1 to this.
 								*/
 								$content = '';
-								if( strlen( $match[3] ))
+								if ( strlen( $match[3] ) ) {
 									$content = '= ' . $match[3] . " =\n";
-								else
+								} else {
 									$content = '= ' . $match[1] . " =\n";
+								}
 
 								$tempArticle->doEdit(
 									$content,
@@ -1240,12 +1232,12 @@ HEREDOC;
 				 * with the currently displayed title.
 				 */
 				} else {
-					$product = PonyDocsProduct::GetSelectedProduct( );
+					$product = PonyDocsProduct::GetSelectedProduct();
 					$pManual = PonyDocsProductManual::GetCurrentManual( $product );
 					$version = PonyDocsProductVersion::GetSelectedVersion( $product );
-					if (!$pManual) {
+					if ( !$pManual ) {
 						// Cancel out.
-						return true;
+						return TRUE;
 					}
 					
 					/**
@@ -1268,16 +1260,16 @@ HEREDOC;
 						$topicTitle = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$sqlMatch:$version";
 
 						$tempArticle = new Article( Title::newFromText( $topicTitle ));
-						if( !$tempArticle->exists( ))
-						{
+						if ( !$tempArticle->exists() ) {
 							/**
 							* Create the new article in the system;  if we have alternate text then set our H1 to this.
 							*/
 							$content = '';
-							if( strlen( $match[3] ))
+							if( strlen( $match[3] ) ) {
 								$content = '= ' . $match[3] . " =\n";
-							else
+							} else {
 								$content = '= ' . $topicTitle . " =\n";
+							}
 
 							$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
@@ -1285,7 +1277,8 @@ HEREDOC;
 								$content,
 								'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
 								EDIT_NEW );
-							if (PONYDOCS_DEBUG) {
+
+							if ( PONYDOCS_DEBUG ) {
 								error_log(
 									"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1]
 									. " in " . $title->__toString() );
@@ -1339,12 +1332,10 @@ EOJS;
 	 * @param Article $article
 	 * @return boolean|string
 	 */
-	static public function onUnknownAction( $action, &$article )
-	{
-		global $wgRequest, $wgParser, $wgTitle;
-		global $wgHooks;
+	static public function onUnknownAction( $action, &$article ) {
+		global $wgHooks, $wgParser, $wgRequest, $wgTitle;
 
-		$ponydocs  = PonyDocsWiki::getInstance( );
+		$ponydocs  = PonyDocsWiki::getInstance();
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -1391,33 +1382,6 @@ EOJS;
 			die();
 		}
 
-		/**
-		 * Our custom print action -- 'print' exists so we need to use our own.  Require that 'type' is set to 'topic' for the
-		 * current topic or 'manual' for entire current manual.  The 'title' param should be set as well.  Output a print
-		 * ready page.
-		 */
-		else if( !strcmp( $action, 'doprint' ))
-		{
-			$type = 'topic';
-			if( $wgRequest->getVal( 'type' ) || strlen( $wgRequest->getVal( 'type' )))
-			{
-				if( !strcasecmp( $wgRequest->getVal( 'type' ), 'topic' ) && !strcasecmp( $wgRequest->getVal( 'type' ), 'manual' ))
-				{
-					// Invalid!
-				}
-				$type = strtolower( $wgRequest->getVal( 'type' ));
-			}
-
-			if( !strcmp( $type, 'topic' ))
-			{
-				$article = new Article( Title::newFromText( $wgRequest->getVal( 'title' )));
-				$c = $article->getContent();
-
-				die();
-			}
-
-			die( "Print!" );
-		}
 		return true;
 	}
 
@@ -1433,7 +1397,7 @@ EOJS;
 	 */
 	static public function onParserBeforeStrip( &$parser, &$text )
 	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $wgPonyDocs, $action;
+		global $action, $wgTitle, $wgArticlePath, $wgOut, $action;
 
 		$dbr = wfGetDB( DB_SLAVE );
 		if(empty($wgTitle)) {
@@ -2147,6 +2111,29 @@ EOJS;
 		// Make sure this is a docs article
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
+		}
+		// Okay, article is in doc namespace
+
+		// Now we need to remove any pdf books for this topic.
+		// Since the person is editing the article, it's safe to say that the 
+		// version and manual can be fetched from the classes and not do any 
+		// manipulation on the article itself.
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
+		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
+
+		if($manual != null) {
+			// Then we are in the documentation namespace, but we're not part of 
+			// manual.
+			// Clear any PDF for this manual
+			$topicName = $topic->getTopicName();
+			$topicVersions = $topic->getProductVersions();	
+			foreach( $topicVersions as $key => $version ) {
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );				
+				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName(), $topicName );
+			}				
+			
 		}
 		
 		// Clear cache entries for each version on the Topic
