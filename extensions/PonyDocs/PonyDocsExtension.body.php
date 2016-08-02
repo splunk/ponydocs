@@ -481,7 +481,7 @@ class PonyDocsExtension {
 
 		// This has the side effect of loading versions and manuals for the product
 		$wiki = PonyDocsWiki::getInstance();
-
+		
 		if ( ( $wiki->getRequestType() == 'Topic' || $wiki->getRequestType() == 'TOC' )
 			&& !PonyDocsProductVersion::GetSelectedVersion( $wiki->getProduct()->getShortName(), FALSE ) ) {
 			// This version isn't available to this user; go away
@@ -890,19 +890,22 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Hook for 'ArticleSave' which is called when a request to save an article is made BUT BEFORE anything 
-	 * is done.  We trap these for certain special circumstances and perform additional processing.  Otherwise
-	 * we simply fall through and allow normal processing to occur.  It returns true on success and then falls
-	 * through to other hooks, a string on error, and false on success but skips additional processing.
+	 * Implement ArticleSave Hook which is called when a request to save an article is made BUT BEFORE anything is done.
 	 * 
-	 * These include:
+	 * We trap these for certain special circumstances and perform additional processing.
+	 * Otherwise we simply fall through and allow normal processing to occur.
+	 * It returns 
+	 * - true on success and then falls through to other hooks
+	 * - a string on error
+	 * - and false on success but skips additional processing.
+	 * 
+	 * Actions include:
 	 *
 	 *	- If a page is saved in the Documentation namespace and is tagged for a version that another form of
-	 *	  the SAME topic has already been tagged with, it needs to generate a confirmation page which offers
-	 *	  to strip the version tag from the older/other topic, via AJAX.  See onUnknownAction for the handling
+	 *	  the SAME topic has already been tagged with, we needs to generate a confirmation page which offers
+	 *	  to strip the version tag from the older/other topic, via AJAX. See onUnknownAction for the handling
 	 *	  of the AJAX call 'ajax-removetags'.
-	 *
-	 *  - We need to ensure any 'Category' tags present reference a defined version;  else we produce an error.
+	 *  - Ensure any Version category tags present reference a defined version, if not we produce an error.
 	 *
 	 * @param Article $article
 	 * @param User $user
@@ -921,12 +924,18 @@ class PonyDocsExtension {
 		$editPonyDocsProduct = $wgRequest->getVal( "ponydocsproduct" );
 		$editPonyDocsVersion = $wgRequest->getVal( "ponydocsversion" );
 		if ( $editPonyDocsVersion != NULL ) {
+			PonyDocsProduct::setSelectedProduct($editPonyDocsProduct);
 			PonyDocsProductVersion::SetSelectedVersion( $editPonyDocsProduct, $editPonyDocsVersion );
 		}
 
-		// Dangerous. Only set the flag if you know that you should be skipping this processing.
-		// Currently used for branch/inherit.
+		// Gate for speed processing
 		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
+			return TRUE;
+		}
+
+		// Gate for ponydocs namespace
+		$title = $article->getTitle();
+		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 			return TRUE;
 		}
 
@@ -938,11 +947,6 @@ class PonyDocsExtension {
 		}
 		error_log( "INFO [wikiedit] username=\"" . $user->getName() . "\" usertype=\""
 			. ($isEmployee ? 'employee' : 'nonemployee') . "\" url=\"" . $article->getTitle()->getFullURL() . "\"" );
-
-		$title = $article->getTitle();
-		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
-			return TRUE;
-		}
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -957,7 +961,7 @@ class PonyDocsExtension {
 			}
 
 			/**
-			 * Ensure ALL Category tags present reference defined versions.
+j			 * Ensure ALL Category tags present reference defined versions.
 			 */
 			foreach ( $categories as $c ) {
 				$v = PonyDocsProductVersion::GetVersionByName( $editPonyDocsProduct, $c );
@@ -1106,22 +1110,28 @@ HEREDOC;
 	}
 
 	/**
-	 * This is used to scan a topic in the Documentation namespace when saved for wiki links, and when it finds them, it should
-	 * create the topic in the namespace (if it does not exist) then set the H1 to the alternate text (if supplied) and then
-	 * tag it for the versions of the currently being viewed page?  We can assume Documentation namespace.
+	 * Implement ArticleSave hook
 	 * 
-	 * 	[[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
-	 *	[[Dev:HowToFoo|How To Foo]] <- Creates Dev:HowToFoo and sets H1.
-	 *  [[Documentation:User:SomeTopic|Some Topic]] <- To create link to another manual, will use selected version.
-	 *	[[Documentation:User:SomeTopic:1.0|Topic]] <- Specific title in another manual.
-	 *	[[:Main_Page|Main Page]] <- Link to a page in the global namespace.
+	 * This is used to scan a topic in the Documentation namespace when saved for wiki links
+	 * Any links found should 
+	 * - auto create the topic in the namespace (if it does not exist) 
+	 * - set the H1 to the alternate text (if supplied)
+	 * - tag it for the versions of the currently being viewed page
+	 * We can assume Documentation namespace.
+	 * 
+	 * Links that autocreate topics:
+	 * [[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
+	 * [[Dev:HowToFoo|How To Foo]] <- Creates Dev:HowToFoo and sets H1.
+	 * [[Documentation:User:SomeTopic|Some Topic]] <- To create link to another manual, will use selected version.
+	 * [[Documentation:User:SomeTopic:1.0|Topic]] <- Specific title in another manual.
+	 * [[:Main_Page|Main Page]] <- Link to a page in the global namespace.
 	 *
-				 * Forms which can exist are as such:
-				 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-				 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
-				 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
-				 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
-				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
+	 * Other link formats:
+	 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
+	 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
+	 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
+	 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
+	 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 	 *
 	 * When creating the link in Documentation namespace, it uses the CURRENT MANUAL being viewed.. and the selected version?
 	 * 
@@ -1396,7 +1406,9 @@ HEREDOC;
 	}
 
 	/**
-	 * This is an ArticleSaveComplete hook that creates topics which don't exist yet when saving a TOC.
+	 * Implements ArticleSaveComplete hook
+	 * 
+	 * Auto creates topics which don't exist yet when saving a TOC.
 	 * 
 	 * @param WikiPage $article
 	 * @param User $user
@@ -1508,6 +1520,8 @@ HEREDOC;
 	}
 
 	/**
+	 * Implements ArticleSaveComplete hook
+	 * 
 	 * Clean-up for doclinks and caches when a Topic is saved.
 	 * 
 	 * @param WikiPage $article
@@ -1523,11 +1537,9 @@ HEREDOC;
 	 * @param integer $baseRevId
 	 * 
 	 * @deprecated Replace with PageContentSaveComplete hook
-	 *
 	 */
 	static public function onArticleSaveComplete(
 		&$article, &$user, $text, $summary, $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
-
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 		$productName = PonyDocsProduct::GetSelectedProduct();
@@ -1618,6 +1630,29 @@ HEREDOC;
 	}
 
 	/**
+	 * Implement DoEditSectionLink Hook
+	 * 
+	 * Add product and version parameters to the query string
+	 * s.t. we can redirect back to the previous product/version when editing a product-inherited Topic
+	 * 
+	 * @param Skin $skin
+	 * @param Title $title
+	 * @param string $section
+	 * @param string $tooltip
+	 * @param string $result
+	 * @param string $lang
+	 * @return boolean
+	 */
+	static public function onDoEditSectionLink(  $skin, $title, $section, $tooltip, $result, $lang = false ) {
+		$selectedProductName = PonyDocsProduct::GetSelectedProduct();
+		$selectedVersionName = PonyDocsProductVersion::GetSelectedVersion($selectedProductName);
+		// This is hacky, but at least it's not regex :)
+		$result = str_replace("section=$section", "section=$section&amp;product=$selectedProductName&amp;version=$selectedVersionName", $result);
+		
+		return TRUE;
+	}
+
+	/**
 	 * When a new TOC is being edited for the first time, use a JS document.ready() function to add a version category.
 	 *
 	 * @param EditPage $editpage
@@ -1647,37 +1682,36 @@ EOJS;
 	}
 
 	/**
-	 * Returns the pretty url of a document if it's in the Documentation 
-	 * namespace and is a topic in a manual.
+	 * Implement GetFullURL hook
+	 * 
+	 * Returns the pretty url of a document if it's in the Documentation namespace and is a topic in a manual.
 	 */
 	static public function onGetFullURL($title, $url, $query) {
 		global $wgScriptPath;
 		// Check to see if we're in the Documentation namespace when viewing
-		if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+		if ( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath ) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 			'\/(.*)$/i', $_SERVER['PATH_INFO'])) {
-			if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString( )))
-				return true;
+			if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
+				return TRUE;
+			}
 			// Okay, we ARE in the documentation namespace.  Let's try and rewrite 
 			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+)$/i',
 				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" .
 				PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3",
 				$url);
-			return true;
-		}
-		else if(preg_match('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString())) {
+		}  elseif ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 			$editing = false; 		// This stores if we're editing an article or not
-			if(preg_match('/&action=submit/', $_SERVER['PATH_INFO'])) {
+			if ( preg_match( '/&action=submit/', $_SERVER['PATH_INFO'] ) ) {
 				// Then it looks like we are editing.
 				$editing = true;
 			}
 			// Okay, we're not in the documentation namespace, but we ARE 
 			// looking at a documentation namespace title.  So, let's rewrite
-			if(!$editing) {
+			if ( !$editing ) {
 				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					"/$1/$4/$2/$3", $url);
-			}
-			else {
+			} else {
 				// Then we should inject the user's current version into the 
 				// article.
 				$currentProduct = PonyDocsProduct::GetSelectedProduct();
@@ -1692,32 +1726,35 @@ EOJS;
 				$found = false;
 				// Now let's go through each version and make sure the user's 
 				// current version is still in the topic.
-				foreach($topicVersions as $version) {
-					if($version->getVersionShortName() == $currentVersion) {
+				foreach ( $topicVersions as $version ) {
+					if ( $version->getVersionShortName() == $currentVersion ) {
 						$found = true;
 						break;
 					}
 				}
-				if(!$found) {
+				
+				if ( !$found ) {
 					// This is an edge case, it shouldn't happen often.  But 
 					// this means that the editor removed the version the user 
 					// is in from the topic.  So in this case, we want to 
 					// return the Documentation url with the version being the 
 					// latest released version in the topic.
 					$targetVersion = "latest";
-					foreach($topicVersions as $version) {
-						if($version->getVersionStatus() == "released") {
+
+					foreach ( $topicVersions as $version ) {
+						if ( $version->getVersionStatus() == "released" ) {
 							$targetVersion = $version->getVersionShortName();
 						}
 					}
 				}
+				
 				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					"/$currentProduct/$targetVersion/$2/$3", $url);
 			}
-			return true;
 		}
-		return true;
+		error_log($url);
+		return TRUE;
 	}
 
 	/**
@@ -1967,17 +2004,24 @@ EOJS;
 	}
 
 	/**
-	 * Used to render a hidden text field which will hold what version we were 
-	 * in.  This forced the following edit submission to put us back in the 
-	 * version we were browsing.
+	 * Implement ShowEditFormFields Hook
+	 * 
+	 * Render a hidden text field which will hold what product and version we were in.
+	 * onArticleSave() uses this to set product and version on article save
+	 * which then allows doGetFullURL to set the URL to wherever the editor came from on redirect after save is successful.
 	 */
 	static public function onShowEditFormFields(&$editpage, &$output) {
-		// Add our form element to the top of the form.
-		$product = PonyDocsProduct::GetSelectedProduct();
-		$version = PonyDocsProductVersion::GetSelectedVersion($product);
-		$output->mBodytext .= "<input type=\"hidden\" name=\"ponydocsversion\" value=\"" . $version . "\" />";
-		$output->mBodytext .= "<input type=\"hidden\" name=\"ponydocsproduct\" value=\"" . $product . "\" />";
-		return true;
+		global $wgRequest;
+		// Create product and version hidden fields, using values from the query string to set them;
+		$selectedProductName = $wgRequest->getVal('product');
+		$selectedVersionName = $wgRequest->getVal('version');
+		if ($selectedProductName) {
+			$output->mBodytext .= "<input type=\"hidden\" name=\"ponydocsproduct\" value=\"" . $selectedProductName . "\" />";
+			if ($selectedVersionName) {
+				$output->mBodytext .= "<input type=\"hidden\" name=\"ponydocsversion\" value=\"" . $selectedVersionName . "\" />";
+			}
+		}
+		return TRUE;
 	}
 
 	/**
@@ -1990,10 +2034,8 @@ EOJS;
 	 * @param Article $article
 	 * @return boolean|string
 	 */
-	static public function onUnknownAction( $action, &$article )
-	{
-		global $wgRequest, $wgParser, $wgTitle;
-		global $wgHooks;
+	static public function onUnknownAction( $action, &$article ) {
+		global $wgHooks, $wgParser, $wgRequest, $wgTitle;
 
 		$ponydocs  = PonyDocsWiki::getInstance();
 		$dbr = wfGetDB( DB_SLAVE );

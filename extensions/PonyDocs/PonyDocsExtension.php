@@ -230,6 +230,7 @@ $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
 $wgHooks['AlternateEdit'][] = 'PonyDocsExtension::onEdit_TOCPage';
 $wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
 $wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageView';
+$wgHooks['DoEditSectionLink'][] = 'PonyDocsExtension::onDoEditSectionLink';
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
 $wgHooks['GetFullURL'][] = 'PonyDocsExtension::onGetFullURL';
 $wgHooks['ParserBeforeStrip'][] = 'PonyDocsExtension::onParserBeforeStrip';
