@@ -1123,10 +1123,9 @@ HEREDOC;
 	 * 
 	 * This is used to scan a topic in the Documentation namespace when saved for wiki links
 	 * Any links found should 
-	 * - auto create the topic in the namespace (if it does not exist) 
+	 * - auto create the topic in the namespace (if it does not exist), respecting PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT
 	 * - set the H1 to the alternate text (if supplied)
 	 * - tag it for the versions of the currently being viewed page
-	 * We can assume Documentation namespace.
 	 * 
 	 * Links that autocreate topics:
 	 * [[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
@@ -1429,7 +1428,7 @@ HEREDOC;
 	 * 
 	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
-	static public function onArticleSave_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
+	static public function onArticleSaveComplete_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
 
 		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
 		// Currently used for branch/inherit.
@@ -1483,7 +1482,7 @@ HEREDOC;
 
 				$versionIn = array();
 				foreach ( $manVersionList as $pV ) {
-					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionShortName();
+					$versionIn[] = $pV->getProductName() . ':' . $pV->getVersionShortName();
 				}
 
 				$res = $dbr->select(
@@ -1509,17 +1508,15 @@ HEREDOC;
 					if ( !$topicArticle->exists() ) {
 						$content = 	"= " . $m[1] . "=\n\n" ;
 						foreach ( $manVersionList as $pVersion ) {
-							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionShortName( ) . ']]';
+							$content .= '[[Category:V:' . $pVersion->getProductName() . ':' . $pVersion->getVersionShortName( ) . ']]';
 						}
 
 						$topicArticle->doEdit(
 							$content,
 							'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ),
 							EDIT_NEW );
-						if ( PONYDOCS_DEBUG ) {
-							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
-								. $title->__toString() );
-						}
+						error_log( "INFO [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
+							. $title->__toString() );
 					}
 				}
 			}
