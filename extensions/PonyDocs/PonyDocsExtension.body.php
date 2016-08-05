@@ -1762,7 +1762,6 @@ EOJS;
 					"/$currentProduct/$targetVersion/$2/$3", $url);
 			}
 		}
-		error_log($url);
 		return TRUE;
 	}
 
