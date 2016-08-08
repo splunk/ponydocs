@@ -1,8 +1,6 @@
 <?php
 
-class PonyDocsCategoryLinks
-{
-
+class PonyDocsCategoryLinks {
 	static public function getTOCByProductManualVersion( $productShort, $manualShort, $version ) {
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select(
@@ -11,7 +9,7 @@ class PonyDocsCategoryLinks
 			array(
 				"cl_to = 'V:" . $dbr->strencode( "$productShort:$version" ) . "'",
 				'cl_type = "page"',
-				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productShort:$manualShort" ) ) . "TOC%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $manualShort ) ) . "TOC%'",
 			),
 			__METHOD__
 		);
@@ -33,6 +31,4 @@ class PonyDocsCategoryLinks
 		);
 		return $res;
 	}
-
-
 }

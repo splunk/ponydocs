@@ -151,11 +151,10 @@ class PonyDocsTOC
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
 				"cl_to = 'V:"
-					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() ) . "'" ,
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() )
+					. "'" ,
 				'cl_type = "page"',
-				"cl_sortkey LIKE '"
-					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
-					. "TOC%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $this->pManual->getShortName() ) ) . "TOC%'",
 			),
 			__METHOD__ );
 		

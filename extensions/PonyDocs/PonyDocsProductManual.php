@@ -195,7 +195,7 @@ class PonyDocsProductManual
 
 				self::$sDefinedManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
 				
-				// If the Manual is static or there is a TOC for this Product/Manual/Version, add to sManualList
+				// Skip this manual if it's not static and has no TOC
 				if (!$static) {
 					$res = PonyDocsCategoryLinks::getTOCByProductManualVersion(
 						$productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion( $productName ) );
