@@ -302,19 +302,17 @@ class PonyDocsTOC
 					$baseTopic = $matches[1];
 
 					$title_suffix = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $baseTopic );
-					$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix";
-					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $title, $selectedProduct );
+					$title = PonyDocsTopic::GetTopicNameFromBaseAndVersion(
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix",
+						$selectedProduct );
 
 					/**
 					 * Hide topics which have no content (i.e. have not been created yet) from the user viewing. 
-					 * 
 					 * Authors must go to the TOC page in order to view and edit these.
-					 * 
 					 * The only way to do this (the cleanest/quickest) is to create a Title object then see if its article ID is 0
-					 * 
-					 * @tbd: Fix so that the section name is hidden if no topics are visible?
+					 * @todo: Fix so that the section name is hidden if no topics are visible?
 					 */
-					$t = Title::newFromText( $newTitle );
+					$t = Title::newFromText( $title );
 					if ( !$t || !$t->getArticleID() ) {
 						continue;
 					}
@@ -322,9 +320,9 @@ class PonyDocsTOC
 					/**
 					 * Obtain H1 content from the article -- WE NEED TO CACHE THIS!
 					 */
-					$h1 = PonyDocsTopic::FindH1ForTitle( $newTitle );
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
 					if ( $h1 === FALSE ) {
-						$h1 = $newTitle;
+						$h1 = $title;
 					}
 
 					$href = str_replace(
@@ -339,7 +337,7 @@ class PonyDocsTOC
 						'toctitle' => $baseTopic,
 						'text' => $h1,
 						'section' => $toc[$section]['text'],
-						'title' => $newTitle,
+						'title' => $title,
 						'class' => 'toclevel-1',
 					);
 					$toc[$section]['subs']++;
@@ -349,6 +347,7 @@ class PonyDocsTOC
 			if ( !$toc[$section]['subs'] ) {
 				unset( $toc[$section] );
 			}
+			
 			// Okay, let's store in our cache.
 			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
 		}

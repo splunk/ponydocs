@@ -730,8 +730,9 @@ class PonyDocsTemplate extends QuickTemplate {
 			} else {
 				$this->data['topicname'] = $pieces[2];
 			}
+		// Topic page (5 pieces)
 		} else {
-			$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
+			$pManual = $ponydocs->getCurrentManual();
 			if ( $pManual ) {
 				$this->data['manualname'] = $pManual->getLongName();
 			} else {
