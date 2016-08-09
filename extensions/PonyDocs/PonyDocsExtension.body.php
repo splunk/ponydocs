@@ -83,7 +83,7 @@ class PonyDocsExtension {
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get( $key );
-		if ( $cacheEntry === null ) {
+		if ( $cacheEntry === NULL ) {
 			if ( PONYDOCS_DEBUG ) {
 				error_log(
 					"DEBUG [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version" );
