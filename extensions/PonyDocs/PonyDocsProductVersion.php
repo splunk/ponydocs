@@ -477,7 +477,7 @@ class PonyDocsProductVersion {
 	 * @param string $name Version short name OR deprecated "V:VERSION" format
 	 * @return PonyDocsProductVersion OR boolean
 	 */
-	static public function & GetVersionByName( $productName, $name ) {
+	static public function GetVersionByName( $productName, $name ) {
 		// Ensure versions list has been initialized
 		self::LoadVersionsForProduct( $productName );
 		
@@ -490,8 +490,6 @@ class PonyDocsProductVersion {
 			return self::$sVersionMap[$productName][$name];
 		}
 
-		// Crappy fix to avoid "Only variable references should be returned by reference" notice
-		// TODO: This fix doesn't work and we still get the notice :) Why does this need to return by reference anyway?
 		return FALSE;
 	}
 

@@ -969,16 +969,16 @@ class PonyDocsExtension {
 				}
 			}
 
-			// Validate there's no other instance of this Topic with the same Version tag
+			// Validate there's no other instance of this Topic or TOC with the same Version tag
 
+			$categoryTags = array();
+			foreach ( $categories as $category ) {
+				$categoryTags[] = "V:{$category['productName']}:{$category['versionName']}";
+			}
+			
 			if ( preg_match(
 				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
-				
-				$categoryTags = array();
-				foreach ( $categories as $category ) {
-					$categoryTags[] = "V:{$category['productName']}:{$category['versionName']}";
-				}
-				
+			
 				$res = $dbr->select(
 					array('categorylinks', 'page'),
 					array('cl_to', 'page_title') ,
@@ -1410,8 +1410,9 @@ HEREDOC;
 	 * 
 	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
-	static public function onArticleSaveComplete_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
-
+	static public function onArticleSaveComplete_CheckTOC(
+		&$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
+		
 		// Gate for speed processing
 		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
 			return TRUE;
@@ -1450,7 +1451,8 @@ HEREDOC;
 			// Clear all TOC cache entries for each version
 			if ( $pManual ) {
 				foreach ( $manVersionList as $version ) {
-					PonyDocsTOC::clearTOCCache( $pManual, $version, $pProduct );
+					PonyDocsTOC::clearTOCCache(
+						$pManual, $version, PonyDocsProduct::GetProductByShortName( $version->getProductName() ) );
 					PonyDocsProductVersion::clearNAVCache( $version );
 				}
 			}
@@ -1526,6 +1528,7 @@ HEREDOC;
 	 */
 	static public function onArticleSaveComplete(
 		&$article, &$user, $text, $summary, $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
+
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 		$productName = PonyDocsProduct::GetSelectedProduct();
@@ -1542,17 +1545,13 @@ HEREDOC;
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
-		// Okay, article is in doc namespace
-
-		// Now we need to remove any pdf books for this topic.
-		// Since the person is editing the article, it's safe to say that the 
-		// version and manual can be fetched from the classes and not do any 
-		// manipulation on the article itself.
-		$productName = PonyDocsProduct::GetSelectedProduct();
-		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
-
+		
 		// Clear cache entries for each version on the Topic
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		// This will return NULL if we're on a TOC, which is why we also clear caches in the previous method
+		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
 		if ( $manual ) {
+			error_log('boar');
 			$topicName = $topic->getTopicName();
 			$versionsToClear = $topic->getProductVersions();
 			
