@@ -512,10 +512,11 @@ class PonyDocsExtension {
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
 
-		// Delete the PDF on deleting the topic
+		// Okay, article is in doc namespace
 		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 
 			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {			
 			PonyDocsExtension::clearArticleCategoryCache( $realArticle );
+			// Delete the cached PDF
 			$productArr  = explode( ':', $title->getText( ) );
 			$productName = $productArr[0];	
 			if ( PonyDocsProduct::IsProduct( $productName ) 
@@ -527,16 +528,13 @@ class PonyDocsExtension {
 				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
 				if ( $manual != null ) {
 					foreach( $topicVersions as $key => $version ) {
-						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );
+						PonyDocsPdfBook::removeCachedFile( $version->getProductName(), $manual->getShortName(), $version->getVersionShortName() );
 					}	
 				}
-								
 			}
 		}		
-
-		// Okay, article is in doc namespace
 		
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -1399,7 +1397,7 @@ HEREDOC;
 	/**
 	 * Implements ArticleSaveComplete hook
 	 * 
-	 * Auto creates topics which don't exist yet when saving a TOC.
+	 * Auto creates topics which don't exist yet when saving a TOC and clears caches.
 	 * 
 	 * @param WikiPage $article
 	 * @param User $user
@@ -1414,8 +1412,7 @@ HEREDOC;
 	 */
 	static public function onArticleSaveComplete_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
 
-		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
-		// Currently used for branch/inherit.
+		// Gate for speed processing
 		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
 			return TRUE;
 		}
@@ -1450,7 +1447,7 @@ HEREDOC;
 				return TRUE;
 			}
 
-			// Clear all TOC cache entries for each version.
+			// Clear all TOC cache entries for each version
 			if ( $pManual ) {
 				foreach ( $manVersionList as $version ) {
 					PonyDocsTOC::clearTOCCache( $pManual, $version, $pProduct );
