@@ -306,8 +306,10 @@ class PonyDocsTopic {
 		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
 		// Just the names of our preview versions
 		$previewNames = array();
-		foreach ( $previewVersions as $ver ) {
-			$previewNames[] = strtolower( $ver->getVersionShortName() );
+		if ( $previewVersions ) {
+			foreach ( $previewVersions as $ver ) {
+				$previewNames[] = strtolower( $ver->getVersionShortName() );
+			}
 		}
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );

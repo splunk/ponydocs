@@ -890,17 +890,10 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Implement ArticleSave Hook which is called when a request to save an article is made BUT BEFORE anything is done.
+	 * Implement ArticleSave Hook
 	 * 
-	 * We trap these for certain special circumstances and perform additional processing.
-	 * Otherwise we simply fall through and allow normal processing to occur.
-	 * It returns 
-	 * - true on success and then falls through to other hooks
-	 * - a string on error
-	 * - and false on success but skips additional processing.
-	 * 
-	 * Actions include:
-	 *
+	 * Validation before saving a Topic and extra logging
+	 * Validate:
 	 *	- If a page is saved in the Documentation namespace and is tagged for a version that another form of
 	 *	  the SAME topic has already been tagged with, we needs to generate a confirmation page which offers
 	 *	  to strip the version tag from the older/other topic, via AJAX. See onUnknownAction for the handling
@@ -959,24 +952,21 @@ class PonyDocsExtension {
 
 		$dbr = wfGetDB( DB_SLAVE );
 
-		/**
-		 * Check to see if we have any version tags -- if we don't we don't care about this and can skip and return true.
-		 */
+		// Validate Version tags
 		if ( preg_match_all( '/\[\[Category:V:([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*)\]\]/i', $text, $matches, PREG_SET_ORDER ) ) {
-
+			// Create an array of all categories
 			$categories = array();
-			foreach ( $matches as $m ) {
-				$categories[] = $m[2];
+			foreach ( $matches as $match ) {
+				$categories[] = array('productName' => $match[1], 'versionName' => $match[2]);
 			}
 
-			/**
-j			 * Ensure ALL Category tags present reference defined versions.
-			 */
-			foreach ( $categories as $c ) {
-				$v = PonyDocsProductVersion::GetVersionByName( $editPonyDocsProduct, $c );
-				if ( !$v ) {
-					$wgOut->addHTML('<h3>The version <span style="color:red;">' . $c . '</span> does not exist.'
-						. 'Please update version list if you wish to use it.</h3>' );
+			 // Ensure ALL Category tags present reference defined versions.
+			foreach ( $categories as $category ) {
+				$version = PonyDocsProductVersion::GetVersionByName( $category['productName'], $category['versionName'] );
+				if ( !$version ) {
+					$wgOut->addHTML("<h3>The version <span style=\"color:red;\">"
+						. "{$category['productName']}:{$category['versionName']}</span> does not exist."
+						. 'Please update the Version list if you wish to use it.</h3>' );
 					return FALSE;
 				}
 			}
