@@ -260,35 +260,38 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	}
 
 	/**
-	 * Removes a cached PDF file.  Just attempts to unlink.  However, does a 
-	 * quick check to see if the file exists after the unlink.  This is a bad 
-	 * situation to be in because that means cached versions will never be 
-	 * removed and will continue to be served.  So log that situation.
+	 * Removes a cached PDF file.  
+	 * Just attempts to unlink.  
+	 * However, does a quick check to see if the file exists after the unlink, and logs if so.
 	 *
-	 * @param $manual string The short name of the manual remove
+	 * @param $product string the short name of the product to remove
+	 * @param $manual string The short name of the manual to remove
 	 * @param $version string The version of the manual to remove
 	 * @param $topicName string The name of the topic to remove
+	 * @return boolean TRUE on success and FALSE on failure
 	 */
 	static public function removeCachedFile( $product, $manual, $version, $topicName = NULL ) {
 		global $wgUploadDirectory;
-		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
-		@unlink($pdfFileName);
 		
-		if (!empty($topicName)) {
-			$pdfTopicFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $topicName . "-book.pdf";			
-			if (file_exists($pdfTopicFileName)) {
-				@unlink($pdfTopicFileName);
-			}
-		}		
-		
-		if (file_exists($pdfFileName)) {
-			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n')
-				. ": Failed to delete cached pdf file $pdfFileName");
-			return false;
+		if ( !empty( $topicName ) ) {
+			$pdfFileName = "$wgUploadDirectory/ponydocspdf-$product-$version-$manual-$topicName-book.pdf";			
 		} else {
-			error_log("INFO [PonyDocsPdfBook::removeCachedFile] " . php_uname('n') . ": Cache file $pdfFileName removed.");
+			$pdfFileName = "$wgUploadDirectory/ponydocspdf-$product-$version-$manual-book.pdf";			
 		}
-		return true;
+
+		if (file_exists( $pdfFileName ) ) {
+			@unlink( $pdfTopicFileName );
+			// If it still exists after unlinking, oops
+			if ( file_exists( $pdfFileName ) ) {
+				error_log( "ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname( 'n' )
+					. ": Failed to delete cached pdf file $pdfFileName" );
+				return FALSE;
+			} else {
+				error_log( "INFO [PonyDocsPdfBook::removeCachedFile] " . php_uname( 'n' ) . ": Cache file $pdfFileName removed.");
+			}
+		}
+
+		return TRUE;
 	}
 
 	/**

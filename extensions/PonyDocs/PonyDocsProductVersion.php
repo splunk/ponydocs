@@ -490,7 +490,8 @@ class PonyDocsProductVersion {
 			return self::$sVersionMap[$productName][$name];
 		}
 
-		// Crappy fix to avoid"Only variable references should be returned by reference" notice
+		// Crappy fix to avoid "Only variable references should be returned by reference" notice
+		// TODO: This fix doesn't work and we still get the notice :) Why does this need to return by reference anyway?
 		return FALSE;
 	}
 
