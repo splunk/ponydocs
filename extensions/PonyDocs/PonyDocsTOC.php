@@ -503,6 +503,6 @@ class PonyDocsTOC
 		global $wgArticlePath;
 
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
-		return "$base/$productName/$TOCname";
+		return "$base/$productName/$TOCName";
 	}
 }

@@ -512,10 +512,11 @@ class PonyDocsExtension {
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
 
-		//Delete the PDF on deleting the topic -WEB-7042
+		// Okay, article is in doc namespace
 		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 
 			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {			
 			PonyDocsExtension::clearArticleCategoryCache( $realArticle );
+			// Delete the cached PDF
 			$productArr  = explode( ':', $title->getText( ) );
 			$productName = $productArr[0];	
 			if ( PonyDocsProduct::IsProduct( $productName ) 
@@ -527,16 +528,13 @@ class PonyDocsExtension {
 				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
 				if ( $manual != null ) {
 					foreach( $topicVersions as $key => $version ) {
-						PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );
+						PonyDocsPdfBook::removeCachedFile( $version->getProductName(), $manual->getShortName(), $version->getVersionShortName() );
 					}	
 				}
-								
 			}
 		}		
-
-		// Okay, article is in doc namespace
 		
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -890,17 +888,10 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Implement ArticleSave Hook which is called when a request to save an article is made BUT BEFORE anything is done.
+	 * Implement ArticleSave Hook
 	 * 
-	 * We trap these for certain special circumstances and perform additional processing.
-	 * Otherwise we simply fall through and allow normal processing to occur.
-	 * It returns 
-	 * - true on success and then falls through to other hooks
-	 * - a string on error
-	 * - and false on success but skips additional processing.
-	 * 
-	 * Actions include:
-	 *
+	 * Validation before saving a Topic and extra logging
+	 * Validate:
 	 *	- If a page is saved in the Documentation namespace and is tagged for a version that another form of
 	 *	  the SAME topic has already been tagged with, we needs to generate a confirmation page which offers
 	 *	  to strip the version tag from the older/other topic, via AJAX. See onUnknownAction for the handling
@@ -959,54 +950,46 @@ class PonyDocsExtension {
 
 		$dbr = wfGetDB( DB_SLAVE );
 
-		/**
-		 * Check to see if we have any version tags -- if we don't we don't care about this and can skip and return true.
-		 */
+		// If there are any version tags on the page...
 		if ( preg_match_all( '/\[\[Category:V:([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*)\]\]/i', $text, $matches, PREG_SET_ORDER ) ) {
-
+			// Create an array of all categories
 			$categories = array();
-			foreach ( $matches as $m ) {
-				$categories[] = $m[2];
+			foreach ( $matches as $match ) {
+				$categories[] = array('productName' => $match[1], 'versionName' => $match[2]);
 			}
 
-			/**
-j			 * Ensure ALL Category tags present reference defined versions.
-			 */
-			foreach ( $categories as $c ) {
-				$v = PonyDocsProductVersion::GetVersionByName( $editPonyDocsProduct, $c );
-				if ( !$v ) {
-					$wgOut->addHTML('<h3>The version <span style="color:red;">' . $c . '</span> does not exist.'
-						. 'Please update version list if you wish to use it.</h3>' );
+			// Validate Version tags reference actual versions
+			foreach ( $categories as $category ) {
+				$version = PonyDocsProductVersion::GetVersionByName( $category['productName'], $category['versionName'] );
+				if ( !$version ) {
+					$wgOut->addHTML("<h3>The version <span style=\"color:red;\">"
+						. "{$category['productName']}:{$category['versionName']}</span> does not exist."
+						. 'Please update the Version list if you wish to use it.</h3>' );
 					return FALSE;
 				}
 			}
 
-			/**
-			 * Now let's find out topic name.
-			 * From that we can look in categorylinks for all tags for this topic, regardless of topic name
-			 * (i.e. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':User:HowToFoo:%').
-			 * We need to restrict this so that we do not query ourselves (our own topic name)
-			 * and we need to check for 'cl_to' to be in $categories generated above.
-			 * If we get 1 or more hits then we need to inject a form element (or something) and return FALSE.
-			 *
-			 * @FIXME:  Should also work on TOC management pages!
-			 */
+			// Validate there's no other instance of this Topic or TOC with the same Version tag
 
-			$q = '';
-
+			$categoryTags = array();
+			foreach ( $categories as $category ) {
+				$categoryTags[] = "V:{$category['productName']}:{$category['versionName']}";
+			}
+			
 			if ( preg_match(
 				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
+			
 				$res = $dbr->select(
 					array('categorylinks', 'page'),
 					array('cl_to', 'page_title') ,
 					array(
 						'cl_from = page_id',
 						'page_namespace = "' . NS_PONYDOCS . '"',
-						"cl_to IN ('V:{$titleMatch[1]}:" . implode( "','V:{$titleMatch[1]}:", $categories ) . "')",
+						"cl_to IN ('" . $dbr->strencode( implode( ',', $categoryTags ) ) . "')",
 						'cl_type = "page"',
-						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$titleMatch[2]}:{$titleMatch[3]}" ) ) . ":%'",
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$titleMatch[1]}:{$titleMatch[2]}:{$titleMatch[3]}" ) ) . ":%'",
 						"cl_sortkey <> '"
-							. $dbr->strencode( strtoupper( "{$titleMatch[2]}:{$titleMatch[3]}:{$titleMatch[4]}" ) ) . "'",
+							. $dbr->strencode( strtoupper( "{$titleMatch[1]}:{$titleMatch[2]}:{$titleMatch[3]}:{$titleMatch[4]}" ) ) . "'",
 					),
 					__METHOD__
 				);
@@ -1018,10 +1001,10 @@ j			 * Ensure ALL Category tags present reference defined versions.
 					array(
 						'cl_from = page_id',
 						'page_namespace = "' . NS_PONYDOCS . '"',
-						"cl_to IN ('V:{$titleMatch[1]}:" . implode( "','V:{$titleMatch[1]}:", $categories ) . "')",
+						"cl_to IN ('" . implode( ',', $categoryTags ) . "')",
 						'cl_type = "page"',
-						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$titleMatch[2]}TOC" ) ) . "%'",
-						"cl_sortkey <> '" . $dbr->strencode( strtoupper( "{$titleMatch[2]}TOC{$titleMatch[3]}" ) ) . "'",
+						"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "{$titleMatch[1]}:{$titleMatch[2]}TOC" ) ) . "%'",
+						"cl_sortkey <> '" . $dbr->strencode( strtoupper( "{$titleMatch[1]}:{$titleMatch[2]}TOC{$titleMatch[3]}" ) ) . "'",
 					),
 					__METHOD__
 				);
@@ -1032,13 +1015,13 @@ j			 * Ensure ALL Category tags present reference defined versions.
 				return TRUE;
 			}
 			
-			$duplicateVersions = array( );
+			$duplicateVersions = array();
 			$topic = '';
 
 			while( $row = $dbr->fetchObject( $res ) ) {
-				if ( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*)/i', $row->cl_to, $vmatch ) ) {
+				if ( in_array($row->cl_to, $categoryTags ) ) {
 					$topic = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":{$row->page_title}";
-					$duplicateVersions[] = $vmatch[1];
+					$duplicateVersions[] = $row->cl_to;
 				}
 			}
 
@@ -1051,9 +1034,8 @@ j			 * Ensure ALL Category tags present reference defined versions.
 			 * This will strip the version tags from the topic and then hide the output message (the warning)
 			 * and allow the user to submit again.
 			 *
-			 * @FIXME:  Update this to use the stuff from PonyDocsAjax.php to be cleaner.
+			 * TODO:  Update this to use the stuff from PonyDocsAjax.php to be cleaner.
 			 */
-
 			$msg =	<<<HEREDOC
 
 				function ajaxRemoveVersions( url ) {
@@ -1415,7 +1397,7 @@ HEREDOC;
 	/**
 	 * Implements ArticleSaveComplete hook
 	 * 
-	 * Auto creates topics which don't exist yet when saving a TOC.
+	 * Auto creates topics which don't exist yet when saving a TOC and clears caches.
 	 * 
 	 * @param WikiPage $article
 	 * @param User $user
@@ -1428,10 +1410,10 @@ HEREDOC;
 	 * 
 	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
-	static public function onArticleSaveComplete_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
-
-		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
-		// Currently used for branch/inherit.
+	static public function onArticleSaveComplete_CheckTOC(
+		&$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
+		
+		// Gate for speed processing
 		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
 			return TRUE;
 		}
@@ -1466,10 +1448,11 @@ HEREDOC;
 				return TRUE;
 			}
 
-			// Clear all TOC cache entries for each version.
+			// Clear all TOC cache entries for each version
 			if ( $pManual ) {
 				foreach ( $manVersionList as $version ) {
-					PonyDocsTOC::clearTOCCache( $pManual, $version, $pProduct );
+					PonyDocsTOC::clearTOCCache(
+						$pManual, $version, PonyDocsProduct::GetProductByShortName( $version->getProductName() ) );
 					PonyDocsProductVersion::clearNAVCache( $version );
 				}
 			}
@@ -1545,6 +1528,7 @@ HEREDOC;
 	 */
 	static public function onArticleSaveComplete(
 		&$article, &$user, $text, $summary, $minoredit, $watchthis, $sectionanchor, &$flags, $revision, &$status, $baseRevId ) {
+
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
 		$productName = PonyDocsProduct::GetSelectedProduct();
@@ -1561,33 +1545,14 @@ HEREDOC;
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
-		// Okay, article is in doc namespace
-
-		// Now we need to remove any pdf books for this topic.
-		// Since the person is editing the article, it's safe to say that the 
-		// version and manual can be fetched from the classes and not do any 
-		// manipulation on the article itself.
-		$productName = PonyDocsProduct::GetSelectedProduct();
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		$version = PonyDocsProductVersion::GetSelectedVersion($productName);
-		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
-
-		if($manual != null) {
-			// Then we are in the documentation namespace, but we're not part of 
-			// manual.
-			// Clear any PDF for this manual
-			$topicName = $topic->getTopicName();
-			$topicVersions = $topic->getProductVersions();	
-			foreach( $topicVersions as $key => $version ) {
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $version->getVersionShortName() );				
-				PonyDocsPdfBook::removeCachedFile( 
-					$productName, $manual->getShortName(), $version->getVersionShortName(), $topicName );
-			}				
-			
-		}
 		
 		// Clear cache entries for each version on the Topic
+		$productName = PonyDocsProduct::GetSelectedProduct();
+		// This will return NULL if we're on a TOC, which is why we also clear caches in the previous method
+		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
 		if ( $manual ) {
+			error_log('boar');
+			$topicName = $topic->getTopicName();
 			$versionsToClear = $topic->getProductVersions();
 			
 			// Add any versions removed from the Topic
@@ -1600,14 +1565,17 @@ HEREDOC;
 					array_push( $removedVersion, $versionsToClear );
 				}
 			}
-			
-			
+		
 			foreach ( $versionsToClear as $versionToClear ) {
 				// Clear PDF cache, because article content may have been updated
-				PonyDocsPdfBook::removeCachedFile( $productName, $manual->getShortName(), $versionToClear->getVersionShortName() );
+				PonyDocsPdfBook::removeCachedFile( 
+					$versionToClear->getProductName(), $manual->getShortName(), $versionToClear->getVersionShortName() );
+				PonyDocsPdfBook::removeCachedFile( 
+					$versionToClear->getProductName(), $manual->getShortName(), $versionToClear->getVersionShortName(), $topicName );
 				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
-					// Clear TOC and NAV cache in case h1 was edited (I think)
-					PonyDocsTOC::clearTOCCache( $manual, $versionToClear, $product );
+					// Clear TOC and NAV cache in case h1 was edited
+					PonyDocsTOC::clearTOCCache( 
+						$manual, $versionToClear, PonyDocsProduct::GetProductByShortName( $versionToClear->getProductName() ) );
 					PonyDocsProductVersion::clearNAVCache( $versionToClear );
 				}
 			}

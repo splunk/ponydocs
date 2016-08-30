@@ -471,15 +471,18 @@ class PonyDocsProductVersion {
 	}
 
 	/**
-	 * Retrieve a PonyDocsProductVersion instance by version name, or return null if it does not exist.
+	 * Retrieve a PonyDocsProductVersion instance by product and version name, or return FALSE if it does not exist.
 	 *
-	 * @static
-	 * @param string $name Name of version to retrieve.
-	 * @return PonyDocsProductVersion
+	 * @param string $productName
+	 * @param string $name Version short name OR deprecated "V:VERSION" format
+	 * @return PonyDocsProductVersion OR boolean
 	 */
-	static public function & GetVersionByName( $productName, $name ) {
+	static public function GetVersionByName( $productName, $name ) {
 		// Ensure versions list has been initialized
 		self::LoadVersionsForProduct( $productName );
+		
+		// Extract version name from category tag
+		// TODO: I think this is unused
 		if ( preg_match( '/^v:(.*)/i', $name, $match ) ) {
 			$name = $match[1];
 		}
@@ -487,10 +490,7 @@ class PonyDocsProductVersion {
 			return self::$sVersionMap[$productName][$name];
 		}
 
-		// Crappy fix to resolve the issue of Only variable references should be returned by reference
-		// that's been happening for some time now.
-		$result = FALSE;
-		return $result;
+		return FALSE;
 	}
 
 	/**
