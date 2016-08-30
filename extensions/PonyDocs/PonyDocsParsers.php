@@ -69,8 +69,7 @@ class PonyDocsParsers {
 					'page_namespace = "' . NS_PONYDOCS . '"',
 					"cl_to = 'V:$productName:$version'",
 					'cl_type = "page"',
-					"cl_sortkey LIKE '" .
-						$dbr->strencode( strtoupper( $productName ) ) . ':' . $dbr->strencode( strtoupper( $manualName ) ) . "TOC%'"
+					"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $manualName ) ) . "TOC%'"
 				),
 				__METHOD__
 			);

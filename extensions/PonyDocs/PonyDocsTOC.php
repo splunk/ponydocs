@@ -151,11 +151,10 @@ class PonyDocsTOC
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
 				"cl_to = 'V:"
-					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() ) . "'" ,
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() )
+					. "'" ,
 				'cl_type = "page"',
-				"cl_sortkey LIKE '"
-					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
-					. "TOC%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $this->pManual->getShortName() ) ) . "TOC%'",
 			),
 			__METHOD__ );
 		
@@ -273,8 +272,9 @@ class PonyDocsTOC
 					 * See if we are CLOSING a section (i.e. $section != -1). If so, check 'subs' and ensure its >0, 
 					 * otherwise we need to remove the section from the list.
 					 */
-					if ( ( $section != -1 ) && !$toc[$section]['subs'] ) {
-							unset( $toc[$section] );
+					if ( $section != -1 && 
+						( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) ) {
+						unset( $toc[$section] );
 					}
 					if ( isset( $line[0] ) && ctype_alnum( $line[0] ) ) {
 						$toc[$idx] = array(
@@ -344,7 +344,7 @@ class PonyDocsTOC
 				}
 				$idx++;
 			}
-			if ( !$toc[$section]['subs'] ) {
+			if ( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) {
 				unset( $toc[$section] );
 			}
 			

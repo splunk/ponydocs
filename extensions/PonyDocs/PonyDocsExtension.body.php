@@ -83,7 +83,7 @@ class PonyDocsExtension {
 		$key = "NAVDATA-" . $product . "-" . $version;
 		$cache = PonyDocsCache::getInstance();
 		$cacheEntry = $cache->get( $key );
-		if ( $cacheEntry === null ) {
+		if ( $cacheEntry === NULL ) {
 			if ( PONYDOCS_DEBUG ) {
 				error_log(
 					"DEBUG [" . __METHOD__ . "] Creating new navigation cache file for product $product version $version" );
@@ -1123,10 +1123,9 @@ HEREDOC;
 	 * 
 	 * This is used to scan a topic in the Documentation namespace when saved for wiki links
 	 * Any links found should 
-	 * - auto create the topic in the namespace (if it does not exist) 
+	 * - auto create the topic in the namespace (if it does not exist), respecting PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT
 	 * - set the H1 to the alternate text (if supplied)
 	 * - tag it for the versions of the currently being viewed page
-	 * We can assume Documentation namespace.
 	 * 
 	 * Links that autocreate topics:
 	 * [[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
@@ -1157,30 +1156,28 @@ HEREDOC;
 	 */
 	static public function onArticleSave_AutoLinks( 
 		&$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
-		global $wgRequest, $wgOut, $wgArticlePath, $wgRequest, $wgScriptPath;
 
-		// Retrieve read/slave handler for fetching from DB.
 		$dbr = wfGetDB( DB_SLAVE );
 		$title = $article->getTitle();
 		$missingTopics = array();
 
-		// Dangerous.  Only set the flag if you know that you should be skipping this processing.  Currently used for branch/inherit.
+		// Gate for speed processing
 		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
 			return TRUE;
 		}
 
-		// We only perform this in Documentation namespace.
+		// Gate for namespace
 		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 			return TRUE;
 		}
 		
-		// If this is not a TOC and we don't want to create on article edit, then simply return.
+		// Gate for doclink autocreate
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title )
 			&& !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT ) {
 			return TRUE;
 		}
 
-
+		// Autocreate doclinks
 		if ( preg_match_all( "/\[\[([" . Title::legalChars() . "]*)([|]?([^\]]*))\]\]/", $text, $matches, PREG_SET_ORDER ) ) {
 			/**
 			 * $match[1] = Wiki Link
@@ -1189,14 +1186,15 @@ HEREDOC;
 
 			foreach ( $matches as $match ) {
 				/**
-				 * Forms which can exist are as such:
-				 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-				 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
-				 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
-				 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
-				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
-				 * So we first need to detect the use of a namespace.
+				 * Doclink formats:
+				 * - [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
+				 * - [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
+				 * - [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
+				 * - [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
+				 * - [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 				 */
+				
+				 // So we first need to detect the use of a namespace.
 				if ( strpos( $match[1], ':' ) !== FALSE ) {
 					$pieces = explode( ':', $match[1] );
 
@@ -1430,7 +1428,7 @@ HEREDOC;
 	 * 
 	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
-	static public function onArticleSave_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
+	static public function onArticleSaveComplete_CheckTOC( &$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
 
 		// Dangerous.  Only set the flag if you know that you should be skipping this processing.
 		// Currently used for branch/inherit.
@@ -1484,7 +1482,7 @@ HEREDOC;
 
 				$versionIn = array();
 				foreach ( $manVersionList as $pV ) {
-					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionShortName();
+					$versionIn[] = $pV->getProductName() . ':' . $pV->getVersionShortName();
 				}
 
 				$res = $dbr->select(
@@ -1510,17 +1508,15 @@ HEREDOC;
 					if ( !$topicArticle->exists() ) {
 						$content = 	"= " . $m[1] . "=\n\n" ;
 						foreach ( $manVersionList as $pVersion ) {
-							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionShortName( ) . ']]';
+							$content .= '[[Category:V:' . $pVersion->getProductName() . ':' . $pVersion->getVersionShortName( ) . ']]';
 						}
 
 						$topicArticle->doEdit(
 							$content,
 							'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ),
 							EDIT_NEW );
-						if ( PONYDOCS_DEBUG ) {
-							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
-								. $title->__toString() );
-						}
+						error_log( "INFO [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC "
+							. $title->__toString() );
 					}
 				}
 			}
@@ -1766,9 +1762,11 @@ EOJS;
 	}
 
 	/**
-	 * This hook is called before any form of substitution or parsing is done on the text.  $text is modifiable -- we can do
-	 * any sort of substitution, addition/deleting, replacement, etc. on it and it will be reflected in our output.  This is
-	 * perfect to doing wiki link substitution for URL rewriting and so forth.
+	 * Implement ParserBeforeStrip Hook
+	 * 
+	 * This hook is called before any form of substitution or parsing is done on the text.
+	 * $text is modifiable -- we can do any sort of substitution, addition/deleting, replacement, etc. on it
+	 * This is perfect to doing wiki link substitution for URL rewriting and so forth.
 	 *
 	 * @static
 	 * @param Parser $parser
