@@ -1738,8 +1738,6 @@ EOJS;
 	 * Doclinks formats that we parse
 	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>:<VERSION>]]
 	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>]]
-	 * - [[Documentation:<MANUAL>:<TOPIC>:<VERSION>]]
-	 * - [[Documentation:<MANUAL>:<TOPIC>]]
 	 * - [[TopicName]]
 	 * If product is omitted, we'll use current product (but see PI exceptions below)Any omitted product/manual/version will be replaced with current product/manual/version.
 	 * If manual is omitted, we'll use current manual.
@@ -1788,121 +1786,81 @@ EOJS;
 
 			// Use categorylinks to find topic tagged with currently selected version, produce link, and replace in output ($text)
 			foreach ( $matches as $match ) {
-				// Link title has a : and namespace is Documentation
-				if ( strpos( $match[1], ':' ) !== FALSE && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
-					$pieces = explode( ':', $match[1] );
-					// [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
-					if ( count( $pieces ) == 3 ) {
-						$res = $dbr->select(
-							'categorylinks',
-							'cl_from', 
-							array(
-								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
-								'cl_type = "page"',
-								'cl_sortkey LIKE "' . $dbr->strencode( strtoupper( "{$pieces[1]}:{$pieces[2]}" ) ) . ':%"',
-							),
-							__METHOD__
-						);
+				$pieces = explode( ':', $match[1] );
 
-						if ( $res->numRows() ) {
-							// Should we link to latest?
-							$latest = FALSE;
-							global $title; // Apparently $title is the path?!?
-							$tempParts = explode("/", $title);
+				// Gate for Documentation namespace when there's more than one piece
+				if ( count( $pieces ) > 1 && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) !== 0 ) {
+					continue;
+				}
+				
+				error_log($match[0]);
 
-							// Check if path contains latest
-							if ( !empty( $tempParts[1] ) && ( !strcmp( $tempParts[1], "latest" ) ) ) {
-								$latest = TRUE;
-							// Check if current version is latest
-							} elseif ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct ) ) {
-								$latest = TRUE;
-							}
-							
-							$href = str_replace( 
-								'$1',
-								//TODO: There is no $pieces[3] per the if clause we're in, so???
-								PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' 
-									. ( $latest ? "latest" : $selectedVersion ) . '/' . $pieces[2] . '/'  
-									. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '',
-										$pieces[3] ),
-								$wgArticlePath );
-							$href .= $match[2];
+				// [[Documentation:Product:User:Topic:Version]]
+				if ( count( $pieces ) == 5 ) {
+					$href = str_replace( 
+						'$1', 
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
+							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] ),
+						$wgArticlePath );
+					$href .= $match[2];
 
-							if ( isset( $_SERVER['SERVER_NAME'] ) ) {
-								$text =	str_replace(
-									$match[0],
-									"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] )
-										. ']',
-									$text );
-							}
-						}
-					// [[Documentation:Product:Manual:Topic]]
-					// [[Documentation:Manual:Topic:Version]] except I don't think we support this anymore
-					} elseif ( count( $pieces ) == 4 ) {
-						$linkProduct = $pieces[1]; // set product in link for legibility
-						
-						// If this is a link to the current project, use the selected version. Otherwise set version to latest.
-						if ( !strcmp($selectedProduct, $linkProduct) ) {
-							$version = $selectedVersion;
-						} else {
-							$version = 'latest';
-						}
-						
-						// If the version is "latest", translate that to a real version number. Use product that was in the link.
-						if ($version == 'latest') {
-							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
-							$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
-							$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionShortName();
-						} else {
-							$dbVersion = $version;
-						}
-						
-						// Database call to see if this topic exists in the product/version specified in the link
-						$res = $dbr->select(
-							'categorylinks',
-							'cl_from',
-							array(
-								"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'",
-								'cl_type = "page"',
-								"cl_sortkey LIKE '"
-									. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
-							 ),
-							__METHOD__
-						);
+					$text = str_replace(
+						$match[0], 
+						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
+							. ']',
+						$text );
+				// [[Documentation:Product:Manual:Topic]]
+				} elseif ( count( $pieces ) == 4 ) {
+					$linkProduct = $pieces[1]; // set product in link for legibility
 
-						if ( $res->numRows() ) {
-							$href = str_replace(
-								'$1',
-								PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
-									. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
-								$wgArticlePath );
-							$href .= $match[2];
+					// If this is a link to the current project, use the selected version. Otherwise set version to latest.
+					if ( !strcmp($selectedProduct, $linkProduct) ) {
+						$version = $selectedVersion;
+					} else {
+						$version = 'latest';
+					}
 
-							$text = str_replace(
-								$match[0], 
-								"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
-								$text );
-						}
-					// [[Documentation:Product:User:Topic:Version]]
-					} elseif ( count( $pieces ) == 5 ) {
-						$href = str_replace( 
-							'$1', 
-							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
+					// If the version is "latest", translate that to a real version number. Use product that was in the link.
+					if ($version == 'latest') {
+						PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
+						$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
+						$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionShortName();
+					} else {
+						$dbVersion = $version;
+					}
+
+					// Database call to see if this topic exists in the product/version specified in the link
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_from',
+						array(
+							"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'",
+							'cl_type = "page"',
+							"cl_sortkey LIKE '"
+								. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
+						 ),
+						__METHOD__
+					);
+
+					if ( $res->numRows() ) {
+						$href = str_replace(
+							'$1',
+							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
 								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
 							$wgArticlePath );
 						$href .= $match[2];
 
 						$text = str_replace(
 							$match[0], 
-							'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
-								. ']',
+							"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
 							$text );
 					}
 				// [[Topic]]
-				} elseif ( strpos( $match[1], ':' ) === FALSE
-					// Make sure we're on a Topic page and current manual is set
+				} elseif ( count( $pieces ) == 1
+					// Make sure we're on a Topic page
 					&& preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
-					&& !isset($pManual)) {
+					// Make sure current manual is set
+					&& isset($pManual)) {
 					
 					// Assume current product and manual, find a page that matches the Topic
 					$res = $dbr->select(
@@ -1942,6 +1900,7 @@ EOJS;
 				}
 			}
 		}
+		
 		return TRUE;
 	}
 
