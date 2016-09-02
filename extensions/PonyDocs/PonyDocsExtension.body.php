@@ -1796,41 +1796,23 @@ EOJS;
 				
 				// [[Documentation:Product:User:Topic:Version]]
 				if ( count( $pieces ) == 5 ) {
-					
 					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
-					
-					// Construct URL
-					$href = str_replace( 
-						'$1', 
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
-							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] ),
-						$wgArticlePath );
-					// Add in anchor
-					$href .= $match[2];
-					// Rebuild as external link
-					$text = str_replace(
-						$match[0], 
-						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
-							. ']',
-						$text );
+
+					$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
+						. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] );
 				// [[Documentation:Product:Manual:Topic]]
 				} elseif ( count( $pieces ) == 4 ) {
 					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
-
-					// If this is a link to the current project, use the selected version. Otherwise set version to latest.
-					if ( !strcmp($selectedProduct, $productName) ) {
-						$version = $selectedVersion;
-					} else {
-						$version = 'latest';
-					}
+					$versionName = !strcmp( $selectedProduct, $productName ) ? $selectedVersion : 'latest';
 
 					// If the version is "latest", translate that to a real version number. Use product that was in the link.
-					if ($version == 'latest') {
+					if ($versionName == 'latest') {
 						PonyDocsProductVersion::LoadVersionsForProduct($productName);
-						$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($productName);
-						$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionShortName();
-					} else {
-						$dbVersion = $version;
+						$version = PonyDocsProductVersion::GetLatestReleasedVersion($productName);
+						if (! $version ) {
+							continue;
+						}
+						$versionName = $version->getVersionShortName();
 					}
 
 					// Database call to see if this topic exists in the product/version specified in the link
@@ -1838,7 +1820,7 @@ EOJS;
 						'categorylinks',
 						'cl_from',
 						array(
-							"cl_to = 'V:" . $productName . ":" . $dbVersion . "'",
+							"cl_to = 'V:" . $productName . ":" . $versionName . "'",
 							'cl_type = "page"',
 							"cl_sortkey LIKE '"
 								. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
@@ -1847,19 +1829,8 @@ EOJS;
 					);
 
 					if ( $res->numRows() ) {
-						// Construct URL
-						$href = str_replace(
-							'$1',
-							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $version . '/' . $pieces[2] . '/' 
-								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
-							$wgArticlePath );
-						// Add in anchor
-						$href .= $match[2];
-						// Rebuild as external link
-						$text = str_replace(
-							$match[0], 
-							"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
-							$text );
+						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' 
+							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] );
 					}
 				// [[Topic]]
 				} elseif ( count( $pieces ) == 1
@@ -1882,26 +1853,24 @@ EOJS;
 					);
 
 					// No page found that matches this Topic
-					if ( !$res->numRows() ) {
-						continue;
+					if ( $res->numRows() ) {
+						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
+								. $pManual->getShortName() . '/' 
+								. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] );
 					}
-
+				}
+				
+				if ( isset( $url ) ) {
 					// Construct URL
-					$href = str_replace(
-						'$1',
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
-							. $pManual->getShortName() . '/' 
-							. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] ),
-						$wgArticlePath
-					);
+					$href = str_replace( '$1', $url, $wgArticlePath );
 					// Add in anchor
 					$href .= $match[2];
 					// Rebuild as external link
-					$text = str_replace( 
-						$match[0],
-						"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']',
-						$text
-					);
+					$text = str_replace(
+						$match[0], 
+						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
+							. ']',
+						$text );
 				}
 			}
 		}
