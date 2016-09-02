@@ -1891,14 +1891,11 @@ EOJS;
 
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
-				// Link title does not have a : or namespace is not Documentation
 				// [[Topic]] -> /Documentation/<CURRENT PRODUCT>/<CURRENT VERSION>/<CURRENT MANUAL>/Topic
-				} else {
-					// Gate for current title (not link title!) is a Topic and manual is set
-					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
-						|| !isset($pManual)) {
-						continue;
-					}
+				// We can only handle [[Topic]] if we're currently on a Topic page and the current Manual is set
+				} elseif ( strpos( $match[1], ':' ) === FALSE 
+					&& preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
+					&& !isset($pManual)) {
 					
 					// Assume current product and manual, find a page that matches the Topic
 					$res = $dbr->select(
