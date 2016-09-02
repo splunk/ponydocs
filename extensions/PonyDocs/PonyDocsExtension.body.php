@@ -1736,46 +1736,33 @@ EOJS;
 	 * $text is modifiable -- we can do any sort of substitution, addition/deleting, replacement, etc. on it
 	 * This is perfect to doing wiki link substitution for URL rewriting and so forth.
 	 *
-	 * @static
 	 * @param Parser $parser
 	 * @param string $text
 	 * @return boolean|string
 	 */
-	static public function onParserBeforeStrip( &$parser, &$text )
-	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $action;
+	static public function onParserBeforeStrip( &$parser, &$text ) {
+		global $action, $wgArticlePath, $wgTitle;
 
 		$dbr = wfGetDB( DB_SLAVE );
-		if(empty($wgTitle)) {
-			return true;
+		if (empty( $wgTitle ) ) {
+			return TRUE;
 		}
 
 		// We want to do link substitution in all namespaces now.
 		$doWikiLinkSubstitution = true;
-		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/');
+		$matches = array( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/' );
 
 		$doStripH1 = false;
-		foreach( $matches as $m )
-			if( preg_match( $m, $wgTitle->__toString( )))
-				$doStripH1 = true;
-
-		if( !strcmp( $action, 'submit' ) && preg_match( '/^Someone else has changed this page/i', $text ))
-		{
-			$text = '';
-			return true;
+		foreach ( $matches as $m ) {
+			if ( preg_match( $m, $wgTitle->__toString() ) ) {
+				$doStripH1 = TRUE;
+			}
 		}
-
-		/**
-		 * Strip out ANY H1 HEADER.  This has the nice effect of only stripping it out during render and not during edit or
-		 * anything.  We should only be doing this for Documentation namespace?
-		 *
-		 * Note, we've put false into the if statement, because we're 
-		 * disabling this "feature", per WEB-2890.
-		 *
-		 * Keeping the code in, just in case we want to re-enable.
-		 */
-		if( $doStripH1 && false )
-			$text = preg_replace( '/^\s*=.*=.*\n?/', '', $text );
+		
+		if ( !strcmp( $action, 'submit' ) && preg_match( '/^Someone else has changed this page/i', $text ) ) {
+			$text = '';
+			return TRUE;
+		}
 
 		/**
 		 * Handle our wiki links, which are always of the form [[<blah>]].  There are built-in functions however that also use
@@ -1792,15 +1779,12 @@ EOJS;
 		 *	[[Namespace:Topic]]							No translation done -- exact link.
 		 *  [[:Topic]]									Link to topic in global namespace - preceding colon required!
 		 */
-
-		//if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:.'_!@\"()#$ -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		if( $doWikiLinkSubstitution 
+		if ( $doWikiLinkSubstitution 
 			&& preg_match_all(
 				"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/",
 				$text,
 				$matches,
 				PREG_SET_ORDER ) ) {
-			//echo '<pre>'; print_r( $matches ); die();
 			/**
 			 * For each, find the topic in categorylinks which is tagged with currently selected version then produce
 			 * link and replace in output ($text).  Simple!
@@ -1808,18 +1792,13 @@ EOJS;
 			$selectedProduct = PonyDocsProduct::GetSelectedProduct();
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
-			// No longer bail on $pManual not being set.  We should only need it 
-			// for [[Namespace:Topic]]
 
+			// No longer bail on $pManual not being set.  We should only need it for [[Namespace:Topic]]
 			foreach ( $matches as $match ) {
-				/**
-				 * Namespace used.  If NOT Documentation, just output the link.
-				 */
+				 // Namespace used.  If NOT Documentation, just output the link.
 				if ( strpos( $match[1], ':' ) !== false && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
 					$pieces = explode( ':', $match[1] );
-					/**
-					 * [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
-					 */
+					 // [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
 					if ( 3 == sizeof( $pieces ) ) {
 						$res = $dbr->select(
 							'categorylinks',
@@ -1834,17 +1813,17 @@ EOJS;
 
 						if ( $res->numRows() ) {
 							global $title;
-							// Our title is our url.  We should check to see if 
-							// latest is our version.  If so, we want to FORCE 
-							// the URL to include /latest/ as the version 
-							// instead of the version that the user is 
-							// currently in.
+							// Our title is our url.
+							// We should check to see if latest is our version.
+							// If so, we want to FORCE the URL to include /latest/ as the version 
+							// instead of the version that the user is currently in.
 							$tempParts = explode("/", $title);
-							$latest = false;
-							if(!empty($tempParts[1]) && (!strcmp($tempParts[1], "latest"))) {
-								$latest = true;
+							$latest = FALSE;
+							if (!empty($tempParts[1]) && (!strcmp($tempParts[1], "latest"))) {
+								$latest = TRUE;
 							}
-							// Okay, let's determine if the VERSION that the user is in is latest, 
+
+							// Okay, let's determine if the VERSION that the user is in is latest,
 							// if so, we should set latest to true.
 							if($selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct)) {
 								$latest = true;
@@ -1866,10 +1845,8 @@ EOJS;
 									$text );
 							}
 						}
-					/**
-					 * [[Documentation:Product:Manual:Topic]] => Documentation/Product/<latest_or_selected>/Manual/Topic
-					 * If linking within same product, stay on selected version; otherwise use "latest" for cross-product link
-					 */
+					// [[Documentation:Product:Manual:Topic]] => Documentation/Product/<latest_or_selected>/Manual/Topic
+					// If linking within same product, stay on selected version; otherwise use "latest" for cross-product link
 					} else if ( 4 == sizeof( $pieces ) ) {
 						$linkProduct = $pieces[1]; // set product in link for legibility
 						
@@ -1919,19 +1896,14 @@ EOJS;
 							$text );
 					}
 
-					/**
-					 * [[Documentation:Product:User:Topic:Version]] => Documentation/Product/Version/User/Topic
-					 */
-					else if( 5 == sizeof( $pieces ))
-					{
+					// [[Documentation:Product:User:Topic:Version]] => Documentation/Product/Version/User/Topic
+					elseif ( 5 == sizeof( $pieces ) ) {
 						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
 						$href .= $match[2];
 
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
-				}
-				else
-				{
+				} else {
 					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
 					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
 						|| !isset($pManual)) {
@@ -1950,14 +1922,12 @@ EOJS;
 						__METHOD__
 					);
 
-					/**
-					 * We might need to make it a "non-link" at this point instead of skipping it.
-					 */
+					// We might need to make it a "non-link" at this point instead of skipping it.
 					if ( !$res->numRows() ) {
 						continue;
 					}
 
-					$href = str_replace(
+						$href = str_replace(
 						'$1',
 						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
 							. $pManual->getShortName() . '/' 
@@ -1974,7 +1944,7 @@ EOJS;
 				}
 			}
 		}
-		return true;
+		return TRUE;
 	}
 
 	/**
