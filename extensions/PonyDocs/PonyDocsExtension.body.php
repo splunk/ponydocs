@@ -1732,16 +1732,22 @@ EOJS;
 	/**
 	 * Implement ParserBeforeStrip Hook
 	 * 
-	 * Handle our doclinks, which are always of the form [[<blah>]].
-	 * There are built-in functions however that also use this structure (like Category tags).
-	 * We need to filter these out AND filter out any external links.
+	 * Handle doclinks, which are always of the form [[<blah>]]
+	 * We can skip other markups that also use this structure like Category tags, external links, and links to non-topic pages.
 	 * The rest we need to grab and produce proper anchors and replace in the output.
-	 * Doclinks forms that we modify
+	 * Doclinks formats that we parse
 	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>:<VERSION>]]
 	 * - [[Documentation:<PRODCUT>:<MANUAL>:<TOPIC>]]
 	 * - [[Documentation:<MANUAL>:<TOPIC>:<VERSION>]]
-	 * - [[Documentation:<manual>:<TOPIC>]]
+	 * - [[Documentation:<MANUAL>:<TOPIC>]]
 	 * - [[TopicName]]
+	 * If product is omitted, we'll use current product (but see PI exceptions below)Any omitted product/manual/version will be replaced with current product/manual/version.
+	 * If manual is omitted, we'll use current manual.
+	 * If version is omitted, we'll use current version for same-product links, latest version for inter-product links
+	 * To support product inheritance
+	 * - If product is "*", we'll use current product
+	 * - If the current topic is inherited, and the product matches the base product, and a same-product link exists, 
+	 *   we'll make a same-product link instead of linking to the base product
 	 *
 	 * @param Parser $parser
 	 * @param string $text
