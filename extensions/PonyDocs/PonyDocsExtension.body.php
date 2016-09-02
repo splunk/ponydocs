@@ -1785,26 +1785,69 @@ EOJS;
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
 
+			$inheritedTopic = FALSE;
+			$pageTitlePieces = explode(':', $wgTitle->toString());
+			if ( array_key_exists( 1, $pageTitlePieces ) && $pageTitlePieces[1] != $selectedProduct ) {
+				$inheritedTopic = TRUE;
+				$baseProductName = $pageTitlePieces[1];
+			}
+
 			// Use categorylinks to find topic tagged with currently selected version, produce link, and replace in output ($text)
 			foreach ( $matches as $match ) {
 				$pieces = explode( ':', $match[1] );
+				
+				// Gate for piece count
+				if (! ( count( $pieces ) == 1
+						|| count( $pieces ) == 4
+						|| count( $pieces ) == 5 ) ) {
+					continue;
+				}
 
 				// Gate for Documentation namespace when there's more than one piece
 				if ( count( $pieces ) > 1 && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) !== 0 ) {
 					continue;
 				}
 				
-				// [[Documentation:Product:User:Topic:Version]]
+				// Gate for page type and manual when there's one piece
+				if ( count( $pieces ) == 1
+					// Make sure we're on a Topic page
+					&& ( ! preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
+						|| ! isset( $pManual ) ) ) {
+					continue;
+				}
+
+				// Set product name
+				$productName = $selectedProduct;
+				if ( count( $pieces ) == 5 || count( $pieces ) == 4 ) {
+					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
+					// If we're in an inherited topic, and this link is to the base product,
+					// link to a topic in the selected product if possible
+					if ( $inheritedTopic && $productName == $baseProductName ) {
+						// See if topic exists in the selected product
+						$res = $dbr->select(
+							'categorylinks',
+							'cl_from',
+							array(
+								"cl_to = 'V:" . $selectedProduct . ":" . $versionName . "'",
+								'cl_type = "page"',
+								"cl_sortkey LIKE '"
+									. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
+							 ),
+							__METHOD__
+						);
+					
+						if ( $res->numRows() ) {
+							$productName = $selectedProduct;
+						}
+					}
+				}
+
+				// Set version name
+				$versionName = $selectedVersion;
 				if ( count( $pieces ) == 5 ) {
-					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
-
-					$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
-						. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] );
-				// [[Documentation:Product:Manual:Topic]]
-				} elseif ( count( $pieces ) == 4 ) {
-					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
-					$versionName = !strcmp( $selectedProduct, $productName ) ? $selectedVersion : 'latest';
-
+					$versionName = $pieces[4];
+				} elseif ( count ( $pieces ) == 4 ) {
+					$versionName = $selectedProduct == $productName ? $selectedVersion : 'latest';
 					// If the version is "latest", translate that to a real version number. Use product that was in the link.
 					if ($versionName == 'latest') {
 						PonyDocsProductVersion::LoadVersionsForProduct($productName);
@@ -1814,7 +1857,14 @@ EOJS;
 						}
 						$versionName = $version->getVersionShortName();
 					}
-
+				}
+				
+				// [[Documentation:Product:Manual:Topic:Version]]
+				if ( count( $pieces ) == 5 ) {
+					$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' 
+						. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] );
+				// [[Documentation:Product:Manual:Topic]]
+				} elseif ( count( $pieces ) == 4 ) {
 					// Database call to see if this topic exists in the product/version specified in the link
 					$res = $dbr->select(
 						'categorylinks',
@@ -1833,29 +1883,24 @@ EOJS;
 							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] );
 					}
 				// [[Topic]]
-				} elseif ( count( $pieces ) == 1
-					// Make sure we're on a Topic page
-					&& preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
-					// Make sure current manual is set
-					&& isset($pManual)) {
+				} elseif ( count( $pieces ) == 1 ) {
+					$manualName = $pManual->getShortName();
 					
-					// Assume current product and manual, find a page that matches the Topic
 					$res = $dbr->select(
 						'categorylinks',
 						'cl_from', 
 						array(
-							"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
+							"cl_to = 'V:" . $productName . ":" . $versionName . "'",
 							'cl_type = "page"',
 							"cl_sortkey LIKE '" . $dbr->strencode(
-								strtoupper( $selectedProduct . ':' . $pManual->getShortName() . ':' . $match[1] ) ) . ":%'",
+								strtoupper( $productName . ':' . $manualName . ':' . $match[1] ) ) . ":%'",
 						),
 						__METHOD__
 					);
 
-					// No page found that matches this Topic
 					if ( $res->numRows() ) {
-						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
-								. $pManual->getShortName() . '/' 
+						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/'
+								. $manualName . '/' 
 								. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] );
 					}
 				}
