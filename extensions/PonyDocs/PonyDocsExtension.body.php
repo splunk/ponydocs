@@ -1732,9 +1732,16 @@ EOJS;
 	/**
 	 * Implement ParserBeforeStrip Hook
 	 * 
-	 * This hook is called before any form of substitution or parsing is done on the text.
-	 * $text is modifiable -- we can do any sort of substitution, addition/deleting, replacement, etc. on it
-	 * This is perfect to doing wiki link substitution for URL rewriting and so forth.
+	 * Handle our doclinks, which are always of the form [[<blah>]].
+	 * There are built-in functions however that also use this structure (like Category tags).
+	 * We need to filter these out AND filter out any external links.
+	 * The rest we need to grab and produce proper anchors and replace in the output.
+	 * Doclinks forms that we modify
+	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>:<VERSION>]]
+	 * - [[Documentation:<PRODCUT>:<MANUAL>:<TOPIC>]]
+	 * - [[Documentation:<MANUAL>:<TOPIC>:<VERSION>]]
+	 * - [[Documentation:<manual>:<TOPIC>]]
+	 * - [[TopicName]]
 	 *
 	 * @param Parser $parser
 	 * @param string $text
@@ -1743,62 +1750,43 @@ EOJS;
 	static public function onParserBeforeStrip( &$parser, &$text ) {
 		global $action, $wgArticlePath, $wgTitle;
 
+		// Gate for title
 		$dbr = wfGetDB( DB_SLAVE );
 		if (empty( $wgTitle ) ) {
 			return TRUE;
 		}
 
-		// We want to do link substitution in all namespaces now.
-		$doWikiLinkSubstitution = true;
-		$matches = array( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/' );
-
-		$doStripH1 = false;
-		foreach ( $matches as $m ) {
-			if ( preg_match( $m, $wgTitle->__toString() ) ) {
-				$doStripH1 = TRUE;
-			}
-		}
-		
+		// Gate for rejected edits
 		if ( !strcmp( $action, 'submit' ) && preg_match( '/^Someone else has changed this page/i', $text ) ) {
 			$text = '';
 			return TRUE;
 		}
 
 		/**
-		 * Handle our wiki links, which are always of the form [[<blah>]].  There are built-in functions however that also use
-		 * this structure (like Category tags).  We need to filter these out AND filter out any external links.  The rest we
-		 * need to grab and produce proper anchor's and replace in the output.  In each:
-		 * 	0=Entire string to match
-		 *  1=Title
-		 *  2=Ignore
-		 *  3=Display Text (optional)
-		 * Possible forms:
-		 *	[[TopicName]]								Translated to Documentation:<currentManual>:<topicName>:<selectedVersion>
-		 *	[[Documentation:<manual>:<topic>]]			Translated to Documentation:<manual>:<topic>:<selectedVersion>
-		 *	[[Documentation:<manual>:<topic>:<version>]]No translation done -- exact link.
-		 *	[[Namespace:Topic]]							No translation done -- exact link.
-		 *  [[:Topic]]									Link to topic in global namespace - preceding colon required!
+		 * In each match:
+		 * 	0 = Entire string to match
+		 *  1 = Title
+		 *  2 = Anchor
+		 *  3 = Display Text (including pipe)
+		 *  4 = Display Text
 		 */
-		if ( $doWikiLinkSubstitution 
-			&& preg_match_all(
-				"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/",
-				$text,
-				$matches,
-				PREG_SET_ORDER ) ) {
-			/**
-			 * For each, find the topic in categorylinks which is tagged with currently selected version then produce
-			 * link and replace in output ($text).  Simple!
-			 */
+		if ( preg_match_all(
+			"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/",
+			$text,
+			$matches,
+			PREG_SET_ORDER ) ) {
+			
 			$selectedProduct = PonyDocsProduct::GetSelectedProduct();
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
 
-			// No longer bail on $pManual not being set.  We should only need it for [[Namespace:Topic]]
+			// Find the topic in categorylinks which is tagged with currently selected version
+			// Then produce link and replace in output ($text)
 			foreach ( $matches as $match ) {
-				 // Namespace used.  If NOT Documentation, just output the link.
-				if ( strpos( $match[1], ':' ) !== false && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
+				// Link title has a : and namespace is Documentation
+				if ( strpos( $match[1], ':' ) !== FALSE && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
 					$pieces = explode( ':', $match[1] );
-					 // [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
+					// [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
 					if ( 3 == sizeof( $pieces ) ) {
 						$res = $dbr->select(
 							'categorylinks',
@@ -1903,13 +1891,16 @@ EOJS;
 
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
+				// Link title does not have a : or namespace is not Documentation
+				// [[Topic]] -> /Documentation/<CURRENT PRODUCT>/<CURRENT VERSION>/<CURRENT MANUAL>/Topic
 				} else {
-					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
+					// Gate for current title (not link title!) is a Topic and manual is set
 					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
 						|| !isset($pManual)) {
 						continue;
 					}
 					
+					// Assume current product and manual, find a page that matches the Topic
 					$res = $dbr->select(
 						'categorylinks',
 						'cl_from', 
@@ -1922,20 +1913,23 @@ EOJS;
 						__METHOD__
 					);
 
-					// We might need to make it a "non-link" at this point instead of skipping it.
+					// No page found that matches this Topic
 					if ( !$res->numRows() ) {
 						continue;
 					}
 
-						$href = str_replace(
+					// Construct URL
+					$href = str_replace(
 						'$1',
 						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
 							. $pManual->getShortName() . '/' 
 							. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] ),
 						$wgArticlePath
 					);
+					// Add in anchor
 					$href .= $match[2];
 
+					// I have no idea what's going on here with $match[4]?!
 					$text = str_replace( 
 						$match[0],
 						"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']',
