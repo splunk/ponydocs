@@ -1796,10 +1796,13 @@ EOJS;
 				
 				// [[Documentation:Product:User:Topic:Version]]
 				if ( count( $pieces ) == 5 ) {
+					
+					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
+					
 					// Construct URL
 					$href = str_replace( 
 						'$1', 
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
 							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] ),
 						$wgArticlePath );
 					// Add in anchor
@@ -1812,10 +1815,10 @@ EOJS;
 						$text );
 				// [[Documentation:Product:Manual:Topic]]
 				} elseif ( count( $pieces ) == 4 ) {
-					$linkProduct = $pieces[1]; // set product in link for legibility
+					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
 
 					// If this is a link to the current project, use the selected version. Otherwise set version to latest.
-					if ( !strcmp($selectedProduct, $linkProduct) ) {
+					if ( !strcmp($selectedProduct, $productName) ) {
 						$version = $selectedVersion;
 					} else {
 						$version = 'latest';
@@ -1823,8 +1826,8 @@ EOJS;
 
 					// If the version is "latest", translate that to a real version number. Use product that was in the link.
 					if ($version == 'latest') {
-						PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
-						$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
+						PonyDocsProductVersion::LoadVersionsForProduct($productName);
+						$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($productName);
 						$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionShortName();
 					} else {
 						$dbVersion = $version;
@@ -1835,7 +1838,7 @@ EOJS;
 						'categorylinks',
 						'cl_from',
 						array(
-							"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'",
+							"cl_to = 'V:" . $productName . ":" . $dbVersion . "'",
 							'cl_type = "page"',
 							"cl_sortkey LIKE '"
 								. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
@@ -1847,7 +1850,7 @@ EOJS;
 						// Construct URL
 						$href = str_replace(
 							'$1',
-							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
+							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $version . '/' . $pieces[2] . '/' 
 								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
 							$wgArticlePath );
 						// Add in anchor
