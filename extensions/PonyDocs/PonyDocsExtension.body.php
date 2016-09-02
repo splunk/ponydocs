@@ -1737,7 +1737,7 @@ EOJS;
 	 * The rest we need to grab and produce proper anchors and replace in the output.
 	 * Doclinks formats that we parse
 	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>:<VERSION>]]
-	 * - [[Documentation:<PRODCUT>:<MANUAL>:<TOPIC>]]
+	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>]]
 	 * - [[Documentation:<MANUAL>:<TOPIC>:<VERSION>]]
 	 * - [[Documentation:<MANUAL>:<TOPIC>]]
 	 * - [[TopicName]]
@@ -1786,14 +1786,13 @@ EOJS;
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
 
-			// Find the topic in categorylinks which is tagged with currently selected version
-			// Then produce link and replace in output ($text)
+			// Use categorylinks to find topic tagged with currently selected version, produce link, and replace in output ($text)
 			foreach ( $matches as $match ) {
 				// Link title has a : and namespace is Documentation
 				if ( strpos( $match[1], ':' ) !== FALSE && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
 					$pieces = explode( ':', $match[1] );
 					// [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
-					if ( 3 == sizeof( $pieces ) ) {
+					if ( count( $pieces ) == 3 ) {
 						$res = $dbr->select(
 							'categorylinks',
 							'cl_from', 
@@ -1806,22 +1805,19 @@ EOJS;
 						);
 
 						if ( $res->numRows() ) {
-							global $title;
-							// Our title is our url.
-							// We should check to see if latest is our version.
-							// If so, we want to FORCE the URL to include /latest/ as the version 
-							// instead of the version that the user is currently in.
-							$tempParts = explode("/", $title);
+							// Should we link to latest?
 							$latest = FALSE;
-							if (!empty($tempParts[1]) && (!strcmp($tempParts[1], "latest"))) {
+							global $title; // Apparently $title is the path?!?
+							$tempParts = explode("/", $title);
+
+							// Check if path contains latest
+							if ( !empty( $tempParts[1] ) && ( !strcmp( $tempParts[1], "latest" ) ) ) {
+								$latest = TRUE;
+							// Check if current version is latest
+							} elseif ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct ) ) {
 								$latest = TRUE;
 							}
-
-							// Okay, let's determine if the VERSION that the user is in is latest,
-							// if so, we should set latest to true.
-							if($selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct)) {
-								$latest = true;
-							}
+							
 							$href = str_replace( 
 								'$1',
 								//TODO: There is no $pieces[3] per the if clause we're in, so???
@@ -1831,6 +1827,7 @@ EOJS;
 										$pieces[3] ),
 								$wgArticlePath );
 							$href .= $match[2];
+
 							if ( isset( $_SERVER['SERVER_NAME'] ) ) {
 								$text =	str_replace(
 									$match[0],
@@ -1839,9 +1836,9 @@ EOJS;
 									$text );
 							}
 						}
-					// [[Documentation:Product:Manual:Topic]] => Documentation/Product/<latest_or_selected>/Manual/Topic
-					// If linking within same product, stay on selected version; otherwise use "latest" for cross-product link
-					} else if ( 4 == sizeof( $pieces ) ) {
+					// [[Documentation:Product:Manual:Topic]]
+					// [[Documentation:Manual:Topic:Version]] except I don't think we support this anymore
+					} elseif ( count( $pieces ) == 4 ) {
 						$linkProduct = $pieces[1]; // set product in link for legibility
 						
 						// If this is a link to the current project, use the selected version. Otherwise set version to latest.
@@ -1873,33 +1870,37 @@ EOJS;
 							__METHOD__
 						);
 
-						if ( !$res->numRows() ) {
-							// This article is not found.
-							continue;
+						if ( $res->numRows() ) {
+							$href = str_replace(
+								'$1',
+								PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
+									. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
+								$wgArticlePath );
+							$href .= $match[2];
+
+							$text = str_replace(
+								$match[0], 
+								"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
+								$text );
 						}
-						
-						$href = str_replace(
-							'$1',
-							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
+					// [[Documentation:Product:User:Topic:Version]]
+					} elseif ( count( $pieces ) == 5 ) {
+						$href = str_replace( 
+							'$1', 
+							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
 								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
 							$wgArticlePath );
 						$href .= $match[2];
+
 						$text = str_replace(
 							$match[0], 
-							"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
+							'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
+								. ']',
 							$text );
 					}
-
-					// [[Documentation:Product:User:Topic:Version]] => Documentation/Product/Version/User/Topic
-					elseif ( 5 == sizeof( $pieces ) ) {
-						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
-						$href .= $match[2];
-
-						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
-					}
-				// [[Topic]] -> /Documentation/<CURRENT PRODUCT>/<CURRENT VERSION>/<CURRENT MANUAL>/Topic
-				// We can only handle [[Topic]] if we're currently on a Topic page and the current Manual is set
-				} elseif ( strpos( $match[1], ':' ) === FALSE 
+				// [[Topic]]
+				} elseif ( strpos( $match[1], ':' ) === FALSE
+					// Make sure we're on a Topic page and current manual is set
 					&& preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
 					&& !isset($pManual)) {
 					
