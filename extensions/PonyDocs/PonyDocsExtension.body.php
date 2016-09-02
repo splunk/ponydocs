@@ -1770,12 +1770,13 @@ EOJS;
 		 * In each match:
 		 * 	0 = Entire string to match
 		 *  1 = Title
-		 *  2 = Anchor
-		 *  3 = Display Text (including pipe)
+		 *  2 = Anchor (optional)
+		 *  3 = |Display Text (optional)
 		 *  4 = Display Text
+		 * @todo: i'm not sure why the | is optional, or why we have a separate group for the text including the bar
 		 */
 		if ( preg_match_all(
-			"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/",
+			"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
 			$text,
 			$matches,
 			PREG_SET_ORDER ) ) {
@@ -1793,17 +1794,17 @@ EOJS;
 					continue;
 				}
 				
-				error_log($match[0]);
-
 				// [[Documentation:Product:User:Topic:Version]]
 				if ( count( $pieces ) == 5 ) {
+					// Construct URL
 					$href = str_replace( 
 						'$1', 
 						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' 
 							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] ),
 						$wgArticlePath );
+					// Add in anchor
 					$href .= $match[2];
-
+					// Rebuild as external link
 					$text = str_replace(
 						$match[0], 
 						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
@@ -1843,13 +1844,15 @@ EOJS;
 					);
 
 					if ( $res->numRows() ) {
+						// Construct URL
 						$href = str_replace(
 							'$1',
 							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
 								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
 							$wgArticlePath );
+						// Add in anchor
 						$href .= $match[2];
-
+						// Rebuild as external link
 						$text = str_replace(
 							$match[0], 
 							"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
@@ -1890,8 +1893,7 @@ EOJS;
 					);
 					// Add in anchor
 					$href .= $match[2];
-
-					// I have no idea what's going on here with $match[4]?!
+					// Rebuild as external link
 					$text = str_replace( 
 						$match[0],
 						"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']',
