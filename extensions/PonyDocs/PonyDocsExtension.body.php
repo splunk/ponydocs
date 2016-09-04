@@ -1776,7 +1776,7 @@ EOJS;
 		 * @todo: i'm not sure why the | is optional, or why we have a separate group for the text including the bar
 		 */
 		if ( preg_match_all(
-			"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
+			"/\[\[([A-Za-z0-9,:._ -*]*)(\#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
 			$text,
 			$matches,
 			PREG_SET_ORDER ) ) {
@@ -1786,7 +1786,7 @@ EOJS;
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
 
 			$inheritedTopic = FALSE;
-			$pageTitlePieces = explode(':', $wgTitle->toString());
+			$pageTitlePieces = explode(':', $wgTitle->__toString());
 			if ( array_key_exists( 1, $pageTitlePieces ) && $pageTitlePieces[1] != $selectedProduct ) {
 				$inheritedTopic = TRUE;
 				$baseProductName = $pageTitlePieces[1];
@@ -1795,6 +1795,7 @@ EOJS;
 			// Use categorylinks to find topic tagged with currently selected version, produce link, and replace in output ($text)
 			foreach ( $matches as $match ) {
 				$pieces = explode( ':', $match[1] );
+				$url = NULL;
 				
 				// Gate for piece count
 				if (! ( count( $pieces ) == 1
@@ -1819,7 +1820,9 @@ EOJS;
 				// Set product name
 				$productName = $selectedProduct;
 				if ( count( $pieces ) == 5 || count( $pieces ) == 4 ) {
-					$productName = $pieces[1] == "*" ? $selectedProduct : $pieces[1];
+					if ($pieces[1] != "*") {
+						$productName = $pieces[1];
+					}
 					// If we're in an inherited topic, and this link is to the base product,
 					// link to a topic in the selected product if possible
 					if ( $inheritedTopic && $productName == $baseProductName ) {
@@ -1828,10 +1831,10 @@ EOJS;
 							'categorylinks',
 							'cl_from',
 							array(
-								"cl_to = 'V:" . $selectedProduct . ":" . $versionName . "'",
-								'cl_type = "page"',
-								"cl_sortkey LIKE '"
-									. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
+								"cl_to = '" . $dbr->strencode( "V:$selectedProduct:$selectedVersion" ) . "'",
+								"cl_type = 'page'",
+								"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$baseProductName:$pieces[2]:$pieces[3]" ) )
+									. ":%'",
 							 ),
 							__METHOD__
 						);
@@ -1847,7 +1850,9 @@ EOJS;
 				if ( count( $pieces ) == 5 ) {
 					$versionName = $pieces[4];
 				} elseif ( count ( $pieces ) == 4 ) {
-					$versionName = $selectedProduct == $productName ? $selectedVersion : 'latest';
+					if ($selectedProduct != $productName ) {
+						$versionName = 'latest';
+					}
 					// If the version is "latest", translate that to a real version number. Use product that was in the link.
 					if ($versionName == 'latest') {
 						PonyDocsProductVersion::LoadVersionsForProduct($productName);
@@ -1870,10 +1875,10 @@ EOJS;
 						'categorylinks',
 						'cl_from',
 						array(
-							"cl_to = 'V:" . $productName . ":" . $versionName . "'",
-							'cl_type = "page"',
+							"cl_to = 'V:$productName:$versionName'",
+							"cl_type = 'page'",
 							"cl_sortkey LIKE '"
-								. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
+								. $dbr->strencode( strtoupper( "%:$pieces[2]:$pieces[3]" ) ) . ":%'",
 						 ),
 						__METHOD__
 					);
@@ -1909,11 +1914,13 @@ EOJS;
 					// Construct URL
 					$href = str_replace( '$1', $url, $wgArticlePath );
 					// Add in anchor
-					$href .= $match[2];
+					if ( !empty( $match[2] ) ) {
+						$href .= $match[2];
+					}
 					// Rebuild as external link
 					$text = str_replace(
 						$match[0], 
-						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) 
+						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( !empty( $match[4] ) ? $match[4] : $match[1] ) 
 							. ']',
 						$text );
 				}
