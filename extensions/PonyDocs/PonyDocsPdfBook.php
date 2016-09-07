@@ -138,7 +138,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 				'username' => $wgUser->getName(),
 				'product' => addcslashes( $productName, '"' ),
 				'version' => $versionName,
-				'manual' => addclashes( $pManual->getShortName(), '"'),
+				'manual' => addcslashes( $pManual->getShortName(), '"'),
 				'topic' => $topic ? $topic->getTopicName() : '',
 			);
 			$logString = '';
