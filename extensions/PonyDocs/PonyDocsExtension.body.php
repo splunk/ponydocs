@@ -207,7 +207,7 @@ class PonyDocsExtension {
 		$fromNamespace = $titlePieces[0];
 		$fromProduct = $titlePieces[1];
 		$fromManual = $titlePieces[2];
-		$fromTopic = $titlePieces[3]  ? $titlePieces[3] : NULL;
+		$fromTopic = isset( $titlePieces[3] ) ? $titlePieces[3] : NULL;
 		$toAndFromLinksToInsert = array();
 		$fromLinksToDelete = array();
 		// if this is not set, we're not looking at a Topic (probably we're looking at a TOC) and we don't need doclinks
@@ -622,9 +622,9 @@ class PonyDocsExtension {
 				
 				// For each version, if any are released, then redirect to special latest doc
 				if ( $res2->numRows() ) {
-					while ( $row = $dbr->fetchObject( $res ) ) {
+					while ( $row = $dbr->fetchObject( $res2 ) ) {
 						if ( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ) ) {
-							if (PonyDocsProductVersion::IsReleasedVersion( $vmatch[1], $vmatch[2] ) ) {
+							if (PonyDocsProductVersion::isReleasedVersion( $vmatch[1], $vmatch[2] ) ) {
 								if ( PONYDOCS_DEBUG ) {
 									error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
 										. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title" );

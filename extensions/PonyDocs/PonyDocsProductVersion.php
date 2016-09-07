@@ -471,6 +471,20 @@ class PonyDocsProductVersion {
 	}
 
 	/**
+	 * Returns whether or not a supplied version is defined.
+	 *
+	 * @param string $productName
+	 * @param string $versionName
+	 * @return boolean
+	 * 
+	 * @static
+	 */
+	static public function isReleasedVersion( $productName, $versionName ) {
+		error_log(print_r(self::$sVersionMapReleased['SplunkCloud'], TRUE));
+		return isset( self::$sVersionMapReleased[$productName][$versionName] );
+	}
+
+	/**
 	 * Retrieve a PonyDocsProductVersion instance by product and version name, or return FALSE if it does not exist.
 	 *
 	 * @param string $productName
@@ -545,28 +559,24 @@ class PonyDocsProductVersion {
 		if ( sizeof( self::$sVersionList[$productName] ) ) {
 			return self::$sVersionList[$productName][sizeof( self::$sVersionList[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	static public function & GetLatestReleasedVersion( $productName ) {
-		if ( sizeof( self::$sVersionListReleased[$productName] ) ) {
+		if ( isset( self::$sVersionListReleased[$productName] ) && sizeof( self::$sVersionListReleased[$productName] ) ) {
 			return self::$sVersionListReleased[$productName][sizeof( self::$sVersionListReleased[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	static public function & GetLatestUnreleasedVersion( $productName ) {
 		if ( sizeof( self::$sVersionListUnreleased[$productName] ) ) {
 			return self::$sVersionListUnreleased[$productName][sizeof( self::$sVersionListUnreleased[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	static public function & GetLatestPreviewVersion( $productName ) {
 		if ( sizeof( self::$sVersionListPreview[$productName] ) ) {
 			return self::$sVersionListPreview[$productName][sizeof( self::$sVersionListPreview[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	/**
