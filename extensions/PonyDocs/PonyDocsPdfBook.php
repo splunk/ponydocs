@@ -88,13 +88,14 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			exit;
 		}
 
-		// Determine product
+		// Determine Oroduct
 		if ( isset( $_GET['product'] ) && PonyDocsProduct::IsProduct( $_GET['product'] ) ) {
+			error_log("get prodcut");
 			$productName = $_GET['product'];
 		} else {
+			error_log("title product");
 			$productName = $pieces[1];
 		}
-		$productName = $pieces[1];
 		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
 		// Gate for invalid product
 		if ($pProduct === NULL) { 
