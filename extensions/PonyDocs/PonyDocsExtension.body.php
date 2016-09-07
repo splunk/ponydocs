@@ -212,8 +212,6 @@ class PonyDocsExtension {
 		$fromLinksToDelete = array();
 		// if this is not set, we're not looking at a Topic (probably we're looking at a TOC) and we don't need doclinks
 		if ($fromNamespace == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME && isset( $fromTopic ) ) {
-			// @todo only process this topic if it's not a TOC.
-
 			// Get the versions associated with this topic
 			$topic = new PonyDocsTopic($article);
 			// @todo do we need to load versions for foreign products as well?
@@ -222,24 +220,19 @@ class PonyDocsExtension {
 			
 			// Add a link to the database for each version
 			foreach ($ponydocsVersions as $version) {
-				error_log("Version: " . $version->getProductName() . ':' . $version->getVersionShortName());
-				
 				// Make a pretty PonyDocs URL (with slashes) out of the mediawiki title (with colons)
 				// Set product and version from $ver
 				$fromLink = "$fromNamespace/" . $version->getProductName() . "/" . $version->getVersionShortName()
 					. "/$fromManual/$fromTopic";
-				error_log("from: $fromLink");
 				// Add this title to the array of titles to be deleted from the database
 				$fromLinksToDelete[] = $fromLink;
 
 				if ($updateOrDelete == "update") {
 					// Add links in article to database
 					foreach ($matches as $match) {
-						error_log($match[1]);
 						// Get pretty to_link
 						$toUrl = self::translateTopicTitleForDocLinks($match[1], $fromNamespace, $version, $topic);
 						// Add this from_link and to_link to array to be inserted into the database
-						error_log("to: $toUrl");
 						if ($toUrl) {
 							$toAndFromLinksToInsert[] = array(
 								'from_link' => $fromLink,
@@ -390,13 +383,10 @@ class PonyDocsExtension {
 		$toUrl = $title;
 
 		// Do special parsing for PonyDocs titles
-		if (strpos($toUrl, PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) !== false) {
+		if ( strpos($toUrl, PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) !== FALSE ) {
 			$pieces = explode(':', $title);
-			// Evaluate based on the different "forms" our internal documentation links can take.
+			// [[Documentation:Topic]]
 			if (sizeof($pieces) == 2) {
-				// Handles links with no product/manual/version specified:
-				// (Namespace was prepended at the beginning of this function)
-				// [[Documentation:Topic]] -> Documenation/Product/Version/Manual/Topic
 				if ( $ver === NULL || $topic === NULL ) {
 					error_log("WARNING [PonyDocs] [" . __METHOD__ . "] If no Product, Manual, and Version specified in PonyDocs title, must include version and topic objects when calling translateTopicTitleForDocLinks().");
 					return FALSE;
@@ -407,42 +397,46 @@ class PonyDocsExtension {
 
 				// Put together the $toUrl
 				$toUrl = $pieces[0] . '/' . $ver->getProductName() . '/' . $ver->getVersionShortName() . '/' . $topicMetaData['manual'] . '/' . $pieces[1];
-
-			} else if (sizeof($pieces) == 4) {
-				// Handles links with no version specified:
-				// [[Documentation:Product:Manual:Topic]] ->
-				// Documentation/Product/Version/Manual/Topic
+			// [[Documentation:Product:Manual:Topic]] -> Documentation/Product/Version/Manual/Topic
+			} elseif (sizeof($pieces) == 4) {
+				if ( $pieces[1] == '*' ) {
+					$productName = $ver->getProductName();
+				} else {
+					$productName = $pieces[1];
+				}
 
 				// Handle links to other products that don't specify a version
-				if ($ver !== NULL) { // link is from non-Ponydocs namespace
+				if ($ver !== NULL) {
 					$fromProduct = $ver->getProductName();
 				} else {
 					$fromProduct = '';
 				}
-				$toProduct = $pieces[1];
 				
-				if ($fromProduct != $toProduct) {
-					$toVersion = "latest";
+				if ($fromProduct != $productName) {
+					$versionName = "latest";
 				} else {
 					if ($ver === NULL) {
-						error_log("WARNING [PonyDocs] [" . __METHOD__ . "] If Version is not specified in title, must include version object when calling translateTopicTitleForDocLinks().");
-						return false;
+						error_log( "WARNING [PonyDocs] [" . __METHOD__ . "] If Version is not specified in title, "
+							. "you must include version object when calling translateTopicTitleForDocLinks()." );
+						return FALSE;
 					}
-					$toVersion = $ver->getVersionShortName();
+					$versionName = $ver->getVersionShortName();
 				}
 
 				// Put together the $toUrl
-				$toUrl = $pieces[0] . '/' . $pieces[1] . '/' . $toVersion . '/' . $pieces[2] . '/' . $pieces[3];
-
+				$toUrl = $pieces[0] . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' . $pieces[3];
+			// [[Documentation:Product:Manual:Topic:Version]]
 			} elseif ( sizeof( $pieces ) == 5 ) {
-				// Handles links with full product/version/manual specified:
-				// [[Documentation:Product:Manual:Topic:Version]] =>
-				// Documentation/Product/Version/Manual/Topic
-				$toUrl = $pieces[0] . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' . $pieces[3];
+				if ( $pieces[1] == '*' ) {
+					$productName = $ver->getProductName();
+				} else {
+					$productName = $pieces[1];
+				}
+				$toUrl = $pieces[0] . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' . $pieces[3];
 			} else {
 				// Not a valid number of pieces in title
-				error_log("WARNING [PonyDocs] [" . __METHOD__ . "] Wrong number of pieces in PonyDocs title.");
-				return false;
+				error_log( "WARNING [PonyDocs] [" . __METHOD__ . "] Wrong number of pieces in PonyDocs title." );
+				return FALSE;
 			}
 		}
 
@@ -1529,7 +1523,6 @@ HEREDOC;
 		// This will return NULL if we're on a TOC, which is why we also clear caches in the previous method
 		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
 		if ( $manual ) {
-			error_log('boar');
 			$topicName = $topic->getTopicName();
 			$versionsToClear = $topic->getProductVersions();
 			
