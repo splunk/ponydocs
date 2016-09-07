@@ -197,28 +197,7 @@ class PonyDocsExtension {
 
 		if ($updateOrDelete == "update") {
 			// Match all links in the article
-			/* Breakdown of the regex below:
-			 * two left brackets
-			 * followed by zero or more misc chars ($match[1]), until
-			 * a pound followed by one or more misc chars ($match[2]) -- but this section is optional
-			 * followed by an optional |
-			 * followed by zero or more misc chars ($match[4]) ($match[3] is the misc chars plus the |)
-			 * followed by two right brackets
-			 * Things that would match:
-			 * [[TextHere:OtherTextHere#MoreText|StillMoreText]]
-			 * [[TextHere:MoreText:Text:Text|StillMoreText]]
-			 * [[TextHere:MoreText:Text:Text:Text|StillMoreText]]
-			 * [[TextHere:OtherTextHere|StillMoreText]]
-			 * [[TextHereStillMoreText]]
-			 * etc.
-			 * For PonyDocs, this maps to:
-			 * [[Topic]]
-			 * [[Documentation:Product:Manual:Topic]]
-			 * [[Documentation:Product:Manual:Topic:Version]]
-			 * [[OtherNamespace:Topic]]
-			 */
-			// TODO we really should refactor this regex; for now, leaving intact
-			$regex = "/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 _-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -]*))\]\]/";
+			$regex = "/\[\[([A-Za-z0-9,:._ -*]*)(\#[A-Za-z0-9 _-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -]*))\]\]/";
 			preg_match_all($regex, $content, $matches, PREG_SET_ORDER);
 		}
 
@@ -238,14 +217,15 @@ class PonyDocsExtension {
 			$topic = new PonyDocsTopic($article);
 			PonyDocsProductVersion::LoadVersionsForProduct($titlePieces[1], true, true);
 			$ponydocsVersions = $topic->getProductVersions();
-
+			
 			// Add a link to the database for each version
 			foreach ($ponydocsVersions as $ver) {
-				
+				error_log("Version: " . $ver->getProductName() . ':' . $ver->getVersionShortName());
 				// Make a pretty PonyDocs URL (with slashes) out of the mediawiki title (with colons)
 				// Put this $ver in the version spot. We want one URL per inherited version
 				$titleNoVersion = $fromNamespace . ":" . $titlePieces[1] . ":" . $titlePieces[2] . ":" . $titlePieces[3];
 				$humanReadableTitle = self::translateTopicTitleForDocLinks($titleNoVersion, $fromNamespace, $ver, $topic); // this will add the version
+				error_log("from: $humanReadableTitle");
 				// Add this title to the array of titles to be deleted from the database
 				$fromLinksToDelete[] = $humanReadableTitle;
 
@@ -254,9 +234,9 @@ class PonyDocsExtension {
 					foreach ($matches as $match) {
 						// Get pretty to_link
 						$toUrl = self::translateTopicTitleForDocLinks($match[1], $fromNamespace, $ver, $topic);
-
 						// Add this from_link and to_link to array to be inserted into the database
-						if($toUrl) {
+						error_log("to: $toUrl");
+						if ($toUrl) {
 							$toAndFromLinksToInsert[] = array(
 								'from_link' => $humanReadableTitle,
 								'to_link' => $toUrl
@@ -1109,21 +1089,7 @@ HEREDOC;
 	 * - set the H1 to the alternate text (if supplied)
 	 * - tag it for the versions of the currently being viewed page
 	 * 
-	 * Links that autocreate topics:
-	 * [[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
-	 * [[Dev:HowToFoo|How To Foo]] <- Creates Dev:HowToFoo and sets H1.
-	 * [[Documentation:User:SomeTopic|Some Topic]] <- To create link to another manual, will use selected version.
-	 * [[Documentation:User:SomeTopic:1.0|Topic]] <- Specific title in another manual.
-	 * [[:Main_Page|Main Page]] <- Link to a page in the global namespace.
-	 *
-	 * Other link formats:
-	 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-	 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
-	 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
-	 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
-	 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
-	 *
-	 * When creating the link in Documentation namespace, it uses the CURRENT MANUAL being viewed.. and the selected version?
+	 * For doclink formats see onStripBeforeParse()
 	 * 
 	 * @param Article $article
 	 * @param User $user
@@ -1170,7 +1136,6 @@ HEREDOC;
 				/**
 				 * Doclink formats:
 				 * - [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-				 * - [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
 				 * - [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
 				 * - [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
 				 * - [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
