@@ -20,31 +20,30 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 	 * Called when an unknown action occurs on url.  We are only interested in zipmanual action.
 	 */
 	function onUnknownAction($action, $article) {
-		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
-		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
+		global $wgOut, $wgTitle, $wgUser;
 
-		// We don't do any processing unless it's zipmanual
-		if ($action != 'zipmanual') {
-			return true;
+		// Gate for zipmanual action
+		if ( $action != 'zipmanual' ) {
+			return TRUE;
 		}
 
-		$zipAllowed = false;
+		$zipAllowed = FALSE;
 		PonyDocsExtension::onUserCan( $wgTitle, $wgUser, 'zipmanual', &$zipAllowed );
 		if ( !$zipAllowed ) {
-			error_log("WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission.");
+			error_log( "WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission." );
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 			header( "Location: " . $defaultRedirect );
 			exit;
 		}
 	
-		// Get the title and make sure we're in Documentation namespace
+		// Gate for Documentation namespace
 		$title = $article->getTitle();
-		if($title->getNamespace() != NS_PONYDOCS) {
-			return true;
+		if ( $title->getNamespace() != NS_PONYDOCS ) {
+			return TRUE;
 		}
 
 		// Grab parser options for the logged in user.
-		$opt = ParserOptions::newFromUser($wgUser);
+		$opt = ParserOptions::newFromUser( $wgUser );
 
 		// Any potential titles to exclude
 		$exclude = array();
@@ -66,12 +65,17 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 			exit;
 		}
 
-		$productName = $pieces[1];
-		$ponydocs = PonyDocsWiki::getInstance();
-		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
-		if ($pProduct === NULL) { // product wasn't valid
+		// Determine Product
+		if ( isset( $_GET['product'] ) && PonyDocsProduct::IsProduct( $_GET['product'] ) ) {
+			$productName = $_GET['product'];
+		} else {
+			$productName = $pieces[1];
+		}
+		$pProduct = PonyDocsProduct::GetProductByShortName( $productName );
+		// product wasn't valid
+ 		if ( $pProduct === NULL ) {
 			wfProfileOut( __METHOD__ );
-			$wgOut->setStatusCode(404);
+			$wgOut->setStatusCode( 404 );
 			return FALSE;
 		}
 		$productLongName = $pProduct->getLongName();
