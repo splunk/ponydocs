@@ -197,28 +197,7 @@ class PonyDocsExtension {
 
 		if ($updateOrDelete == "update") {
 			// Match all links in the article
-			/* Breakdown of the regex below:
-			 * two left brackets
-			 * followed by zero or more misc chars ($match[1]), until
-			 * a pound followed by one or more misc chars ($match[2]) -- but this section is optional
-			 * followed by an optional |
-			 * followed by zero or more misc chars ($match[4]) ($match[3] is the misc chars plus the |)
-			 * followed by two right brackets
-			 * Things that would match:
-			 * [[TextHere:OtherTextHere#MoreText|StillMoreText]]
-			 * [[TextHere:MoreText:Text:Text|StillMoreText]]
-			 * [[TextHere:MoreText:Text:Text:Text|StillMoreText]]
-			 * [[TextHere:OtherTextHere|StillMoreText]]
-			 * [[TextHereStillMoreText]]
-			 * etc.
-			 * For PonyDocs, this maps to:
-			 * [[Topic]]
-			 * [[Documentation:Product:Manual:Topic]]
-			 * [[Documentation:Product:Manual:Topic:Version]]
-			 * [[OtherNamespace:Topic]]
-			 */
-			// TODO we really should refactor this regex; for now, leaving intact
-			$regex = "/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 _-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -]*))\]\]/";
+			$regex = "/\[\[([A-Za-z0-9,:._ -*]*)(\#[A-Za-z0-9 _-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -]*))\]\]/";
 			preg_match_all($regex, $content, $matches, PREG_SET_ORDER);
 		}
 
@@ -226,39 +205,37 @@ class PonyDocsExtension {
 		$title = $article->getTitle()->getFullText();
 		$titlePieces = explode(':', $title);
 		$fromNamespace = $titlePieces[0];
+		$fromProduct = $titlePieces[1];
+		$fromManual = $titlePieces[2];
+		$fromTopic = isset( $titlePieces[3] ) ? $titlePieces[3] : NULL;
 		$toAndFromLinksToInsert = array();
 		$fromLinksToDelete = array();
-		// $titlePieces[3] is the version
 		// if this is not set, we're not looking at a Topic (probably we're looking at a TOC) and we don't need doclinks
-		if ($fromNamespace == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME && isset( $titlePieces[3] ) ) {
-			// TODO only process this topic if it's not a TOC.
-			// Do PonyDocs-specific stuff (loop through all inherited versions)
-
+		if ($fromNamespace == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME && isset( $fromTopic ) ) {
 			// Get the versions associated with this topic
 			$topic = new PonyDocsTopic($article);
-			PonyDocsProductVersion::LoadVersionsForProduct($titlePieces[1], true, true);
+			// @todo do we need to load versions for foreign products as well?
+			PonyDocsProductVersion::LoadVersionsForProduct($fromProduct, true, true);
 			$ponydocsVersions = $topic->getProductVersions();
-
+			
 			// Add a link to the database for each version
-			foreach ($ponydocsVersions as $ver) {
-				
+			foreach ($ponydocsVersions as $version) {
 				// Make a pretty PonyDocs URL (with slashes) out of the mediawiki title (with colons)
-				// Put this $ver in the version spot. We want one URL per inherited version
-				$titleNoVersion = $fromNamespace . ":" . $titlePieces[1] . ":" . $titlePieces[2] . ":" . $titlePieces[3];
-				$humanReadableTitle = self::translateTopicTitleForDocLinks($titleNoVersion, $fromNamespace, $ver, $topic); // this will add the version
+				// Set product and version from $ver
+				$fromLink = "$fromNamespace/" . $version->getProductName() . "/" . $version->getVersionShortName()
+					. "/$fromManual/$fromTopic";
 				// Add this title to the array of titles to be deleted from the database
-				$fromLinksToDelete[] = $humanReadableTitle;
+				$fromLinksToDelete[] = $fromLink;
 
 				if ($updateOrDelete == "update") {
 					// Add links in article to database
 					foreach ($matches as $match) {
 						// Get pretty to_link
-						$toUrl = self::translateTopicTitleForDocLinks($match[1], $fromNamespace, $ver, $topic);
-
+						$toUrl = self::translateTopicTitleForDocLinks($match[1], $fromNamespace, $version, $topic);
 						// Add this from_link and to_link to array to be inserted into the database
-						if($toUrl) {
+						if ($toUrl) {
 							$toAndFromLinksToInsert[] = array(
-								'from_link' => $humanReadableTitle,
+								'from_link' => $fromLink,
 								'to_link' => $toUrl
 							);
 						}
@@ -379,6 +356,15 @@ class PonyDocsExtension {
 		return PONYDOCS_TEMP_DIR;
 	}
 
+	/**
+	 * Format to_links for updateOrDeleteDocLinks() 
+	 * 
+	 * @param string $title
+	 * @param string $fromNamespace
+	 * @param PonyDocsProducVersion $ver
+	 * @param PonyDocsTopic $topic
+	 * @return boolean|string
+	 */
 	static public function translateTopicTitleForDocLinks($title, $fromNamespace = NULL, $ver = NULL, $topic = NULL) {
 
 		if (PONYDOCS_DEBUG) {
@@ -397,17 +383,13 @@ class PonyDocsExtension {
 		$toUrl = $title;
 
 		// Do special parsing for PonyDocs titles
-		if (strpos($toUrl, PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) !== false) {
+		if ( strpos($toUrl, PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) !== FALSE ) {
 			$pieces = explode(':', $title);
-			// Evaluate based on the different "forms" our internal documentation links can take.
+			// [[Documentation:Topic]]
 			if (sizeof($pieces) == 2) {
-				// Handles links with no product/manual/version specified:
-				// (Namespace was prepended at the beginning of this function)
-				// [[Documentation:Topic]] ->
-				// Documenation/Product/Version/Manual/Topic
-				if ($ver === NULL || $topic === NULL) {
+				if ( $ver === NULL || $topic === NULL ) {
 					error_log("WARNING [PonyDocs] [" . __METHOD__ . "] If no Product, Manual, and Version specified in PonyDocs title, must include version and topic objects when calling translateTopicTitleForDocLinks().");
-					return false;
+					return FALSE;
 				}
 				// Get the manual
 				$toTitle = $topic->getTitle();
@@ -415,41 +397,46 @@ class PonyDocsExtension {
 
 				// Put together the $toUrl
 				$toUrl = $pieces[0] . '/' . $ver->getProductName() . '/' . $ver->getVersionShortName() . '/' . $topicMetaData['manual'] . '/' . $pieces[1];
-
-			} else if (sizeof($pieces) == 4) {
-				// Handles links with no version specified:
-				// [[Documentation:Product:Manual:Topic]] ->
-				// Documentation/Product/Version/Manual/Topic
+			// [[Documentation:Product:Manual:Topic]] -> Documentation/Product/Version/Manual/Topic
+			} elseif (sizeof($pieces) == 4) {
+				if ( $pieces[1] == '*' ) {
+					$productName = $ver->getProductName();
+				} else {
+					$productName = $pieces[1];
+				}
 
 				// Handle links to other products that don't specify a version
-				if ($ver !== NULL) { // link is from non-Ponydocs namespace
+				if ($ver !== NULL) {
 					$fromProduct = $ver->getProductName();
 				} else {
 					$fromProduct = '';
 				}
-				$toProduct = $pieces[1];
-				if ($fromProduct != $toProduct) {
-					$toVersion = "latest";
+				
+				if ($fromProduct != $productName) {
+					$versionName = "latest";
 				} else {
 					if ($ver === NULL) {
-						error_log("WARNING [PonyDocs] [" . __METHOD__ . "] If Version is not specified in title, must include version object when calling translateTopicTitleForDocLinks().");
-						return false;
+						error_log( "WARNING [PonyDocs] [" . __METHOD__ . "] If Version is not specified in title, "
+							. "you must include version object when calling translateTopicTitleForDocLinks()." );
+						return FALSE;
 					}
-					$toVersion = $ver->getVersionShortName();
+					$versionName = $ver->getVersionShortName();
 				}
 
 				// Put together the $toUrl
-				$toUrl = $pieces[0] . '/' . $pieces[1] . '/' . $toVersion . '/' . $pieces[2] . '/' . $pieces[3];
-
-			} else if(sizeof($pieces) == 5) {
-				// Handles links with full product/version/manual specified:
-				// [[Documentation:Product:Manual:Topic:Version]] =>
-				// Documentation/Product/Version/Manual/Topic
-				$toUrl = $pieces[0] . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' . $pieces[3];
+				$toUrl = $pieces[0] . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' . $pieces[3];
+			// [[Documentation:Product:Manual:Topic:Version]]
+			} elseif ( sizeof( $pieces ) == 5 ) {
+				if ( $pieces[1] == '*' ) {
+					$productName = $ver->getProductName();
+				} else {
+					$productName = $pieces[1];
+				}
+				$toUrl = $pieces[0] . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' . $pieces[3];
 			} else {
 				// Not a valid number of pieces in title
-				error_log("WARNING [PonyDocs] [" . __METHOD__ . "] Wrong number of pieces in PonyDocs title.");
-				return false;
+				error_log( "WARNING [PonyDocs] [" . __METHOD__ . "] Wrong number of pieces in PonyDocs title." );
+				return FALSE;
 			}
 		}
 
@@ -635,9 +622,9 @@ class PonyDocsExtension {
 				
 				// For each version, if any are released, then redirect to special latest doc
 				if ( $res2->numRows() ) {
-					while ( $row = $dbr->fetchObject( $res ) ) {
+					while ( $row = $dbr->fetchObject( $res2 ) ) {
 						if ( preg_match( '/^V:(.*):(.*)/i', $row->cl_to, $vmatch ) ) {
-							if (PonyDocsProductVersion::IsReleasedVersion( $vmatch[1], $vmatch[2] ) ) {
+							if (PonyDocsProductVersion::isReleasedVersion( $vmatch[1], $vmatch[2] ) ) {
 								if ( PONYDOCS_DEBUG ) {
 									error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__
 										. "] redirecting to $wgScriptPath/Special:PonyDocsLatestDoc?t=$title" );
@@ -1109,21 +1096,7 @@ HEREDOC;
 	 * - set the H1 to the alternate text (if supplied)
 	 * - tag it for the versions of the currently being viewed page
 	 * 
-	 * Links that autocreate topics:
-	 * [[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
-	 * [[Dev:HowToFoo|How To Foo]] <- Creates Dev:HowToFoo and sets H1.
-	 * [[Documentation:User:SomeTopic|Some Topic]] <- To create link to another manual, will use selected version.
-	 * [[Documentation:User:SomeTopic:1.0|Topic]] <- Specific title in another manual.
-	 * [[:Main_Page|Main Page]] <- Link to a page in the global namespace.
-	 *
-	 * Other link formats:
-	 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-	 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
-	 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
-	 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
-	 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
-	 *
-	 * When creating the link in Documentation namespace, it uses the CURRENT MANUAL being viewed.. and the selected version?
+	 * For doclink formats see onStripBeforeParse()
 	 * 
 	 * @param Article $article
 	 * @param User $user
@@ -1170,7 +1143,6 @@ HEREDOC;
 				/**
 				 * Doclink formats:
 				 * - [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-				 * - [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
 				 * - [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
 				 * - [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
 				 * - [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
@@ -1551,7 +1523,6 @@ HEREDOC;
 		// This will return NULL if we're on a TOC, which is why we also clear caches in the previous method
 		$manual = PonyDocsProductManual::GetCurrentManual($productName, $title);
 		if ( $manual ) {
-			error_log('boar');
 			$topicName = $topic->getTopicName();
 			$versionsToClear = $topic->getProductVersions();
 			
@@ -1732,249 +1703,202 @@ EOJS;
 	/**
 	 * Implement ParserBeforeStrip Hook
 	 * 
-	 * This hook is called before any form of substitution or parsing is done on the text.
-	 * $text is modifiable -- we can do any sort of substitution, addition/deleting, replacement, etc. on it
-	 * This is perfect to doing wiki link substitution for URL rewriting and so forth.
+	 * Handle doclinks, which are always of the form [[<blah>]]
+	 * We can skip other markups that also use this structure like Category tags, external links, and links to non-topic pages.
+	 * The rest we need to grab and produce proper anchors and replace in the output.
+	 * Doclinks formats that we parse
+	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>:<VERSION>]]
+	 * - [[Documentation:<PRODUCT>:<MANUAL>:<TOPIC>]]
+	 * - [[TopicName]]
+	 * If product is omitted, we'll use current product (but see PI exceptions below)Any omitted product/manual/version will be replaced with current product/manual/version.
+	 * If manual is omitted, we'll use current manual.
+	 * If version is omitted, we'll use current version for same-product links, latest version for inter-product links
+	 * To support product inheritance
+	 * - If product is "*", we'll use current product
+	 * - If the current topic is inherited, and the product matches the base product, and a same-product link exists, 
+	 *   we'll make a same-product link instead of linking to the base product
 	 *
-	 * @static
 	 * @param Parser $parser
 	 * @param string $text
 	 * @return boolean|string
 	 */
-	static public function onParserBeforeStrip( &$parser, &$text )
-	{
-		global $action, $wgTitle, $wgArticlePath, $wgOut, $action;
+	static public function onParserBeforeStrip( &$parser, &$text ) {
+		global $action, $wgArticlePath, $wgTitle;
 
+		// Gate for title
 		$dbr = wfGetDB( DB_SLAVE );
-		if(empty($wgTitle)) {
-			return true;
+		if (empty( $wgTitle ) ) {
+			return TRUE;
 		}
 
-		// We want to do link substitution in all namespaces now.
-		$doWikiLinkSubstitution = true;
-		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/');
-
-		$doStripH1 = false;
-		foreach( $matches as $m )
-			if( preg_match( $m, $wgTitle->__toString( )))
-				$doStripH1 = true;
-
-		if( !strcmp( $action, 'submit' ) && preg_match( '/^Someone else has changed this page/i', $text ))
-		{
+		// Gate for rejected edits
+		if ( !strcmp( $action, 'submit' ) && preg_match( '/^Someone else has changed this page/i', $text ) ) {
 			$text = '';
-			return true;
+			return TRUE;
 		}
 
 		/**
-		 * Strip out ANY H1 HEADER.  This has the nice effect of only stripping it out during render and not during edit or
-		 * anything.  We should only be doing this for Documentation namespace?
-		 *
-		 * Note, we've put false into the if statement, because we're 
-		 * disabling this "feature", per WEB-2890.
-		 *
-		 * Keeping the code in, just in case we want to re-enable.
+		 * In each match:
+		 * 	0 = Entire string to match
+		 *  1 = Title
+		 *  2 = Anchor (optional)
+		 *  3 = |Display Text (optional)
+		 *  4 = Display Text
+		 * @todo: i'm not sure why the | is optional, or why we have a separate group for the text including the bar
 		 */
-		if( $doStripH1 && false )
-			$text = preg_replace( '/^\s*=.*=.*\n?/', '', $text );
-
-		/**
-		 * Handle our wiki links, which are always of the form [[<blah>]].  There are built-in functions however that also use
-		 * this structure (like Category tags).  We need to filter these out AND filter out any external links.  The rest we
-		 * need to grab and produce proper anchor's and replace in the output.  In each:
-		 * 	0=Entire string to match
-		 *  1=Title
-		 *  2=Ignore
-		 *  3=Display Text (optional)
-		 * Possible forms:
-		 *	[[TopicName]]								Translated to Documentation:<currentManual>:<topicName>:<selectedVersion>
-		 *	[[Documentation:<manual>:<topic>]]			Translated to Documentation:<manual>:<topic>:<selectedVersion>
-		 *	[[Documentation:<manual>:<topic>:<version>]]No translation done -- exact link.
-		 *	[[Namespace:Topic]]							No translation done -- exact link.
-		 *  [[:Topic]]									Link to topic in global namespace - preceding colon required!
-		 */
-
-		//if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:.'_!@\"()#$ -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
-		if( $doWikiLinkSubstitution 
-			&& preg_match_all(
-				"/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/",
-				$text,
-				$matches,
-				PREG_SET_ORDER ) ) {
-			//echo '<pre>'; print_r( $matches ); die();
-			/**
-			 * For each, find the topic in categorylinks which is tagged with currently selected version then produce
-			 * link and replace in output ($text).  Simple!
-			 */
+		if ( preg_match_all(
+			"/\[\[([A-Za-z0-9,:._ -*]*)(\#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
+			$text,
+			$matches,
+			PREG_SET_ORDER ) ) {
+			
 			$selectedProduct = PonyDocsProduct::GetSelectedProduct();
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
-			// No longer bail on $pManual not being set.  We should only need it 
-			// for [[Namespace:Topic]]
 
+			$inheritedTopic = FALSE;
+			$pageTitlePieces = explode(':', $wgTitle->__toString());
+			if ( array_key_exists( 1, $pageTitlePieces ) && $pageTitlePieces[1] != $selectedProduct ) {
+				$inheritedTopic = TRUE;
+				$baseProductName = $pageTitlePieces[1];
+			}
+
+			// Use categorylinks to find topic tagged with currently selected version, produce link, and replace in output ($text)
 			foreach ( $matches as $match ) {
-				/**
-				 * Namespace used.  If NOT Documentation, just output the link.
-				 */
-				if ( strpos( $match[1], ':' ) !== false && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 ) {
-					$pieces = explode( ':', $match[1] );
-					/**
-					 * [[Documentation:Manual:Topic]] => Documentation/<currentProduct>/<currentVersion>/Manual/Topic
-					 */
-					if ( 3 == sizeof( $pieces ) ) {
-						$res = $dbr->select(
-							'categorylinks',
-							'cl_from', 
-							array(
-								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
-								'cl_type = "page"',
-								'cl_sortkey LIKE "' . $dbr->strencode( strtoupper( "{$pieces[1]}:{$pieces[2]}" ) ) . ':%"',
-							),
-							__METHOD__
-						);
+				$pieces = explode( ':', $match[1] );
+				$url = NULL;
+				
+				// Gate for piece count
+				if (! ( count( $pieces ) == 1
+						|| count( $pieces ) == 4
+						|| count( $pieces ) == 5 ) ) {
+					continue;
+				}
 
-						if ( $res->numRows() ) {
-							global $title;
-							// Our title is our url.  We should check to see if 
-							// latest is our version.  If so, we want to FORCE 
-							// the URL to include /latest/ as the version 
-							// instead of the version that the user is 
-							// currently in.
-							$tempParts = explode("/", $title);
-							$latest = false;
-							if(!empty($tempParts[1]) && (!strcmp($tempParts[1], "latest"))) {
-								$latest = true;
-							}
-							// Okay, let's determine if the VERSION that the user is in is latest, 
-							// if so, we should set latest to true.
-							if($selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct)) {
-								$latest = true;
-							}
-							$href = str_replace( 
-								'$1',
-								//TODO: There is no $pieces[3] per the if clause we're in, so???
-								PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' 
-									. ( $latest ? "latest" : $selectedVersion ) . '/' . $pieces[2] . '/'  
-									. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '',
-										$pieces[3] ),
-								$wgArticlePath );
-							$href .= $match[2];
-							if ( isset( $_SERVER['SERVER_NAME'] ) ) {
-								$text =	str_replace(
-									$match[0],
-									"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] )
-										. ']',
-									$text );
-							}
-						}
-					/**
-					 * [[Documentation:Product:Manual:Topic]] => Documentation/Product/<latest_or_selected>/Manual/Topic
-					 * If linking within same product, stay on selected version; otherwise use "latest" for cross-product link
-					 */
-					} else if ( 4 == sizeof( $pieces ) ) {
-						$linkProduct = $pieces[1]; // set product in link for legibility
-						
-						// If this is a link to the current project, use the selected version. Otherwise set version to latest.
-						if ( !strcmp($selectedProduct, $linkProduct) ) {
-							$version = $selectedVersion;
-						} else {
-							$version = 'latest';
-						}
-						
-						// If the version is "latest", translate that to a real version number. Use product that was in the link.
-						if ($version == 'latest') {
-							PonyDocsProductVersion::LoadVersionsForProduct($linkProduct);
-							$versionObj = PonyDocsProductVersion::GetLatestReleasedVersion($linkProduct);
-							$dbVersion = ($versionObj === NULL) ? NULL : $versionObj->getVersionShortName();
-						} else {
-							$dbVersion = $version;
-						}
-						
-						// Database call to see if this topic exists in the product/version specified in the link
+				// Gate for Documentation namespace when there's more than one piece
+				if ( count( $pieces ) > 1 && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) !== 0 ) {
+					continue;
+				}
+				
+				// Gate for page type and manual when there's one piece
+				if ( count( $pieces ) == 1
+					// Make sure we're on a Topic page
+					&& ( ! preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
+						|| ! isset( $pManual ) ) ) {
+					continue;
+				}
+
+				// Set product name
+				$productName = $selectedProduct;
+				if ( count( $pieces ) == 5 || count( $pieces ) == 4 ) {
+					if ($pieces[1] != "*") {
+						$productName = $pieces[1];
+					}
+					// If we're in an inherited topic, and this link is to the base product,
+					// link to a topic in the selected product if possible
+					if ( $inheritedTopic && $productName == $baseProductName ) {
+						// See if topic exists in the selected product
 						$res = $dbr->select(
 							'categorylinks',
 							'cl_from',
 							array(
-								"cl_to = 'V:" . $linkProduct . ":" . $dbVersion . "'",
-								'cl_type = "page"',
-								"cl_sortkey LIKE '"
-									. $dbr->strencode( strtoupper( implode( ":", array_slice( $pieces, 1 ) ) ) ) . ":%'",
+								"cl_to = '" . $dbr->strencode( "V:$selectedProduct:$selectedVersion" ) . "'",
+								"cl_type = 'page'",
+								"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$baseProductName:$pieces[2]:$pieces[3]" ) )
+									. ":%'",
 							 ),
 							__METHOD__
 						);
-
-						if ( !$res->numRows() ) {
-							// This article is not found.
-							continue;
+					
+						if ( $res->numRows() ) {
+							$productName = $selectedProduct;
 						}
-						
-						$href = str_replace(
-							'$1',
-							PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $linkProduct . '/' . $version . '/' . $pieces[2] . '/' 
-								. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ),
-							$wgArticlePath );
-						$href .= $match[2];
-						$text = str_replace(
-							$match[0], 
-							"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', 
-							$text );
-					}
-
-					/**
-					 * [[Documentation:Product:User:Topic:Version]] => Documentation/Product/Version/User/Topic
-					 */
-					else if( 5 == sizeof( $pieces ))
-					{
-						$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
-						$href .= $match[2];
-
-						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
 				}
-				else
-				{
-					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
-					if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':.*:.*:.*:.*/i', $wgTitle->__toString() )
-						|| !isset($pManual)) {
-						continue;
+
+				// Set version name
+				$versionName = $selectedVersion;
+				if ( count( $pieces ) == 5 ) {
+					$versionName = $pieces[4];
+				} elseif ( count ( $pieces ) == 4 ) {
+					if ($selectedProduct != $productName ) {
+						$versionName = 'latest';
 					}
+					// If the version is "latest", translate that to a real version number. Use product that was in the link.
+					if ($versionName == 'latest') {
+						PonyDocsProductVersion::LoadVersionsForProduct($productName);
+						$version = PonyDocsProductVersion::GetLatestReleasedVersion($productName);
+						if (! $version ) {
+							continue;
+						}
+						$versionName = $version->getVersionShortName();
+					}
+				}
+				
+				// [[Documentation:Product:Manual:Topic:Version]]
+				if ( count( $pieces ) == 5 ) {
+					$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' 
+						. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] );
+				// [[Documentation:Product:Manual:Topic]]
+				} elseif ( count( $pieces ) == 4 ) {
+					// Database call to see if this topic exists in the product/version specified in the link
+					$res = $dbr->select(
+						'categorylinks',
+						'cl_from',
+						array(
+							"cl_to = 'V:$productName:$versionName'",
+							"cl_type = 'page'",
+							"cl_sortkey LIKE '"
+								. $dbr->strencode( strtoupper( "%:$pieces[2]:$pieces[3]" ) ) . ":%'",
+						 ),
+						__METHOD__
+					);
+
+					if ( $res->numRows() ) {
+						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' 
+							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] );
+					}
+				// [[Topic]]
+				} elseif ( count( $pieces ) == 1 ) {
+					$manualName = $pManual->getShortName();
 					
 					$res = $dbr->select(
 						'categorylinks',
 						'cl_from', 
 						array(
-							"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'",
+							"cl_to = 'V:" . $productName . ":" . $versionName . "'",
 							'cl_type = "page"',
 							"cl_sortkey LIKE '" . $dbr->strencode(
-								strtoupper( $selectedProduct . ':' . $pManual->getShortName() . ':' . $match[1] ) ) . ":%'",
+								strtoupper( $productName . ':' . $manualName . ':' . $match[1] ) ) . ":%'",
 						),
 						__METHOD__
 					);
 
-					/**
-					 * We might need to make it a "non-link" at this point instead of skipping it.
-					 */
-					if ( !$res->numRows() ) {
-						continue;
+					if ( $res->numRows() ) {
+						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/'
+								. $manualName . '/' 
+								. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] );
 					}
-
-					$href = str_replace(
-						'$1',
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/'
-							. $pManual->getShortName() . '/' 
-							. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] ),
-						$wgArticlePath
-					);
-					$href .= $match[2];
-
-					$text = str_replace( 
-						$match[0],
-						"[http://{$_SERVER['SERVER_NAME']}$href " . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']',
-						$text
-					);
+				}
+				
+				if ( isset( $url ) ) {
+					// Construct URL
+					$href = str_replace( '$1', $url, $wgArticlePath );
+					// Add in anchor
+					if ( !empty( $match[2] ) ) {
+						$href .= $match[2];
+					}
+					// Rebuild as external link
+					$text = str_replace(
+						$match[0], 
+						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( !empty( $match[4] ) ? $match[4] : $match[1] ) 
+							. ']',
+						$text );
 				}
 			}
 		}
-		return true;
+		
+		return TRUE;
 	}
 
 	/**
