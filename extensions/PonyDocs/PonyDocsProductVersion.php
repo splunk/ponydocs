@@ -480,7 +480,6 @@ class PonyDocsProductVersion {
 	 * @static
 	 */
 	static public function isReleasedVersion( $productName, $versionName ) {
-		error_log(print_r(self::$sVersionMapReleased['SplunkCloud'], TRUE));
 		return isset( self::$sVersionMapReleased[$productName][$versionName] );
 	}
 

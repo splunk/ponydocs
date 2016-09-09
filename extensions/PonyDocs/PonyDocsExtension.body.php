@@ -221,7 +221,7 @@ class PonyDocsExtension {
 			// Add a link to the database for each version
 			foreach ($ponydocsVersions as $version) {
 				// Make a pretty PonyDocs URL (with slashes) out of the mediawiki title (with colons)
-				// Set product and version from $ver
+				// Set product and version from $version
 				$fromLink = "$fromNamespace/" . $version->getProductName() . "/" . $version->getVersionShortName()
 					. "/$fromManual/$fromTopic";
 				// Add this title to the array of titles to be deleted from the database
@@ -288,9 +288,6 @@ class PonyDocsExtension {
 			$insertQuery = "INSERT INTO ponydocs_doclinks (from_link, to_link) VALUES (" . $insertValuesString . ")";
 			$dbh->query($insertQuery);
 		}
-
-
-		return true;
 	}
 
 	static public function isSpeedProcessingEnabled() {
@@ -357,7 +354,9 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * Format to_links for updateOrDeleteDocLinks() 
+	 * Transform :-separated fake titles to /-separated paths
+	 * Use passed namespace, version, and topic to override some elements of the path
+	 * Used to generate to_links for the ponydocs_doclinks table
 	 * 
 	 * @param string $title
 	 * @param string $fromNamespace
@@ -538,13 +537,6 @@ class PonyDocsExtension {
 		$dbr = wfGetDB( DB_SLAVE );
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
-		/**
-		 * We only care about Documentation namespace for rewrites and they must contain a slash, so scan for it.
-		 * $matches[1] = product
-		 * $matches[2] = latest|version
-		 * $matches[3] = manual
-		 * $matches[4] = topic
-		 */
 		if ( !preg_match(
 			'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', 
 			$title->__toString(),
@@ -552,14 +544,6 @@ class PonyDocsExtension {
 			return FALSE;
 		}
 
-		/**
-		 * At this point $matches contains:
-		 * 	0= Full title.
-		 *  1= Product name
-		 *  2= Version OR 'latest' as a string.
-		 *  3= Manual name (short name).
-		 *  4= Wiki topic name.
-		 */
 		$productName = $matches[1];
 		$versionName = $matches[2];
 		$manualName = $matches[3];
@@ -1737,15 +1721,13 @@ EOJS;
 			return TRUE;
 		}
 
-		/**
-		 * In each match:
-		 * 	0 = Entire string to match
-		 *  1 = Title
-		 *  2 = Anchor (optional)
-		 *  3 = |Display Text (optional)
-		 *  4 = Display Text
-		 * @todo: i'm not sure why the | is optional, or why we have a separate group for the text including the bar
-		 */
+		// This regex breaks down a mediawiki internal link (https://www.mediawiki.org/wiki/Help:Links#Internal_links)
+		// Matches have the following capture groups:
+		// 0 = Entire string to match
+		// 1 = Title
+		// 2 = Anchor
+		// 3 = |Display Text (because this part is optional, we need an extra group to hang the ? on)
+		// 4 = Display Text
 		if ( preg_match_all(
 			"/\[\[([A-Za-z0-9,:._ -*]*)(\#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
 			$text,
