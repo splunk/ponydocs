@@ -74,6 +74,7 @@ PonyDocsValidators = function() {
 SplunkBranchInherit = function() {
 	var sourceProduct = '';
 	var sourceVersion = '';
+	var targetProduct = '';
 	var targetVersion = '';
 	var manuals = [];
 	var defaultAction = 'ignore';
@@ -96,11 +97,11 @@ SplunkBranchInherit = function() {
 				else {
 					sourceVersion = $('#versionselect_sourceversion').val();
 				}
+				targetProduct = $( '#docsTargetProductSelect' ).val();
 				targetVersion = $('#versionselect_targetversion').val();
-				if(sourceVersion == targetVersion) {
+				if ( sourceVersion == targetVersion ) {
 					alert('Target version can not be the same as source version.');
-				}
-				else {
+				} else {
 					$('#docbranchinherit .sourceversion').html(sourceVersion);
 					$('#docbranchinherit .targetversion').html(targetVersion);
 					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
@@ -205,6 +206,10 @@ SplunkBranchInherit = function() {
 						});
 					});
 			});
+		},
+		
+		setupManuals: function( res ) {
+			
 		},
 			
 		setupTopicActions: function(res) {
