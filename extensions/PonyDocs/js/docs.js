@@ -106,7 +106,7 @@ SplunkBranchInherit = function() {
 					$('#docbranchinherit .targetversion').html(targetVersion);
 					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
 					if ( forceTitle == null ) {
-						var manuals = setupManuals();
+						var manuals = SplunkBranchInherit.setupManuals();
 						var container = $( '#manualselect_manuals' );
 						container.html( '' );
 						for ( index in manuals ) {
@@ -130,10 +130,9 @@ SplunkBranchInherit = function() {
 			$(document).on( 'change', '.sectiondefault', null, function() {
 				var val = $(this).val();
 				$(this).siblings("table").find("option[value='" + val + "']").attr("selected", "selected");
-				if(val == "inherit") {
+				if (val == "inherit") {
 					$(this).siblings("table").find("option[value='inheritpurge']").attr("selected", "selected");
-				}
-				if(val == "branch") {
+				} else if (val == "branch") {
 					$(this).siblings("table").find("option[value='branchsplit']").attr("selected", "selected");
 				}
 			});
@@ -211,6 +210,7 @@ SplunkBranchInherit = function() {
 		setupManuals: function() {
 			var sourceManuals = '';
 			var targetManuals = '';
+			var manuals = '';
 			
 			sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
 				sourceManuals = eval(res.responseText);
@@ -220,11 +220,12 @@ SplunkBranchInherit = function() {
 				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct, null], function(res) {
 					targetManuals = eval(res.responseText);
 				});
-				// var manuals = intersection of source and target manuals
+				// @todo manuals = intersection of source and target manuals
+				manuals = sourceManuals;
 			} else {
-				var manuals = sourceManuals;
+				manuals = sourceManuals;
 			}
-			
+
 			return manuals;
 		},
 			
