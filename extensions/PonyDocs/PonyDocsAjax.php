@@ -3,19 +3,21 @@ if( !defined( 'MEDIAWIKI' ))
 	die( "PonyDocs MediaWiki Extension" );
 	
 /**
- * This contains any Ajax functionality supported in the PonyDocs extension.  Each function should be added to the $wgAjaxExportList
- * so it can be called from the sajax_do_call() JS function.  Note that you should always call this providing a callback function
- * then use this function to convert the response text to a String object, otherwise it causes serious problems in IE and Firefox.
- * The syntax is simply:
- *	sajax_do_call( 'functionName', args, callback );
+ * This contains any Ajax functionality supported in the PonyDocs extension.
+ * Each function should be added to the $wgAjaxExportList so it can be called from the sajax_do_call() JS function.
+ * You should always call this with a callback function, using the callback to convert the response text to a String object,
+ * otherwise it causes serious problems in IE and Firefox.
+ * The syntax: sajax_do_call( 'functionName', args, callback );
  *
  * Requires $wgUseAjax to be set to true.
  */
 
 $wgExtensionFunctions[] = 'efPonyDocsAjaxInit';
-$wgAjaxExportList[] = 'efPonyDocsAjaxRemoveVersions';
-$wgAjaxExportList[] = 'efPonyDocsAjaxChangeVersion';
+
 $wgAjaxExportList[] = 'efPonyDocsAjaxChangeProduct';
+$wgAjaxExportList[] = 'efPonyDocsAjaxChangeVersion';
+$wgAjaxExportList[] = 'efPonyDocsAjaxGetVersions';
+$wgAjaxExportList[] = 'efPonyDocsAjaxRemoveVersions';
 
 /**
  * Basic init function to ensure Ajax is enabled.
@@ -23,7 +25,7 @@ $wgAjaxExportList[] = 'efPonyDocsAjaxChangeProduct';
 function efPonyDocsAjaxInit()
 {
 	global $wgUseAjax;
-	if( !$wgUseAjax ) {
+	if ( !$wgUseAjax ) {
 		wfDebug( 'efAjaxRemoveVersions: $wgUseAjax must be enabled for Ajax functionality.' );
 	}
 }
@@ -188,6 +190,19 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 }
 
 /**
+ * Return a list of available versions for a product.
+ * 
+ * To invoke from JS: sajax_do_call( "efPonyDocsAjaxGetVersions", [productName], callback );
+ * 
+ * @param string $productName
+ * @return string json-encoded array of versions
+ */
+function efPonyDocsAjaxGetVersions( $productName ) {
+	$versions = json_encode( PonyDocsProductVersion::GetVersions( $productName ) );
+	return $versions;
+}
+
+/**
  * To use this inside the HTML, you need to execute the call:
  *
  * 	sajax_do_call("efPonyDocsAjexRemoveVersions", [title,versions], callback );
@@ -200,8 +215,7 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
  * @param string $versionList Colon delimited list of versions.
  * @return AjaxResponse
  */
-function efPonyDocsAjaxRemoveVersions( $title, $versionList )
-{
+function efPonyDocsAjaxRemoveVersions( $title, $versionList ) {
 	global $wgRequest;
 
 	/**

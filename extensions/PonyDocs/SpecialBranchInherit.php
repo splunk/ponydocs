@@ -557,11 +557,12 @@ class SpecialBranchInherit extends SpecialPage
 
 						function AjaxChangeSourceProduct() {
 							var productIndex = document.getElementById( 'docsSourceProductSelect' ).selectedIndex;
-							var product = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
-							var title = '<?= $_SERVER['REQUEST_URI'] ?>'; // TODO fix this title
+							var productName = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
+							// @todo fix this title
+							var title = '<?= $_SERVER['REQUEST_URI'] ?>';
 							var force = true;
 							sajax_do_call(
-								'efPonyDocsAjaxChangeProduct', [product, title, force], AjaxChangeSourceProduct_callback, true );
+								'efPonyDocsAjaxChangeProduct', [productName, title, force], AjaxChangeSourceProduct_callback, true );
 						}
 					</script>
 
@@ -616,16 +617,17 @@ class SpecialBranchInherit extends SpecialPage
 				<script language="javascript">
 					function AjaxChangeTargetProduct_callback( o ) {
 						document.getElementById( 'docsTargetProductSelect' ).disabled = true;
-						// disable version select too
-						// update version select values
+						document.getElemenyById( 'versionselect_targetversion'.disabled = true;
+						var versions = eval(res.responseText);
+						// build a new select to replace targetversion
 						document.getElementById( 'docsTargetProductSelect' ).disabled = false;
-						// reenable version select too
+						document.getElemenyById( 'versionselect_targetversion'.disabled = false;
 					}
 
 					function AjaxChangeTargetProduct() {
 						var productIndex = document.getElementById( 'docsTargetProductSelect' ).selectedIndex;
-						var product = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
-						sajax_do_call( 'efPonyDocsAjaxGetVersions', [product], AjaxChangeTargetProduct_callback, true);
+						var productName = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
+						sajax_do_call( 'efPonyDocsAjaxGetVersions', [productName], AjaxChangeTargetProduct_callback, true);
 					}
 				</script>
 				<?php
