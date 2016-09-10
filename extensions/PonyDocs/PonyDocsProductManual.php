@@ -138,7 +138,7 @@ class PonyDocsProductManual
 	 * @return array
 	 */
 
-	static public function LoadManualsForProduct( $productName, $reload = FALSE, $respectVersion = TRUE ) {
+	static public function LoadManualsForProduct( $productName, $reload = FALSE ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -185,8 +185,8 @@ class PonyDocsProductManual
 
 				self::$sDefinedManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
 				
-				// If we're respecting verions, skip non-static manuals w/o TOCs
-				if ( $respectVersion && !$static ) {
+				// Skip non-static manuals w/o TOCs
+				if ( !$static ) {
 					$res = PonyDocsCategoryLinks::getTOCByProductManualVersion(
 						$productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion( $productName ) );
 					if ( !$res->numRows() ) {
