@@ -426,9 +426,9 @@ class SpecialBranchInherit extends SpecialPage
 					$numOfTopicsCompleted++;
 				}
 			}
-			//WEB-10792, Clear TOCCACHE for the target version only, each Manual at a time
+			// Clear TOCCACHE for the target version only, each Manual at a time
 			PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);
-			//Also clear the NAVCache for the target version
+			// Also clear the NAVCache for the target version
 			PonyDocsProductVersion::clearNAVCache($targetVersion);
 		}
 		list ($msec, $sec) = explode(' ', microtime());
@@ -511,7 +511,8 @@ class SpecialBranchInherit extends SpecialPage
 		<div class="versionselect">
 			<h1>Branch and Inheritance Console</h1>
 
-			Begin by selecting your product, source version material and a target version below.  You will then be presented with additional screens to specify branch and inherit behavior.
+			Begin by selecting your source product and version material, and target product and version below.
+			You will then be presented with additional screens to specify branch and inherit behavior.
 			<?php
 			if(isset($_GET['titleName'])) {
 				?>
@@ -522,55 +523,54 @@ class SpecialBranchInherit extends SpecialPage
 			}
 			?>
 
-			<h2>Choose a Product</h2>
+			<h2>Choose a source Product</h2>
 
 			<?php
-			if (isset($_GET['titleName'])) {
+			if ( isset( $_GET['titleName'] ) ) {
 				?>
-				You have selected a product: <?= $forceProduct ?>
+				You have selected a product: <?php echo $forceProduct; ?>
 			<?php
 			} else {
-				if (!count($products)) {
+				if ( !count( $products ) ) {
 					print "<p>No products defined.</p>";
-				} else {
-				?>
-				<div class="product">
-					<select id="docsProductSelect1" name="selectedProduct" onChange="AjaxChangeProduct1();">
-					<?php
-						foreach( $products as $idx => $data ) {
-							echo '<option value="' . $data['name'] . '" ';
-							if( !strcmp( $data['name'], $forceProduct ))
-								echo 'selected';
-							echo '>' . $data['label'] . '</option>';
+				} else { ?>
+					<div class="product">
+						<select id="docsSourceProductSelect" name="selectedSourceProduct" onChange="AjaxChangeSourceProduct();">
+						<?php
+							foreach( $products as $idx => $data ) {
+								echo '<option value="' . $data['name'] . '" ';
+								if ( !strcmp( $data['name'], $forceProduct ) )
+									echo 'selected';
+								echo '>' . $data['label'] . '</option>';
+							}
+						?>
+						</select>
+					</div>
+
+					<script language="javascript">
+						function AjaxChangeSourceProduct_callback( o ) {
+							document.getElementById( 'docsSourceProductSelect' ).disabled = true;
+							var s = new String( o.responseText );
+							document.getElementById( 'docsSourceProductSelect' ).disabled = false;
+							window.location.href = s;
 						}
-					?>
-					</select>
-				</div>
 
-				<script language="javascript">
-				function AjaxChangeProduct1_callback( o ) {
-					document.getElementById('docsProductSelect1').disabled = true;
-					var s = new String( o.responseText );
-					document.getElementById('docsProductSelect1').disabled = false;
-					window.location.href = s;
+						function AjaxChangeSourceProduct() {
+							var productIndex = document.getElementById( 'docsSourceProductSelect' ).selectedIndex;
+							var product = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
+							var title = '<?= $_SERVER['REQUEST_URI'] ?>'; // TODO fix this title
+							var force = true;
+							sajax_do_call(
+								'efPonyDocsAjaxChangeProduct', [product, title, force], AjaxChangeSourceProduct_callback, true );
+						}
+					</script>
+
+
+				<?php
 				}
+			} ?>
 
-				function AjaxChangeProduct1( ) {
-					var productIndex = document.getElementById('docsProductSelect1').selectedIndex;
-					var product = document.getElementById('docsProductSelect1')[productIndex].value;
-					var title = '<?= $_SERVER['REQUEST_URI'] ?>'; // TODO fix this title
-					var force = true;
-					sajax_do_call( 'efPonyDocsAjaxChangeProduct', [product,title,force], AjaxChangeProduct1_callback,true);
-				}
-				</script>
-
-
-			<?php
-				}
-			}
-			?>
-
-			<h2>Choose a Source Version</h2>
+			<h2>Choose a source Version</h2>
 			<?php
 				// Determine if topic was set, if so, we should fetch version from currently selected version.
 				if(isset($_GET['titleName'])) {
@@ -581,7 +581,7 @@ class SpecialBranchInherit extends SpecialPage
 				}
 				else {
 					?>
-					<select name="version" id="versionselect_sourceversion">
+					<select name="sourceversion" id="versionselect_sourceversion">
 						<?php
 						foreach($versions as $version) {
 							?>
@@ -593,18 +593,55 @@ class SpecialBranchInherit extends SpecialPage
 					<?php
 				}
 			?>
-			<h2>Choose a Target Version</h2>
-			<select name="version" id="versionselect_targetversion">
-				<?php
-				foreach($versions as $version) {
+					
+			<h2>Choose a target Product</h2>
+
+			<?php
+			if ( !count( $products ) ) {
+				print "<p>No products defined.</p>";
+			} else { ?>
+				<div class="product">
+					<select id="docsTargetProductSelect" name="selectedTargetProduct" onChange="AjaxChangeTargetProduct();">
+					<?php
+						foreach( $products as $idx => $data ) {
+							echo '<option value="' . $data['name'] . '" ';
+							if ( !strcmp( $data['name'], $forceProduct ) )
+								echo 'selected';
+							echo '>' . $data['label'] . '</option>';
+						}
 					?>
+					</select>
+				</div>
+
+				<script language="javascript">
+					function AjaxChangeTargetProduct_callback( o ) {
+						document.getElementById( 'docsTargetProductSelect' ).disabled = true;
+						// disable version select too
+						// update version select values
+						document.getElementById( 'docsTargetProductSelect' ).disabled = false;
+						// reenable version select too
+					}
+
+					function AjaxChangeTargetProduct() {
+						var productIndex = document.getElementById( 'docsTargetProductSelect' ).selectedIndex;
+						var product = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
+						sajax_do_call( 'efPonyDocsAjaxGetVersions', [product], AjaxChangeTargetProduct_callback, true);
+					}
+				</script>
+				<?php
+			} ?>
+
+			<h2>Choose a target Version</h2>
+			<select name="targetversion" id="versionselect_targetversion">
+				<?php
+				foreach( $versions as $version ) { ?>
 					<option value="<?php echo $version->getVersionShortName();?>"><?php echo $version->getVersionShortName() . " - " . $version->getVersionStatus();?></option>
 					<?php
-				}
-				?>
+				} ?>
 			</select>
+
 			<p>
-			<input type="button" id="versionselect_submit" value="Continue to Manuals" />
+				<input type="button" id="versionselect_submit" value="Continue to Manuals" />
 			</p>
 		</div>
 

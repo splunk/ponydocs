@@ -257,8 +257,7 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
  * @return AjaxResponse
  */
 
-function efPonyDocsAjaxCloneExternalTopic( $topic, $destTitle )
-{
+function efPonyDocsAjaxCloneExternalTopic( $topic, $destTitle ) {
 	$response = new AjaxResponse( );
 	$response->setCacheDuration( false );
 
@@ -290,12 +289,7 @@ function efPonyDocsAjaxCloneExternalTopic( $topic, $destTitle )
 		return $response;
 	}
 
-	$content = $article->getContent( );
-	//$content = preg_replace( '/\[\[
+	$article->getContent( );
 
 	return $response;
 }
-
-/**
- * End of file.
- */
