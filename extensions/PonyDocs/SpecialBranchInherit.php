@@ -616,7 +616,7 @@ class SpecialBranchInherit extends SpecialPage
 						document.getElementById( 'docsTargetProductSelect' ).disabled = true;
 						document.getElementById( 'versionselect_targetversion' ).disabled = true;
 						var versions = eval( o.responseText );
-						// build a new select to replace targetversion
+						rebuildTargetVersionSelect( versions );
 						document.getElementById( 'docsTargetProductSelect' ).disabled = false;
 						document.getElementById( 'versionselect_targetversion' ).disabled = false;
 					}
@@ -625,6 +625,22 @@ class SpecialBranchInherit extends SpecialPage
 						var productIndex = document.getElementById( 'docsTargetProductSelect' ).selectedIndex;
 						var productName = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
 						sajax_do_call( 'efPonyDocsAjaxGetVersions', [productName], AjaxChangeTargetProduct_callback, true);
+					}
+					
+					function rebuildTargetVersionSelect( versions ) {
+						var targetVersionSelect = document.getElementById( 'versionselect_targetversion');
+						// Remove options
+						var selectLength = targetVersionSelect.length;
+						for ( var i = 0; i < selectLength; i++ ) {
+							targetVersionSelect.remove(0);
+						}
+						// Add options
+						for ( var i = 0; i < versions.length; i++ ) {
+							option = document.createElement( 'option' );
+							option.setAttribute( 'value', versions[i].short_name );
+							option.appendChild(document.createTextNode( versions[i].short_name + ' - ' + versions[i].status ) );
+							targetVersionSelect.appendChild( option );
+						}
 					}
 				</script>
 				<?php
