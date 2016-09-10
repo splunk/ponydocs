@@ -198,8 +198,15 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
  * @return string json-encoded array of versions
  */
 function efPonyDocsAjaxGetVersions( $productName ) {
-	$versions = json_encode( PonyDocsProductVersion::GetVersions( $productName ) );
-	return $versions;
+	$versions = PonyDocsProductVersion::LoadVersionsForProduct( $productName, TRUE );
+	$response = array();
+	foreach ( $versions as $version ) {
+		$response[] = array (
+			'short_name' => $version->getVersionShortName(),
+			'status' => $version->getVersionStatus(),
+		);
+	}
+	return json_encode( $response );
 }
 
 /**

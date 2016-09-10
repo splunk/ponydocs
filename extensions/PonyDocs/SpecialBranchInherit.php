@@ -451,11 +451,8 @@ class SpecialBranchInherit extends SpecialPage
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
-	public function execute( )
-	{
-		error_log(__METHOD__);
-		global $wgOut, $wgArticlePath, $wgScriptPath;
-		global $wgUser;
+	public function execute() {
+		global $wgOut, $wgUser;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -617,11 +614,11 @@ class SpecialBranchInherit extends SpecialPage
 				<script language="javascript">
 					function AjaxChangeTargetProduct_callback( o ) {
 						document.getElementById( 'docsTargetProductSelect' ).disabled = true;
-						document.getElemenyById( 'versionselect_targetversion'.disabled = true;
-						var versions = eval(res.responseText);
+						document.getElementById( 'versionselect_targetversion' ).disabled = true;
+						var versions = eval( o.responseText );
 						// build a new select to replace targetversion
 						document.getElementById( 'docsTargetProductSelect' ).disabled = false;
-						document.getElemenyById( 'versionselect_targetversion'.disabled = false;
+						document.getElementById( 'versionselect_targetversion' ).disabled = false;
 					}
 
 					function AjaxChangeTargetProduct() {
