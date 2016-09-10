@@ -47,22 +47,28 @@ class SpecialBranchInherit extends SpecialPage
 	/**
 	 * AJAX method to fetch manuals for a specified product and version
 	 *
-	 * @param $ver string The string representation of the version to retrieve
-	 * 					  manuals for.
+	 * @param $productName string
+	 * @param $versionName string
  	 * @returns string JSON representation of the manuals
 	 */
-	public static function ajaxFetchManuals($product, $ver) {
-		PonyDocsProductVersion::LoadVersionsForProduct($product);
-		PonyDocsProductVersion::SetSelectedVersion($product, $ver);
-		$manuals = PonyDocsProductManual::LoadManualsForProduct($product, TRUE);
-		$result = array();
-		foreach($manuals as $manual) {
+	public static function ajaxFetchManuals( $productName, $versionName ) {
+		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
+		
+		if ( isset( $versionName ) ) {
+			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionName);
+			$manuals = PonyDocsProductManual::LoadManualsForProduct( $productName, TRUE);
+		} else {
+			$manuals = PonyDocsProductManual::GetDefinedManuals( $productName );
+		}
+		
+		$response = array();
+		foreach ( $manuals as $manual ) {
 			if ( !$manual->isStatic() ) {
-				$result[] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
+				$response[] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
 			}
 		}
-		$result = json_encode($result);
-		return $result;
+		
+		return json_encode( $response );
 	}
 
 	/**

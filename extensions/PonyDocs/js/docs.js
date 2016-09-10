@@ -105,22 +105,22 @@ SplunkBranchInherit = function() {
 					$('#docbranchinherit .sourceversion').html(sourceVersion);
 					$('#docbranchinherit .targetversion').html(targetVersion);
 					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
-					if(forceTitle == null) {
-						sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
-							var manuals = eval(res.responseText);
-							var container = $('#manualselect_manuals');
-							container.html('');
-							for(index in manuals) {
-								var html = "<input id=\"manual_" + manuals[index]['shortname'] + "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname'] + "\" /><label for=\"manual_" + manuals[index]['shortname'] + "\">" + manuals[index]['longname'] + "</label><br />";
-								container.prepend(html);
-							}
-							$('#docbranchinherit .versionselect').fadeOut(function () {
-								$('#versionselect_submit').attr("value", "Continue to Manuals").removeAttr("disabled");
-								$('#docbranchinherit .manualselect').fadeIn();
-							});
+					if ( forceTitle == null ) {
+						var manuals = setupManuals();
+						var container = $( '#manualselect_manuals' );
+						container.html( '' );
+						for ( index in manuals ) {
+							var html = "<input id=\"manual_" + manuals[index]['shortname']
+								+ "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname']
+								+ "\" /><label for=\"manual_" + manuals[index]['shortname'] + "\">" + manuals[index]['longname']
+								+ "</label><br />";
+							container.prepend( html );
+						}
+						$( '#docbranchinherit .versionselect' ).fadeOut( function () {
+							$( '#versionselect_submit' ).attr( "value", "Continue to Manuals" ).removeAttr( "disabled" );
+							$( '#docbranchinherit .manualselect' ).fadeIn();
 						});
-					}
-					else {
+					} else {
 						// Force handling a title.
 						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
 					}
@@ -208,8 +208,24 @@ SplunkBranchInherit = function() {
 			});
 		},
 		
-		setupManuals: function( res ) {
+		setupManuals: function() {
+			var sourceManuals = '';
+			var targetManuals = '';
 			
+			sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
+				sourceManuals = eval(res.responseText);
+			});
+			
+			if ( sourceProduct != targetProduct ) {
+				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct, null], function(res) {
+					targetManuals = eval(res.responseText);
+				});
+				// var manuals = intersection of source and target manuals
+			} else {
+				var manuals = sourceManuals;
+			}
+			
+			return manuals;
 		},
 			
 		setupTopicActions: function(res) {
