@@ -40,8 +40,7 @@ function efPonyDocsAjaxInit()
  * @param boolean $force Force the change, no matter if a doc is in the same product or not
  * @return AjaxResponse
  */
-function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
-{
+function efPonyDocsAjaxChangeProduct( $product, $title, $force = FALSE ) {
 	global $wgArticlePath;
 
 	$dbr = wfGetDB( DB_SLAVE );
@@ -50,13 +49,11 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
 	$response = new AjaxResponse( );
 
 	if ($force) {
-		// This is coming from the search page.  let's not do any title look up,
-		// and instead just pass back the same url.
-		$leadingSlash = "/";
-		if (substr($title, 0,1) == "/") {
-			$leadingSlash = "";
+		// This is coming from the search page.  let's not do any title look up, and instead just pass back the same url.
+		if ( ! substr( $title, 0,1 ) == "/" ) {
+			$title = "/$title";
 		}
-		$response->addText($leadingSlash . $title); // Need to make the url non-relative
+		$response->addText( $title ); // Need to make the url non-relative
 		return $response;
 	}
 

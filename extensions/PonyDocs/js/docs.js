@@ -92,7 +92,7 @@ SplunkBranchInherit = function() {
 				var productIndex = document.getElementById( 'docsSourceProductSelect' ).selectedIndex;
 				var productName = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
 				// @todo fix this title
-				var title = '/' + window.location.pathname;
+				var title = window.location.pathname;
 				var force = true;
 				sajax_do_call(
 					'efPonyDocsAjaxChangeProduct', [productName, title, force], function( o ) {
@@ -195,7 +195,8 @@ SplunkBranchInherit = function() {
 				});
 				$("#manualselect_submit").attr("disabled", "disabled").attr("value", "Fetching Data...");
 				// Okay, let's fetch our tocs.
-				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
+				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', 
+					[sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
 			});
 
 			$('#topicactions_submit').click(function() {
@@ -262,6 +263,7 @@ SplunkBranchInherit = function() {
 				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct, null], function(res) {
 					targetManuals = eval(res.responseText);
 				});
+				
 				// @todo manuals = intersection of source and target manuals
 				manuals = sourceManuals;
 			} else {
