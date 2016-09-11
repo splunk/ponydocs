@@ -87,6 +87,48 @@ SplunkBranchInherit = function() {
 
 	return {
 		init: function() {
+			// Change the current version and reload the page when source product changes
+			$( '#docsSourceProductSelect' ).change( function() {
+				var productIndex = document.getElementById( 'docsSourceProductSelect' ).selectedIndex;
+				var productName = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
+				// @todo fix this title
+				var title = '/' + window.location.pathname;
+				var force = true;
+				sajax_do_call(
+					'efPonyDocsAjaxChangeProduct', [productName, title, force], function( o ) {
+						document.getElementById( 'docsSourceProductSelect' ).disabled = true;
+						var s = new String( o.responseText );
+						document.getElementById( 'docsSourceProductSelect' ).disabled = false;
+						window.location.href = s;
+					}), true;
+			});
+			
+			// Update the target version select when target product changes
+			$( '#docsTargetProductSelect' ).change( function() {
+				var productIndex = document.getElementById( 'docsTargetProductSelect' ).selectedIndex;
+				var productName = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
+				sajax_do_call( 'efPonyDocsAjaxGetVersions', [productName], function( o ) {
+					document.getElementById( 'docsTargetProductSelect' ).disabled = true;
+					document.getElementById( 'versionselect_targetversion' ).disabled = true;
+					var versions = eval( o.responseText );
+					var targetVersionSelect = document.getElementById( 'versionselect_targetversion');
+					// Remove options
+					var selectLength = targetVersionSelect.length;
+					for ( var i = 0; i < selectLength; i++ ) {
+						targetVersionSelect.remove(0);
+					}
+					// Add options
+					for ( var i = 0; i < versions.length; i++ ) {
+						option = document.createElement( 'option' );
+						option.setAttribute( 'value', versions[i].short_name );
+						option.appendChild(document.createTextNode( versions[i].short_name + ' - ' + versions[i].status ) );
+						targetVersionSelect.appendChild( option );
+					}
+					document.getElementById( 'docsTargetProductSelect' ).disabled = false;
+					document.getElementById( 'versionselect_targetversion' ).disabled = false;
+				}, true);
+			});
+			
 			$('#versionselect_submit').click(function() {
 				sourceProduct = $('#force_product').val();
 				if($('#force_sourceVersion').length != 0) {

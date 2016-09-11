@@ -538,7 +538,7 @@ class SpecialBranchInherit extends SpecialPage
 					print "<p>No products defined.</p>";
 				} else { ?>
 					<div class="product">
-						<select id="docsSourceProductSelect" name="selectedSourceProduct" onChange="AjaxChangeSourceProduct();">
+						<select id="docsSourceProductSelect" name="selectedSourceProduct">
 						<?php
 							foreach( $products as $idx => $data ) {
 								echo '<option value="' . $data['name'] . '" ';
@@ -549,27 +549,6 @@ class SpecialBranchInherit extends SpecialPage
 						?>
 						</select>
 					</div>
-
-					<script language="javascript">
-						function AjaxChangeSourceProduct_callback( o ) {
-							document.getElementById( 'docsSourceProductSelect' ).disabled = true;
-							var s = new String( o.responseText );
-							document.getElementById( 'docsSourceProductSelect' ).disabled = false;
-							window.location.href = s;
-						}
-
-						function AjaxChangeSourceProduct() {
-							var productIndex = document.getElementById( 'docsSourceProductSelect' ).selectedIndex;
-							var productName = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
-							// @todo fix this title
-							var title = '<?= $_SERVER['REQUEST_URI'] ?>';
-							var force = true;
-							sajax_do_call(
-								'efPonyDocsAjaxChangeProduct', [productName, title, force], AjaxChangeSourceProduct_callback, true );
-						}
-					</script>
-
-
 				<?php
 				}
 			} ?>
@@ -605,7 +584,7 @@ class SpecialBranchInherit extends SpecialPage
 				print "<p>No products defined.</p>";
 			} else { ?>
 				<div class="product">
-					<select id="docsTargetProductSelect" name="selectedTargetProduct" onChange="AjaxChangeTargetProduct();">
+					<select id="docsTargetProductSelect" name="selectedTargetProduct">
 					<?php
 						foreach( $products as $idx => $data ) {
 							echo '<option value="' . $data['name'] . '" ';
@@ -616,39 +595,6 @@ class SpecialBranchInherit extends SpecialPage
 					?>
 					</select>
 				</div>
-
-				<script language="javascript">
-					function AjaxChangeTargetProduct_callback( o ) {
-						document.getElementById( 'docsTargetProductSelect' ).disabled = true;
-						document.getElementById( 'versionselect_targetversion' ).disabled = true;
-						var versions = eval( o.responseText );
-						rebuildTargetVersionSelect( versions );
-						document.getElementById( 'docsTargetProductSelect' ).disabled = false;
-						document.getElementById( 'versionselect_targetversion' ).disabled = false;
-					}
-
-					function AjaxChangeTargetProduct() {
-						var productIndex = document.getElementById( 'docsTargetProductSelect' ).selectedIndex;
-						var productName = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
-						sajax_do_call( 'efPonyDocsAjaxGetVersions', [productName], AjaxChangeTargetProduct_callback, true);
-					}
-					
-					function rebuildTargetVersionSelect( versions ) {
-						var targetVersionSelect = document.getElementById( 'versionselect_targetversion');
-						// Remove options
-						var selectLength = targetVersionSelect.length;
-						for ( var i = 0; i < selectLength; i++ ) {
-							targetVersionSelect.remove(0);
-						}
-						// Add options
-						for ( var i = 0; i < versions.length; i++ ) {
-							option = document.createElement( 'option' );
-							option.setAttribute( 'value', versions[i].short_name );
-							option.appendChild(document.createTextNode( versions[i].short_name + ' - ' + versions[i].status ) );
-							targetVersionSelect.appendChild( option );
-						}
-					}
-				</script>
 				<?php
 			} ?>
 
@@ -656,7 +602,8 @@ class SpecialBranchInherit extends SpecialPage
 			<select name="targetversion" id="versionselect_targetversion">
 				<?php
 				foreach( $versions as $version ) { ?>
-					<option value="<?php echo $version->getVersionShortName();?>"><?php echo $version->getVersionShortName() . " - " . $version->getVersionStatus();?></option>
+					<option value="<?php echo $version->getVersionShortName();?>"><?php echo $version->getVersionShortName()
+						. " - " . $version->getVersionStatus();?></option>
 					<?php
 				} ?>
 			</select>
