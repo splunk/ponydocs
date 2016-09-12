@@ -224,11 +224,9 @@ class PonyDocsBranchInheritEngine {
 			array(
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
-				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $version->getVersionShortName() ) . "'",
+				"cl_to = 'V:" . $dbr->strencode( $version->getProductName() . ':' . $version->getVersionShortName() ) . "'",
 				'cl_type = "page"',
-				"cl_sortkey LIKE '"
-					. $dbr->strencode( strtoupper( $product->getShortName() ) ) . ':' . strtoupper( $manual->getShortName() )
-					. "TOC%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $manual->getShortName() ) ) . "TOC%'",
 			),
 			__METHOD__
 		);
@@ -492,9 +490,9 @@ class PonyDocsBranchInheritEngine {
 			array(
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
-				"cl_to = 'V:" . $dbr->strencode( $product->getShortName() . ':' . $targetVersion->getVersionShortName() ) . "'",
+				"cl_to = 'V:" . $dbr->strencode( $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() ) . "'",
 				'cl_type = "page"',
-				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "$productName:$manual:$title" ) ) . ":%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manual:$title" ) ) . ":%'",
 			),
 			__METHOD__
 		);
