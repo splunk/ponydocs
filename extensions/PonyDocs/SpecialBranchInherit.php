@@ -476,9 +476,9 @@ class SpecialBranchInherit extends SpecialPage
 			$forceManual = $match[2];
 		} else {
 			$forceProduct = PonyDocsProduct::GetSelectedProduct();
-			$ponydocs = PonyDocsWiki::getInstance();
-			$products = $ponydocs->getProductsForTemplate( );
 		}
+		$ponydocs = PonyDocsWiki::getInstance();
+		$products = $ponydocs->getProductsForTemplate();
 
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct);
