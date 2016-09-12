@@ -205,10 +205,11 @@ class SpecialLatestDoc extends SpecialPage {
 					</p>
 					<p>
 					<?php 
-						$searchTerm = $topicName;
+						$searchTerm = trim($topicName);
 						$tempSuggArr = $primarySuggestions;
 						$suggFirstEle = array_pop( $tempSuggArr );
 						if ( !empty( $suggFirstEle['title'] ) ) {
+								$suggFirstEle['title'] = trim( $suggFirstEle['title'] );
 								$searchTerm = urlencode( $suggFirstEle['title'] );
 						}
 					?>
