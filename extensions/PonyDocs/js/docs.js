@@ -141,27 +141,14 @@ SplunkBranchInherit = function() {
 				}
 				targetProduct = $( '#docsTargetProductSelect' ).val();
 				targetVersion = $('#versionselect_targetversion').val();
-				if ( sourceVersion == targetVersion ) {
-					alert('Target version can not be the same as source version.');
+				if ( sourceProduct == targetProduct && sourceVersion == targetVersion ) {
+					alert('Target version cannot be the same as source version.');
 				} else {
 					$('#docbranchinherit .sourceversion').html(sourceVersion);
 					$('#docbranchinherit .targetversion').html(targetVersion);
 					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
 					if ( forceTitle == null ) {
-						var manuals = SplunkBranchInherit.setupManuals();
-						var container = $( '#manualselect_manuals' );
-						container.html( '' );
-						for ( index in manuals ) {
-							var html = "<input id=\"manual_" + manuals[index]['shortname']
-								+ "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname']
-								+ "\" /><label for=\"manual_" + manuals[index]['shortname'] + "\">" + manuals[index]['longname']
-								+ "</label><br />";
-							container.prepend( html );
-						}
-						$( '#docbranchinherit .versionselect' ).fadeOut( function () {
-							$( '#versionselect_submit' ).attr( "value", "Continue to Manuals" ).removeAttr( "disabled" );
-							$( '#docbranchinherit .manualselect' ).fadeIn();
-						});
+						SplunkBranchInherit.setupManuals();
 					} else {
 						// Force handling a title.
 						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
@@ -253,24 +240,37 @@ SplunkBranchInherit = function() {
 		setupManuals: function() {
 			var sourceManuals = '';
 			var targetManuals = '';
-			var manuals = '';
-			
-			sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
-				sourceManuals = eval(res.responseText);
-			});
-			
-			if ( sourceProduct != targetProduct ) {
-				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct, null], function(res) {
-					targetManuals = eval(res.responseText);
-				});
-				
-				// @todo manuals = intersection of source and target manuals
-				manuals = sourceManuals;
-			} else {
-				manuals = sourceManuals;
-			}
+			var manuals = {};
+			sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function( res ) {
+				sourceManuals = eval( res.responseText );
+				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct, null], function( res ) {
+					targetManuals = eval( res.responseText );
+					if ( sourceProduct == targetProduct ) {
+						manuals = sourceManuals;
+					} else {
+						for ( manual in sourceManuals ) {
+							if ( manual in targetManuals ) {
+								manuals[manual] = sourceManuals[manual];
+							}
+						}
+					}
 
-			return manuals;
+					var container = $( '#manualselect_manuals' );
+					container.html( '' );
+					for ( manual in manuals ) {
+						var html = "<input id=\"manual_" + manuals[manual]['shortname']
+							+ "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[manual]['shortname']
+							+ "\" /><label for=\"manual_" + manuals[manual]['shortname'] + "\">" + manuals[manual]['longname']
+							+ "</label><br />";
+						container.prepend( html );
+					}
+					
+					$( '#docbranchinherit .versionselect' ).fadeOut( function () {
+						$( '#versionselect_submit' ).attr( "value", "Continue to Manuals" ).removeAttr( "disabled" );
+						$( '#docbranchinherit .manualselect' ).fadeIn();
+					});
+				});
+			});
 		},
 			
 		setupTopicActions: function(res) {
@@ -406,7 +406,7 @@ SplunkRenameVersion = function() {
 				sourceVersion = $( '#versionselect_sourceversion' ).val();
 				targetVersion = $( '#versionselect_targetversion' ).val();
 				if ( sourceVersion == targetVersion ) {
-					alert( 'Target version can not be the same as source version.' );
+					alert( 'Target version cannot be the same as source version.' );
 				}
 				else {
 					$( '#renameversion .sourceversion' ).html( sourceVersion );

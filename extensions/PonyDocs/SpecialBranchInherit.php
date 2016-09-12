@@ -64,11 +64,12 @@ class SpecialBranchInherit extends SpecialPage
 		$response = array();
 		foreach ( $manuals as $manual ) {
 			if ( !$manual->isStatic() ) {
-				$response[] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
+				$response[$manual->getShortName()] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
 			}
 		}
 		
-		return json_encode( $response );
+		// JS eval only works with json representing objects at the top level (i.e. associative arrays) if they parenthesized
+		return "(" . json_encode( $response ) . ")";
 	}
 
 	/**
