@@ -246,6 +246,9 @@ SplunkBranchInherit = function() {
 			var manuals = {};
 			sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function( res ) {
 				sourceManuals = eval( res.responseText );
+				// This second call is only necessary when sourceProduct != targetProduct
+				// but because sajax_do_call() can't do synchronous, I'm always make the second call to keep thing simpler
+				// @todo replace sajax_do_call with jQuery.ajax *everywhere*
 				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct, null], function( res ) {
 					targetManuals = eval( res.responseText );
 					if ( sourceProduct == targetProduct ) {
