@@ -75,21 +75,22 @@ class SpecialBranchInherit extends SpecialPage
 	/**
 	 * AJAX method to fetch topics for a specified version and manuals
 	 *
-	 * @param $productName string product short name
-	 * @param $sourceVersion string String representation of the source version
-	 * @param $targetVersion string String representation of the target version
+	 * @param $sourceProductName string product short name
+	 * @param $sourceVersionName string String representation of the source version
+	 * @param $targetProductName string product short name
+	 * @param $targetVersionName string String representation of the target version
 	 * @param $manuals string Comma seperated list of manuals to retrieve from
-	 * @param $forcedTitle string A specific title to pull from and nothing else
-	 * 							  (for individual branch/inherit)
+	 * @param $forcedTitle string A specific title to pull from and nothing else (for individual branch/inherit)
 	 * @returns string JSON representation of all titles requested
 	 */
-	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $manuals, $forcedTitle = null) {
-		PonyDocsProduct::LoadProducts(true);
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		PonyDocsProductVersion::LoadVersionsForProduct(true, true);
-		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
-		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
-		if(!$sourceVersion || !$targetVersion) {
+	public static function ajaxFetchTopics(
+		$sourceProductName, $sourceVersionName, $targetProductName, $targetVersionName, $manuals, $forcedTitle = NULL ) {
+		PonyDocsProduct::LoadProducts( TRUE );
+		$product = PonyDocsProduct::GetProductByShortName( $sourceProductName );
+		PonyDocsProductVersion::LoadVersionsForProduct( TRUE, TRUE );
+		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $sourceProductName, $sourceVersionName );
+		$targetVersion = PonyDocsProductVersion::GetVersionByName( $targetProductName, $targetVersionName );
+		if (!$sourceVersion || !$targetVersion) {
 			$result = array("success", false);
 			$result = json_encode($result);
 			return $result;
@@ -98,7 +99,7 @@ class SpecialBranchInherit extends SpecialPage
 		// Okay, get manual by name.
 		$manuals = explode(",", $manuals);
 		foreach($manuals as $manualName) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+			$manual = PonyDocsProductManual::GetManualByShortName( $sourceProductName, $manualName );
 			$result[$manualName] = array();
 			$result[$manualName]['meta'] = array();
 			// Load up meta.

@@ -144,14 +144,16 @@ SplunkBranchInherit = function() {
 				if ( sourceProduct == targetProduct && sourceVersion == targetVersion ) {
 					alert('Target version cannot be the same as source version.');
 				} else {
-					$('#docbranchinherit .sourceversion').html(sourceVersion);
-					$('#docbranchinherit .targetversion').html(targetVersion);
+					$('#docbranchinherit .sourceversion').html(sourceProduct + ':' + sourceVersion);
+					$('#docbranchinherit .targetversion').html(targetProduct + ':' + targetVersion);
 					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
 					if ( forceTitle == null ) {
 						SplunkBranchInherit.setupManuals();
 					} else {
 						// Force handling a title.
-						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
+						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', 
+							[sourceProduct, sourceVersion, targetProduct, targetVersion, forceManual, forceTitle],
+							SplunkBranchInherit.setupTopicActions);
 					}
 				}
 			});
@@ -183,7 +185,8 @@ SplunkBranchInherit = function() {
 				$("#manualselect_submit").attr("disabled", "disabled").attr("value", "Fetching Data...");
 				// Okay, let's fetch our tocs.
 				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', 
-					[sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
+					[sourceProduct, sourceVersion, targetProduct, targetVersion, manuals.join(',')],
+					SplunkBranchInherit.setupTopicActions);
 			});
 
 			$('#topicactions_submit').click(function() {
