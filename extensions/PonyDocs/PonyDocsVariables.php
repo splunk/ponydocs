@@ -10,7 +10,7 @@ class PonyDocsVariables {
 			case 'PonyDocs_Product':
 				$product = $wiki->getCurrentProduct();
 				if ( $product ) {
-					$ret = $product->getLongName( TRUE );
+					$ret = preg_replace( "#<[^/]*[^/]>.*</[^>]*>#U", "", $product->getLongName( TRUE ) );
 				}
 				break;
 			case 'PonyDocs_Version':
