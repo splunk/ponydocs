@@ -63,7 +63,7 @@ class PonyDocsBranchInheritEngine {
 				}
 			}
 			elseif ( !$split ) {
-				// Ruh oh, there's conflicts and we didn't want to purge or split. Cancel out.
+				// There's conflicts and we didn't want to purge or split. Cancel out.
 				throw new Exception(
 					"When calling branchTitle, there were conflicts and purge was not requested and we're not splitting." );
 			}
@@ -89,32 +89,32 @@ class PonyDocsBranchInheritEngine {
 		// Build the versions which will go into the new array.
 		$newVersions = array();
 		// Text representation of the versions
-		$newVersions[] = $version->getVersionShortName();
+		$newVersions[] = $version->getProductName() . ":" . $version->getVersionShortName();
 		if ( $split ) {
 			// We need to get all versions from PonyDocsVersion
 			$rawVersions = PonyDocsProductVersion::GetVersions( $productName );
 			$existingVersions = array();
 			foreach ( $rawVersions as $rawVersion ) {
-				$existingVersions[] = $rawVersion->getVersionShortName();
+				$existingVersions[] = $rawVersion->getProductName() . ":" . $rawVersion->getVersionShortName();
 			}
 			// $existingVersions is now an array of version names in incremental order
 			$versionIndex = array_search( $version->getVersionShortName(), $existingVersions );
 			// versionIndex is the index where our target version is
 			// we will use this to determine what versions need to be brought over.
-			preg_match_all( "/\[\[Category:V:([^\]]*):([^\]]*)\]\]/", $existingContent, $matches );
-			foreach ( $matches[2] as $match ) {
+			preg_match_all( "/\[\[Category:V:([^\]]*:[^\]]*)\]\]/", $existingContent, $matches );
+			foreach ( $matches[1] as $match ) {
 				$index = array_search( $match, $existingVersions );
 				if ( $index > $versionIndex ) {
 					$newVersions[] = $match;
 				}
 			}
 		}
-		
+
 		// $newVersions contains all the versions that need to be pulled from the existing Content and put into the new content.
 		// So let's now remove it form the original content
-		foreach ( $newVersions as $tempVersion ) {
+		foreach ( $newVersions as $newVersion ) {
 			$existingContent = preg_replace(
-				"/\[\[Category:V:" . $productName . ":" . $tempVersion . "\]\]/", "", $existingContent );
+				"/\[\[Category:V:$newVersion\]\]/", "", $existingContent );
 		}
 		
 		// Now let's do the edit on the original content.
@@ -124,8 +124,8 @@ class PonyDocsBranchInheritEngine {
 		// Clear categories tags from new article content
 		$newContent = preg_replace( "/\[\[Category:V:([^\]]*)]]/", "", $newContent );
 		// add new category tags to new content
-		foreach ( $newVersions as $version ) {
-			$newContent .= "[[Category:V:" . $productName . ":" . $version . "]]";
+		foreach ( $newVersions as $newVersion ) {
+			$newContent .= "[[Category:V:$newVersion]]";
 		}
 		$newContent .= "\n";
 		// doEdit on new article
@@ -270,7 +270,7 @@ class PonyDocsBranchInheritEngine {
 
 		// Remove old Version from old TOC (if exists)
 		preg_match_all(
-			"/\[\[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionShortName() . "\]\]/",
+			"/\[\[Category:V:" . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() . "\]\]/",
 			$content,
 			$matches );
 		foreach ( $matches[0] as $match ) {
@@ -278,7 +278,7 @@ class PonyDocsBranchInheritEngine {
 		}
 		$article->doEdit(
 			$oldContent,
-			"Removed version " . $product->getShortName() . ':' . $targetVersion->getVersionShortName(),
+			"Removed version " . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName(),
 			EDIT_UPDATE );
 
 		// Now do the TOC for the new version
@@ -286,7 +286,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception(
 				"TOC Already exists for " . $manual->getShortName() . " with version: " . $targetVersion->getVersionShortName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . 'TOC'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $targetVersion->getProductName() . ':' . $manual->getShortName() . 'TOC'
 			. $targetVersion->getVersionShortName();
 		$newTitle = Title::newFromText( $title );
 		$wgTitle = $newTitle;
@@ -301,7 +301,7 @@ class PonyDocsBranchInheritEngine {
 		// identify the last of the old tags
 		$lastTag = $matches[0][count( $matches[0] ) - 1];
 		// make the new tag
-		$newVersionTag = "[[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionShortName() . "]]";
+		$newVersionTag = "[[Category:V:" . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() . "]]";
 		foreach ( $matches[0] as $match ) {
 			// delete tags that aren't the last tag
 			if ( $match != $lastTag ) { 
@@ -313,7 +313,7 @@ class PonyDocsBranchInheritEngine {
 		}
 		$newArticle->doEdit(
 			$content,
-			"Branched TOC For Version: " . $product->getShortName() . ':' . $sourceVersion->getVersionShortName() . " from Version: "
+			"Branched TOC For Version: " . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() . " from Version: "
 				. $product->getShortName() . ':' . $sourceVersion->getVersionShortName(),
 			EDIT_NEW);
 		return $title;
@@ -334,7 +334,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception(
 				"TOC Already exists for " . $manual->getShortName() . " with version: " . $version->getVersionShortName() );
 		}
-		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ":" . $manual->getShortName() . 'TOC'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $version->getProductName() . ":" . $manual->getShortName() . 'TOC'
 			. $version->getVersionShortName();
 
 		$newTitle = Title::newFromText( $title );
@@ -346,10 +346,10 @@ class PonyDocsBranchInheritEngine {
 		}
 
 		// New TOC. Create empty content.
-		$newContent = "\n\n[[Category:V:" . $product->getShortName() . ":" . $version->getVersionShortName() . "]]";
+		$newContent = "\n\n[[Category:V:" . $version->getProductName() . ":" . $version->getVersionShortName() . "]]";
 		$newArticle->doEdit(
 			$newContent,
-			"Created TOC For Version: " . $product->getShortName() . ":" . $version->getVersionShortName(),
+			"Created TOC For Version: " . $version->getProductName() . ":" . $version->getVersionShortName(),
 			EDIT_NEW);
 		return $title;
 	}
@@ -383,9 +383,9 @@ class PonyDocsBranchInheritEngine {
 		$lastTag = $matches[0][count($matches[0]) - 1];
 		$content = str_replace(
 			$lastTag,
-			$lastTag . "[[Category:V:" . $product->getShortName() . ':' . $newVersion->getVersionShortName() . "]]",
+			$lastTag . "[[Category:V:" . $newVersion->getProductName() . ':' . $newVersion->getVersionShortName() . "]]",
 			$content );
-		$article->doEdit( $content, "Added version " . $product->getShortName() . ':' . $version->getVersionShortName(), EDIT_UPDATE );
+		$article->doEdit( $content, "Added version " . $newVersion->getProductName() . ':' . $newVersion->getVersionShortName(), EDIT_UPDATE );
 		return TRUE;
 	}
 
