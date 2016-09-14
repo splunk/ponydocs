@@ -122,16 +122,14 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 1) Same product, different manual, current version.
 					 */
 					$res = $dbr->select(
-						array('categorylinks', 'page'),
-						array('cl_to', 'page_title') ,
-						array(
-							'cl_from = page_id',
-							'page_namespace = "' . NS_PONYDOCS . '"',
-							'cl_to LIKE "V:%:%"',
+						array( 'categorylinks', 'page' ),
+						array( 'cl_to', 'page_title' ),
+						array( "cl_from = page_id",
+							"page_namespace = '" . NS_PONYDOCS . "'",
+							"cl_to LIKE '" . $dbr->strencode( "V:$productName:%" ) . "'",
 							"cl_to = '" . $latestVersionSql . "'",
-							'cl_type = "page"',						
-							"cl_sortkey REGEXP '"
-								. $dbr->strencode( '^' . strtoupper( $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'",
+							"cl_type = 'page'",						
+							"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "%:$topicName:%" ) ) . "'",
 						),
 						__METHOD__
 					);
@@ -147,16 +145,14 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 2) Same product, same manual, earlier version
 					 */
 					$res = $dbr->select(
-						array('categorylinks', 'page'),
-						array('cl_to', 'page_title') ,
-						array(
-							'cl_from = page_id',
-							'page_namespace = "' . NS_PONYDOCS . '"',
-							'cl_to LIKE "V:%:%"',
+						array( 'categorylinks', 'page' ),
+						array( 'cl_to', 'page_title' ),
+						array( "cl_from = page_id",
+							"page_namespace = '" . NS_PONYDOCS . "'",
+							"cl_to LIKE '" . $dbr->strencode( "V:$productName:%" ) . "'",
 							"cl_to IN " . $versionSql,
-							'cl_type = "page"',						
-							"cl_sortkey REGEXP '"
-								. $dbr->strencode( '^' . strtoupper( "$productName:$manualName:$topicName:[^:]+" ) ) . "\$'",
+							"cl_type = 'page'",
+							"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "%:$manualName:$topicName:%" ) ) . "'",
 						),
 						__METHOD__
 					);

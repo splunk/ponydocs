@@ -151,11 +151,10 @@ class PonyDocsTOC
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
 				"cl_to = 'V:"
-					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() ) . "'" ,
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() )
+					. "'" ,
 				'cl_type = "page"',
-				"cl_sortkey LIKE '"
-					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
-					. "TOC%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $this->pManual->getShortName() ) ) . "TOC%'",
 			),
 			__METHOD__ );
 		
@@ -273,8 +272,9 @@ class PonyDocsTOC
 					 * See if we are CLOSING a section (i.e. $section != -1). If so, check 'subs' and ensure its >0, 
 					 * otherwise we need to remove the section from the list.
 					 */
-					if ( ( $section != -1 ) && !$toc[$section]['subs'] ) {
-							unset( $toc[$section] );
+					if ( $section != -1 && 
+						( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) ) {
+						unset( $toc[$section] );
 					}
 					if ( isset( $line[0] ) && ctype_alnum( $line[0] ) ) {
 						$toc[$idx] = array(
@@ -302,19 +302,17 @@ class PonyDocsTOC
 					$baseTopic = $matches[1];
 
 					$title_suffix = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $baseTopic );
-					$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix";
-					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $title, $selectedProduct );
+					$title = PonyDocsTopic::GetTopicNameFromBaseAndVersion(
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix",
+						$selectedProduct );
 
 					/**
 					 * Hide topics which have no content (i.e. have not been created yet) from the user viewing. 
-					 * 
 					 * Authors must go to the TOC page in order to view and edit these.
-					 * 
 					 * The only way to do this (the cleanest/quickest) is to create a Title object then see if its article ID is 0
-					 * 
-					 * @tbd: Fix so that the section name is hidden if no topics are visible?
+					 * @todo: Fix so that the section name is hidden if no topics are visible?
 					 */
-					$t = Title::newFromText( $newTitle );
+					$t = Title::newFromText( $title );
 					if ( !$t || !$t->getArticleID() ) {
 						continue;
 					}
@@ -322,9 +320,9 @@ class PonyDocsTOC
 					/**
 					 * Obtain H1 content from the article -- WE NEED TO CACHE THIS!
 					 */
-					$h1 = PonyDocsTopic::FindH1ForTitle( $newTitle );
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
 					if ( $h1 === FALSE ) {
-						$h1 = $newTitle;
+						$h1 = $title;
 					}
 
 					$href = str_replace(
@@ -339,16 +337,17 @@ class PonyDocsTOC
 						'toctitle' => $baseTopic,
 						'text' => $h1,
 						'section' => $toc[$section]['text'],
-						'title' => $newTitle,
+						'title' => $title,
 						'class' => 'toclevel-1',
 					);
 					$toc[$section]['subs']++;
 				}
 				$idx++;
 			}
-			if ( !$toc[$section]['subs'] ) {
+			if ( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) {
 				unset( $toc[$section] );
 			}
+			
 			// Okay, let's store in our cache.
 			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
 		}
@@ -504,6 +503,6 @@ class PonyDocsTOC
 		global $wgArticlePath;
 
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
-		return "$base/$productName/$TOCname";
+		return "$base/$productName/$TOCName";
 	}
 }

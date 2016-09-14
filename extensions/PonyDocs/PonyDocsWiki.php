@@ -78,7 +78,7 @@ class PonyDocsWiki {
 		
 		if ( strpos( $path, 'index.php' ) === 0 ) {
 			parse_str( $_SERVER['QUERY_STRING'], $queryParts );
-			$path = $queryParts['title'];
+			$path = isset( $queryParts['title'] ) ? $queryParts['title'] : '';
 		} 
 
 		return $path;
@@ -353,7 +353,8 @@ class PonyDocsWiki {
 					'$1', 
 					'Category:V:' . $productVersion->getProductName() . ':' . $productVersion->getVersionShortName(),
 					$wgArticlePath ),
-				'longName' => $productVersion->getVersionLongName()
+				'longName' => $productVersion->getVersionLongName(),
+				'productName' => $productVersion->getProductName(),
 			);
 		}
 

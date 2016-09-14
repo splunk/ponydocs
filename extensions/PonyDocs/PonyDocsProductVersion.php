@@ -344,11 +344,12 @@ class PonyDocsProductVersion {
 	 * @param boolean $reload True to force reload from the wiki page.
 	 * @return array LIST of all versions (not map!).
 	 * 
-	 * TODO: Cache this?
+	 * @todo: Cache this?
+	 * @todo: Throw an exception if $productName is not set
 	 */
 	static public function LoadVersionsForProduct( $productName, $reload = false, $ignorePermissions = false ) {
 		global $wgPonyDocsEmployeeGroup, $wgUser;
-
+		
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
@@ -416,6 +417,7 @@ class PonyDocsProductVersion {
 					$pVersion->setVersionGroup( $currentGroup, $currentGroupMessage );
 				}
 				if ( !strcasecmp( $pcs[1], 'UNRELEASED' ) ) {
+					// unreleased versions are only instantiated if the user can accces them
 					if ( in_array( $wgPonyDocsEmployeeGroup, $groups )
 						|| in_array( $authProductGroup, $groups )
 						|| PonyDocsCrawlerPassthrough::isAllowedCrawler()
@@ -469,15 +471,31 @@ class PonyDocsProductVersion {
 	}
 
 	/**
-	 * Retrieve a PonyDocsProductVersion instance by version name, or return null if it does not exist.
+	 * Returns whether or not a supplied version is defined.
 	 *
+	 * @param string $productName
+	 * @param string $versionName
+	 * @return boolean
+	 * 
 	 * @static
-	 * @param string $name Name of version to retrieve.
-	 * @return PonyDocsProductVersion
 	 */
-	static public function & GetVersionByName( $productName, $name ) {
+	static public function isReleasedVersion( $productName, $versionName ) {
+		return isset( self::$sVersionMapReleased[$productName][$versionName] );
+	}
+
+	/**
+	 * Retrieve a PonyDocsProductVersion instance by product and version name, or return FALSE if it does not exist.
+	 *
+	 * @param string $productName
+	 * @param string $name Version short name OR deprecated "V:VERSION" format
+	 * @return PonyDocsProductVersion OR boolean
+	 */
+	static public function GetVersionByName( $productName, $name ) {
 		// Ensure versions list has been initialized
 		self::LoadVersionsForProduct( $productName );
+		
+		// Extract version name from category tag
+		// TODO: I think this is unused
 		if ( preg_match( '/^v:(.*)/i', $name, $match ) ) {
 			$name = $match[1];
 		}
@@ -485,10 +503,7 @@ class PonyDocsProductVersion {
 			return self::$sVersionMap[$productName][$name];
 		}
 
-		// Crappy fix to resolve the issue of Only variable references should be returned by reference
-		// that's been happening for some time now.
-		$result = FALSE;
-		return $result;
+		return FALSE;
 	}
 
 	/**
@@ -543,28 +558,24 @@ class PonyDocsProductVersion {
 		if ( sizeof( self::$sVersionList[$productName] ) ) {
 			return self::$sVersionList[$productName][sizeof( self::$sVersionList[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	static public function & GetLatestReleasedVersion( $productName ) {
-		if ( sizeof( self::$sVersionListReleased[$productName] ) ) {
+		if ( isset( self::$sVersionListReleased[$productName] ) && sizeof( self::$sVersionListReleased[$productName] ) ) {
 			return self::$sVersionListReleased[$productName][sizeof( self::$sVersionListReleased[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	static public function & GetLatestUnreleasedVersion( $productName ) {
 		if ( sizeof( self::$sVersionListUnreleased[$productName] ) ) {
 			return self::$sVersionListUnreleased[$productName][sizeof( self::$sVersionListUnreleased[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	static public function & GetLatestPreviewVersion( $productName ) {
 		if ( sizeof( self::$sVersionListPreview[$productName] ) ) {
 			return self::$sVersionListPreview[$productName][sizeof( self::$sVersionListPreview[$productName] ) - 1];
 		}
-		return NULL;
 	}
 
 	/**

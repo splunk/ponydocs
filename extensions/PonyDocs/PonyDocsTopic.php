@@ -142,29 +142,36 @@ class PonyDocsTopic {
 	 * Given a 'base' topic name (Documentation:User:HowToFoo), find the proper topic name based on selected version.
 	 * If 2.1 is selected and we have a HowToFoo2.0 tagged for 2.1, return HowToFoo2.0.
 	 *
-	 * @static
 	 * @param string $baseTopic
-	 * @param string $product
+	 * @param string $productName
 	 */
-	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product ) {
+	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $productName ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$noPrefixText = preg_replace('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', '', $baseTopic);
+		$pathArray = explode(':', $baseTopic);
+
+		// Gate for pathArray - quit if we don't have a proper $baseTopic
+		if (count($pathArray) < 4) {
+			return FALSE;
+		}
+		$manualName = $pathArray[2];
+		$topicName = $pathArray[3];
 
 		$res = $dbr->select(
 			array('categorylinks', 'page'),
 			'page_title' ,
 			array(
-				'cl_from = page_id',
-				'page_namespace = "' . NS_PONYDOCS . '"',
-				"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'",
-				'cl_type = "page"',
-				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $noPrefixText ) ) . ":%'",
+				"cl_from = page_id",
+				"page_namespace = '" . NS_PONYDOCS . "'",
+				"cl_to = 'V:$productName:" . $dbr->strencode( PonyDocsProductVersion::GetSelectedVersion( $productName ) ) . "'",
+				"cl_type = 'page'",
+				// Wildcard product to support product inheritance
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 			),
 			__METHOD__ 
 		);
-
+		
 		if ( !$res->numRows() ) {
-			return false;
+			return FALSE;
 		}
 
 		$row = $dbr->fetchObject( $res );
@@ -299,8 +306,10 @@ class PonyDocsTopic {
 		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
 		// Just the names of our preview versions
 		$previewNames = array();
-		foreach ( $previewVersions as $ver ) {
-			$previewNames[] = strtolower( $ver->getVersionShortName() );
+		if ( $previewVersions ) {
+			foreach ( $previewVersions as $ver ) {
+				$previewNames[] = strtolower( $ver->getVersionShortName() );
+			}
 		}
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
