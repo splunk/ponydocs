@@ -1729,7 +1729,7 @@ EOJS;
 		// 3 = |Display Text (because this part is optional, we need an extra group to hang the ? on)
 		// 4 = Display Text
 		if ( preg_match_all(
-			"/\[\[([A-Za-z0-9,:._ -*]*)(\#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
+			"/\[\[([A-Za-z0-9,:._ *-]*)(#[A-Za-z0-9 ._-]+)?(\|([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))?\]\]/",
 			$text,
 			$matches,
 			PREG_SET_ORDER ) ) {
