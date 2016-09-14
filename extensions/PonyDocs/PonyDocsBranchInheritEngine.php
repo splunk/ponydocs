@@ -162,9 +162,9 @@ class PonyDocsBranchInheritEngine {
 
 		// Get conflicts.
 		$conflicts = self::getConflicts( $product, $topicTitle, $version );
-		if( !empty( $conflicts ) ) {
+		if ( !empty( $conflicts ) ) {
 			if ( !$deleteExisting ) {
-				throw new Exception( "When calling inheritTitle, there were conflicts and deleteExisting was false." );
+				throw new Exception( "When calling inheritTopic, there were conflicts and deleteExisting was false." );
 			}
 			// We want to purge each conflicting title completely.
 			foreach ( $conflicts as $conflict ) {
@@ -196,12 +196,14 @@ class PonyDocsBranchInheritEngine {
 		// Check for existing category.
 		$content = $existingArticle->getContent();
 		if ( !preg_match(
-			"/\[\[Category:V:" . preg_quote($productName . ":" . $version->getVersionShortName()) . "\]\]/", $content ) ) {
-			$content .= "[[Category:V:" . $productName . ":" . $version->getVersionShortName() . "]]";
+			"/\[\[Category:V:" . preg_quote( $version->getProductName() . ":" . $version->getVersionShortName() ) . "\]\]/", 
+			$content ) ) {
+			$content .= "[[Category:V:" . $version->getProductName() . ":" . $version->getVersionShortName() . "]]";
 			// Save the article as an edit
 			$existingArticle->doEdit(
 				$content,
-				"Inherited topic " . $topicTitle . " with version: " . $productName . ":" . $version->getVersionShortName(),
+				"Inherited topic " . $topicTitle . " with version: " . $version->getProductName() 
+					. ":" . $version->getVersionShortName(),
 				EDIT_UPDATE );
 		}
 		

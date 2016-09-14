@@ -227,7 +227,11 @@ SplunkBranchInherit = function() {
 						SplunkBranchInherit.jobID = res.responseText;
 						sajax_request_type = 'POST';
 						SplunkBranchInherit.fetchProgress();
-						sajax_do_call('SpecialBranchInherit::ajaxProcessRequest', [SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetVersion, $.toJSON(topicActions)], function(res) {
+						sajax_do_call(
+							'SpecialBranchInherit::ajaxProcessRequest',
+							[SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetProduct, targetVersion,
+								$.toJSON(topicActions)],
+							function(res) {
 							completed = true;
 							clearTimeout(progressTimer);
 							progressTimer = null;
