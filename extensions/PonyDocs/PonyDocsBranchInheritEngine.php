@@ -320,7 +320,7 @@ class PonyDocsBranchInheritEngine {
 		$newArticle->doEdit(
 			$content,
 			"Branched TOC For Version: " . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() 
-				. " from Version: " . $product->getShortName() . ':' . $sourceVersion->getVersionShortName(),
+				. " from Version: " . $sourceVersion->getProductName() . ':' . $sourceVersion->getVersionShortName(),
 			EDIT_NEW);
 		return $title;
 	}
