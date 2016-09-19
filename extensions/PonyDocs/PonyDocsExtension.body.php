@@ -1517,7 +1517,7 @@ HEREDOC;
 			foreach ( $removedCategories as $removedCategory ) {
 				$removedVersion = $topic->convertCategoryToVersion( $removedCategory );
 				if ( $removedVersion ) {
-					array_push( $removedVersion, $versionsToClear );
+					array_push( $versionsToClear, $removedVersion );
 				}
 			}
 		

@@ -202,7 +202,7 @@ class SpecialBranchInherit extends SpecialPage
 		$logParameters = "sourceProduct=\"" . addslashes( $sourceProductName ) 
 			. "\" sourceVersion=\"" . htmlentities( $sourceVersionName ) 
 			. "\" targetProduct=\"" . addslashes( $targetProductName )
-			. "\" targetVersion=\"" . addslashes( $targetVersionShortName ) . "\"";
+			. "\" targetVersion=\"" . htmlentities( $targetVersionShortName ) . "\"";
 		
 		$logFields = "action=\"start\" status=\"success\" $logParameters";
 		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
