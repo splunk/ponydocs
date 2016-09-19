@@ -75,7 +75,7 @@ class PonyDocsBranchInheritEngine {
 			// No such title exists in the system
 			throw new Exception( "Invalid Title to Branch From. Target Article does not exist:" . $topicTitle );
 		}
-		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':'
+		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $version->getProductName() . ':' . $manual->getShortName() . ':' . $title . ':'
 			. $version->getVersionShortName();
 
 		$newArticle = PonyDocsArticleFactory::getArticleByTitle( $title );
@@ -94,13 +94,15 @@ class PonyDocsBranchInheritEngine {
 			// We need to get all versions from PonyDocsVersion
 			$rawVersions = PonyDocsProductVersion::GetVersions( $productName );
 			$existingVersions = array();
+			// $existingVersions is now an array of version names in incremental order
 			foreach ( $rawVersions as $rawVersion ) {
 				$existingVersions[] = $rawVersion->getProductName() . ":" . $rawVersion->getVersionShortName();
 			}
 			
-			// $existingVersions is now an array of version names in incremental order
-			$versionIndex = array_search( $version->getProductName() . ":" . $version->getVersionShortName(), $existingVersions );
 			// versionIndex is the point in the version list where our target version lives *if* sourceProduct matches target
+			$versionIndex = array_search( $version->getProductName() . ":" . $version->getVersionShortName(), $existingVersions );
+			
+			// Find versions to bring into the new topic
 			preg_match_all( "/\[\[Category:V:([^\]]*:[^\]]*)\]\]/", $existingContent, $matches );
 			foreach ( $matches[1] as $match ) {
 				$index = array_search( $match, $existingVersions );
