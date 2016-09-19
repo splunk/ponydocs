@@ -258,14 +258,16 @@ class PonyDocsBranchInheritEngine {
 		$title = self::TOCExists( $product, $manual, $sourceVersion );
 		if ( $title == false ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $sourceVersion->getVersionShortName() );
+				"TOC does not exist for " . $manual->getShortName() 
+					. " with version " . $sourceVersion->getProductName() . ":" . $sourceVersion->getVersionShortName() );
 		}
 		$title = Title::newFromText( $title );
 		$wgTitle = $title;
 		$article = new Article( $title );
 		if ( !$article->exists() ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $sourceVersion>getVersionShortName() );
+				"TOC does not exist for " . $manual->getShortName() 
+					. " with version " . $sourceVersion->getProductName() . ":" . $sourceVersion->getVersionShortName() );
 		}
 		
 		// Let's grab the content and also do an update
@@ -287,7 +289,8 @@ class PonyDocsBranchInheritEngine {
 		// Now do the TOC for the new version
 		if ( self::TOCExists($product, $manual, $targetVersion ) ) {
 			throw new Exception(
-				"TOC Already exists for " . $manual->getShortName() . " with version: " . $targetVersion->getVersionShortName() );
+				"TOC Already exists for " . $manual->getShortName()
+					. " with version: " . $targetVersion->getProductName() . ":" . $targetVersion->getVersionShortName() );
 		}
 		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $targetVersion->getProductName() . ':' . $manual->getShortName() . 'TOC'
 			. $targetVersion->getVersionShortName();
@@ -316,8 +319,8 @@ class PonyDocsBranchInheritEngine {
 		}
 		$newArticle->doEdit(
 			$content,
-			"Branched TOC For Version: " . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() . " from Version: "
-				. $product->getShortName() . ':' . $sourceVersion->getVersionShortName(),
+			"Branched TOC For Version: " . $targetVersion->getProductName() . ':' . $targetVersion->getVersionShortName() 
+				. " from Version: " . $product->getShortName() . ':' . $sourceVersion->getVersionShortName(),
 			EDIT_NEW);
 		return $title;
 	}
@@ -335,7 +338,8 @@ class PonyDocsBranchInheritEngine {
 		global $wgTitle;
 		if ( self::TOCExists($product, $manual, $version ) ) {
 			throw new Exception(
-				"TOC Already exists for " . $manual->getShortName() . " with version: " . $version->getVersionShortName() );
+				"TOC Already exists for " . $manual->getShortName()
+				. " with version: " . $version->getProductName() . ":" . $version->getVersionShortName() );
 		}
 		$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $version->getProductName() . ":" . $manual->getShortName() . 'TOC'
 			. $version->getVersionShortName();
@@ -370,14 +374,16 @@ class PonyDocsBranchInheritEngine {
 		$title = self::TOCExists( $product, $manual, $version );
 		if ( $title == false ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
+				"TOC does not exist for " . $manual->getShortName() 
+					. " with version " . $version->getProductName() . ":" . $version->getVersionShortName() );
 		}
 		$title = Title::newFromText( $title );
 		$wgTitle = $title;
 		$article = new Article( $title );
 		if ( !$article->exists() ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
+				"TOC does not exist for " . $manual->getShortName() 
+					. " with version " . $version->getProductName() . ":" . $version->getVersionShortName() );
 		}
 
 		// Okay, let's search for the content.
@@ -388,7 +394,8 @@ class PonyDocsBranchInheritEngine {
 			$lastTag,
 			$lastTag . "[[Category:V:" . $newVersion->getProductName() . ':' . $newVersion->getVersionShortName() . "]]",
 			$content );
-		$article->doEdit( $content, "Added version " . $newVersion->getProductName() . ':' . $newVersion->getVersionShortName(), EDIT_UPDATE );
+		$article->doEdit( $content, "Added version " . $newVersion->getProductName() . ':' 
+			. $newVersion->getVersionShortName(), EDIT_UPDATE );
 		return TRUE;
 	}
 
@@ -405,14 +412,16 @@ class PonyDocsBranchInheritEngine {
 		$title = self::TOCExists( $product, $manual, $version );
 		if ( $title == FALSE ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
+				"TOC does not exist for " . $manual->getShortName() 
+					. " with version " . $version->getProductName() . ":" . $version->getVersionShortName() );
 		}
 		$title = Title::newFromText($title);
 		$wgTitle = $title;
 		$article = new Article($title);
 		if (!$article->exists() ) {
 			throw new Exception(
-				"TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionShortName() );
+				"TOC does not exist for " . $manual->getShortName() 
+					. " with version " . $version->getProductName() . ":" . $version->getVersionShortName() );
 		}
 
 		// Okay, let's search for the content.
