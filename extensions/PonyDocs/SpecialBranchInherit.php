@@ -212,8 +212,8 @@ class SpecialBranchInherit extends SpecialPage
 			return true;
 		}
 
-		print( "Beginning process job for source version: " . $sourceProductName . ':' . $sourceVersion . "<br />" );
-		print("Target version is: " . $targetVersion . "<br />");
+		print( "Beginning process job for source version: $sourceProductName:$sourceVersion<br />" );
+		print("Target version is: $targetProductName:$targetVersion<br />");
 
 		// Enable speed processing to avoid any unnecessary processing on
 		// new topics created by this tool.
@@ -247,7 +247,8 @@ class SpecialBranchInherit extends SpecialPage
 			$manual = PonyDocsProductManual::GetManualByShortName( $sourceProductName, $manualName );
 			// Determine if TOC already exists for target version.
 			if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion)) {
-				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version " . $targetVersion->getVersionShortName() . "</div>");
+				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version "
+					. $targetVersion->getProductName() . ":" . $targetVersion->getVersionShortName() . "</div>");
 				// Crl eate the toc or inherit.
 				if($manualData['tocAction'] != 'default') {
 					// Then they want to force.
