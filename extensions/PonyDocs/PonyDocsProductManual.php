@@ -241,9 +241,9 @@ class PonyDocsProductManual
 	 */
 	static public function & GetManualByShortName( $productName, $shortName ) {
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
-		if( self::IsManual( $productName, $convertedName ))
-			return self::$sDefinedManualList[$productName][strtolower($convertedName)];
-		return null;
+		if ( self::IsManual( $productName, $convertedName ) ) {
+			return self::$sDefinedManualList[$productName][strtolower( $convertedName )];
+		}
 	}
 
 	/**
