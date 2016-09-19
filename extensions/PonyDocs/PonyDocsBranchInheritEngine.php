@@ -97,14 +97,15 @@ class PonyDocsBranchInheritEngine {
 			foreach ( $rawVersions as $rawVersion ) {
 				$existingVersions[] = $rawVersion->getProductName() . ":" . $rawVersion->getVersionShortName();
 			}
+			
 			// $existingVersions is now an array of version names in incremental order
-			$versionIndex = array_search( $version->getVersionShortName(), $existingVersions );
-			// versionIndex is the index where our target version is
-			// we will use this to determine what versions need to be brought over.
+			$versionIndex = array_search( $version->getProductName() . ":" . $version->getVersionShortName(), $existingVersions );
+			// versionIndex is the point in the version list where our target version lives *if* sourceProduct matches target
 			preg_match_all( "/\[\[Category:V:([^\]]*:[^\]]*)\]\]/", $existingContent, $matches );
 			foreach ( $matches[1] as $match ) {
 				$index = array_search( $match, $existingVersions );
-				if ( $index > $versionIndex ) {
+				// If versionIndex is FALSE, then this is a cross-product branch, and we don't want to bring any versions over
+				if ( $versionIndex && $index > $versionIndex ) {
 					$newVersions[] = $match;
 				}
 			}
