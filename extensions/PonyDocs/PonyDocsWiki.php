@@ -54,14 +54,17 @@ class PonyDocsWiki {
 	private function __construct() {
 		// Normalize path
 		$path = $this->getPath();
-
+		
 		if ( $this->isPonyDocsPath( $path ) ) {
 			// We need to extract the product name first and initialize manuals and versions before we can run the path typer
 			$this->setProductFromPath( $path );
 			$this->currentProduct = PonyDocsProduct::GetProductByShortName( PonyDocsProduct::GetSelectedProduct() );
-			PonyDocsProductVersion::LoadVersionsForProduct( $this->currentProduct->getShortName(), TRUE );
-			PonyDocsProductManual::LoadManualsForProduct( $this->currentProduct->getShortName(), TRUE );
-			list ( $this->requestType, $this->requestSubtype ) = $this->parsePath( $path );
+			// If product page lacks default product, we're in trouble.
+			if ( !empty( $this->currentProduct ) ) {
+				PonyDocsProductVersion::LoadVersionsForProduct( $this->currentProduct->getShortName(), TRUE );
+				PonyDocsProductManual::LoadManualsForProduct( $this->currentProduct->getShortName(), TRUE );
+				list ( $this->requestType, $this->requestSubtype ) = $this->parsePath( $path );
+			}
 		}
 	}
 
