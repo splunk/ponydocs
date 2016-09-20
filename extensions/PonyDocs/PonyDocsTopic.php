@@ -224,7 +224,6 @@ class PonyDocsTopic {
 			&& $this->pArticle->getParserOutput() ) {
 			
 			$matches = $this->pArticle->getParserOutput()->getSections();
-			error_log(print_r($matches, TRUE));
 			$h2 = FALSE;
 			$headReference = array();
 			$headCount = 0;
