@@ -51,10 +51,10 @@ class SpecialBranchInherit extends SpecialPage
 	 * @param $versionName string
  	 * @returns string JSON representation of the manuals
 	 */
-	public static function ajaxFetchManuals( $productName, $versionName ) {
+	public static function ajaxFetchManuals( $productName, $versionName = NULL ) {
 		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
 		
-		if ( is_null( $versionName ) ) {
+		if ( !is_null( $versionName ) ) {
 			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionName);
 			$manuals = PonyDocsProductManual::LoadManualsForProduct( $productName, TRUE);
 		} else {
