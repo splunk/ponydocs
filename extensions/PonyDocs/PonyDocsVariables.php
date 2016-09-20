@@ -10,6 +10,7 @@ class PonyDocsVariables {
 			case 'PonyDocs_Product':
 				$product = $wiki->getCurrentProduct();
 				if ( $product ) {
+					// strip HTML tags and their content from long names in variables.
 					$ret = preg_replace( "#<[^/]*[^/]>.*</[^>]*>#U", "", $product->getLongName( TRUE ) );
 				}
 				break;
