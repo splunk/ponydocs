@@ -187,16 +187,23 @@ class PonyDocsTopic {
 	 * 
 	 * @static
 	 * @param string $title The text form of the title to get the H1 content for.
-	 * @return string The resulting H1 content; or boolean false if title not found.
+	 * @return boolean or string h1 or false if no h1
 	 */
 	static public function FindH1ForTitle( $title ) {
 		$article = new Article( Title::newFromText( $title ), 0 );
 		$content = $article->loadContent();
+		
+		$sections = $article->getParserOutput()->getSections();
 
-		if ( !preg_match( '/^\s*=(.*)=/D', $article->getContent(), $matches ) ) {
-			return false;
+		$h1 = FALSE;
+		foreach ( $sections as $section ) {
+			if ( $section['level'] == 1 ) {
+				$h1 = $section['line'];
+				break;
+			}
 		}
-		return $matches[1];
+
+		return $h1;
 	}
 
 	/**
