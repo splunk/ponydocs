@@ -1517,7 +1517,7 @@ HEREDOC;
 			foreach ( $removedCategories as $removedCategory ) {
 				$removedVersion = $topic->convertCategoryToVersion( $removedCategory );
 				if ( $removedVersion ) {
-					array_push( $removedVersion, $versionsToClear );
+					array_push( $versionsToClear, $removedVersion );
 				}
 			}
 		
@@ -1848,10 +1848,9 @@ EOJS;
 						'categorylinks',
 						'cl_from', 
 						array(
-							"cl_to = 'V:" . $productName . ":" . $versionName . "'",
-							'cl_type = "page"',
-							"cl_sortkey LIKE '" . $dbr->strencode(
-								strtoupper( $productName . ':' . $manualName . ':' . $match[1] ) ) . ":%'",
+							"cl_to = 'V:$productName:$versionName'",
+							"cl_type = 'page'",
+							"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$match[1]" ) ) . ":%'",
 						),
 						__METHOD__
 					);
