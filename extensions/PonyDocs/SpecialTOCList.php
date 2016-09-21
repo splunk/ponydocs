@@ -91,7 +91,7 @@ class SpecialTOCList extends SpecialPage {
 					$categories = explode( '|', $row->categories );
 					foreach ( $categories as $category ) {
 						$categoryParts = explode ( ':', $category );
-						if ( in_array( $categoryParts[2], $allowed_versions ) ) {
+						if ( !empty( $categoryParts[2] ) && in_array( $categoryParts[2], $allowed_versions ) ) {
 							$versions[] = $categoryParts[2];
 						}
 

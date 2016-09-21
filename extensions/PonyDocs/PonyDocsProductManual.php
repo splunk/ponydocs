@@ -131,12 +131,14 @@ class PonyDocsProductManual
 	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
 	 * currently selected version or not.
-	 *
+	 * 
+	 * @param string $productName
 	 * @param boolean $reload
+	 * @param boolean $respectVersion do we only want manuals with TOCs for the current version? or do we want all the manuals?
 	 * @return array
 	 */
 
-	static public function LoadManualsForProduct( $productName, $reload = false ) {
+	static public function LoadManualsForProduct( $productName, $reload = FALSE ) {
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -152,25 +154,13 @@ class PonyDocsProductManual
 		// Use 0 as the last parameter to enforce getting latest revision of this article.
 		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName .
 			PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
+		// The content of this topic should be of the form {{#manual:shortName|longName}}
 		$content = $article->getContent( );
 
-		if( !$article->exists() ) {
-			/**
-			 * There is no manuals file found -- just return.
-			 */
+		// Gate for no manuals page
+		if ( !$article->exists() ) {
 			return array();
 		}
-
-		/**
-		 * The content of this topic should be of this form:
-		 * {{#manual:shortName|longName}}
-		 * ...
-		 * 
-		 * There is a user defined parser hook which converts this into useful output when viewing as well.
-		 * 
-		 * Then query categorylinks to only add the manual if it is for the selected product and has a tagged TOC file with the selected version.
-		 * Otherwise, skip it!
-		 */
 
 		// Explode on the closing tag to get an array of manual tags
 		$tags = explode( '}}', $content );
@@ -195,8 +185,8 @@ class PonyDocsProductManual
 
 				self::$sDefinedManualList[$productName][strtolower( $pManual->getShortName() )] = $pManual;
 				
-				// Skip this manual if it's not static and has no TOC
-				if (!$static) {
+				// Skip non-static manuals w/o TOCs
+				if ( !$static ) {
 					$res = PonyDocsCategoryLinks::getTOCByProductManualVersion(
 						$productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion( $productName ) );
 					if ( !$res->numRows() ) {
@@ -251,9 +241,9 @@ class PonyDocsProductManual
 	 */
 	static public function & GetManualByShortName( $productName, $shortName ) {
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
-		if( self::IsManual( $productName, $convertedName ))
-			return self::$sDefinedManualList[$productName][strtolower($convertedName)];
-		return null;
+		if ( self::IsManual( $productName, $convertedName ) ) {
+			return self::$sDefinedManualList[$productName][strtolower( $convertedName )];
+		}
 	}
 
 	/**

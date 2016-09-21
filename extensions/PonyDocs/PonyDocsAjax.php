@@ -3,19 +3,21 @@ if( !defined( 'MEDIAWIKI' ))
 	die( "PonyDocs MediaWiki Extension" );
 	
 /**
- * This contains any Ajax functionality supported in the PonyDocs extension.  Each function should be added to the $wgAjaxExportList
- * so it can be called from the sajax_do_call() JS function.  Note that you should always call this providing a callback function
- * then use this function to convert the response text to a String object, otherwise it causes serious problems in IE and Firefox.
- * The syntax is simply:
- *	sajax_do_call( 'functionName', args, callback );
+ * This contains any Ajax functionality supported in the PonyDocs extension.
+ * Each function should be added to the $wgAjaxExportList so it can be called from the sajax_do_call() JS function.
+ * You should always call this with a callback function, using the callback to convert the response text to a String object,
+ * otherwise it causes serious problems in IE and Firefox.
+ * The syntax: sajax_do_call( 'functionName', args, callback );
  *
  * Requires $wgUseAjax to be set to true.
  */
 
 $wgExtensionFunctions[] = 'efPonyDocsAjaxInit';
-$wgAjaxExportList[] = 'efPonyDocsAjaxRemoveVersions';
-$wgAjaxExportList[] = 'efPonyDocsAjaxChangeVersion';
+
 $wgAjaxExportList[] = 'efPonyDocsAjaxChangeProduct';
+$wgAjaxExportList[] = 'efPonyDocsAjaxChangeVersion';
+$wgAjaxExportList[] = 'efPonyDocsAjaxGetVersions';
+$wgAjaxExportList[] = 'efPonyDocsAjaxRemoveVersions';
 
 /**
  * Basic init function to ensure Ajax is enabled.
@@ -23,7 +25,7 @@ $wgAjaxExportList[] = 'efPonyDocsAjaxChangeProduct';
 function efPonyDocsAjaxInit()
 {
 	global $wgUseAjax;
-	if( !$wgUseAjax ) {
+	if ( !$wgUseAjax ) {
 		wfDebug( 'efAjaxRemoveVersions: $wgUseAjax must be enabled for Ajax functionality.' );
 	}
 }
@@ -38,8 +40,7 @@ function efPonyDocsAjaxInit()
  * @param boolean $force Force the change, no matter if a doc is in the same product or not
  * @return AjaxResponse
  */
-function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
-{
+function efPonyDocsAjaxChangeProduct( $product, $title, $force = FALSE ) {
 	global $wgArticlePath;
 
 	$dbr = wfGetDB( DB_SLAVE );
@@ -48,13 +49,11 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = false )
 	$response = new AjaxResponse( );
 
 	if ($force) {
-		// This is coming from the search page.  let's not do any title look up,
-		// and instead just pass back the same url.
-		$leadingSlash = "/";
-		if (substr($title, 0,1) == "/") {
-			$leadingSlash = "";
+		// This is coming from the search page.  let's not do any title look up, and instead just pass back the same url.
+		if ( ! substr( $title, 0,1 ) == "/" ) {
+			$title = "/$title";
 		}
-		$response->addText($leadingSlash . $title); // Need to make the url non-relative
+		$response->addText( $title ); // Need to make the url non-relative
 		return $response;
 	}
 
@@ -188,6 +187,26 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
 }
 
 /**
+ * Return a list of available versions for a product.
+ * 
+ * To invoke from JS: sajax_do_call( "efPonyDocsAjaxGetVersions", [productName], callback );
+ * 
+ * @param string $productName
+ * @return string json-encoded array of versions
+ */
+function efPonyDocsAjaxGetVersions( $productName ) {
+	$versions = PonyDocsProductVersion::LoadVersionsForProduct( $productName, TRUE );
+	$response = array();
+	foreach ( $versions as $version ) {
+		$response[] = array (
+			'short_name' => $version->getVersionShortName(),
+			'status' => $version->getVersionStatus(),
+		);
+	}
+	return json_encode( $response );
+}
+
+/**
  * To use this inside the HTML, you need to execute the call:
  *
  * 	sajax_do_call("efPonyDocsAjexRemoveVersions", [title,versions], callback );
@@ -200,8 +219,7 @@ function efPonyDocsAjaxChangeVersion( $product, $version, $title, $force = false
  * @param string $versionList Colon delimited list of versions.
  * @return AjaxResponse
  */
-function efPonyDocsAjaxRemoveVersions( $title, $versionList )
-{
+function efPonyDocsAjaxRemoveVersions( $title, $versionList ) {
 	global $wgRequest;
 
 	/**
@@ -257,8 +275,7 @@ function efPonyDocsAjaxRemoveVersions( $title, $versionList )
  * @return AjaxResponse
  */
 
-function efPonyDocsAjaxCloneExternalTopic( $topic, $destTitle )
-{
+function efPonyDocsAjaxCloneExternalTopic( $topic, $destTitle ) {
 	$response = new AjaxResponse( );
 	$response->setCacheDuration( false );
 
@@ -290,12 +307,7 @@ function efPonyDocsAjaxCloneExternalTopic( $topic, $destTitle )
 		return $response;
 	}
 
-	$content = $article->getContent( );
-	//$content = preg_replace( '/\[\[
+	$article->getContent( );
 
 	return $response;
 }
-
-/**
- * End of file.
- */
