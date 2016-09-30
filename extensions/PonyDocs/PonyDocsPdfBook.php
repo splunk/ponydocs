@@ -278,7 +278,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		if (file_exists( $pdfFileName ) ) {
-			@unlink( $pdfTopicFileName );
+			@unlink( $pdfFileName );
 			// If it still exists after unlinking, oops
 			if ( file_exists( $pdfFileName ) ) {
 				error_log( "ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname( 'n' )
