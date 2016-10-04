@@ -243,9 +243,10 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	static public function servePdf( $fileName ) {
 		if ( file_exists( $fileName ) ) {
 			$modFileName = $fileName;
-			$fileNameDetails = explode('/', $fileName);
+			$fileNameDetails = explode('-', $fileName);
+			$fileNameDetails = array_slice($fileNameDetails, 1, -1);
 			if ( !empty( $fileNameDetails ) ) {
-				$modFileName = $fileNameDetails[count($fileNameDetails)-1];
+				$modFileName =implode('-', $fileNameDetails).'.pdf';
 			}
 			header( "Content-Type: application/pdf" );
 			header("Content-Disposition: attachment; filename=\"$modFileName\"");			
