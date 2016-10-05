@@ -196,7 +196,6 @@ class PonyDocsTopic {
 
 		if( $article->getParserOutput() ) {
 			$sections = $article->getParserOutput()->getSections();
-
 			
 			foreach ( $sections as $section ) {
 				if ( $section['level'] == 1 ) {
