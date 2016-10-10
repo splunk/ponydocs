@@ -9,7 +9,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 	/**
 	 * This lets you map full titles or namespaces to specific PHP template files and prep methods.
-	 * The special '0' index is the default if not found. Prefix title mappings with 'T:' and namespace mappings with 'NS:'. 
+	 * The special '0' index is the default if not found. Prefix title mappings with 'T:' and namespace mappings with 'NS:'.
 	 * Currently if inside a namespace it will ignore any title mappings (i.e., either it calls the NS:namespace or the default).
 	 *
 	 * @var array
@@ -59,7 +59,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		/**
 		 * When displaying a page we output header.php, then a sub-template, and then footer.php. The namespace
 		 * which we are in determines the sub-template, which is named 'ns<Namespace>'. It defaults to our
-		 * nsDefault.php template. 
+		 * nsDefault.php template.
 		 */
 		$this->data['namespace'] = $wgContLang->getNsText($wgTitle->getNamespace());
 		$idx = $this->data['namespace'] ? "NS:{$this->data['namespace']}" : 'T:' . $wgTitle->__toString();
@@ -167,7 +167,7 @@ class PonyDocsTemplate extends QuickTemplate {
 							$this->html('catlinks');
 						} ?>
 						<!-- end content -->
-						<?php 
+						<?php
 						if ( $this->data['dataAfterContent'] ) {
 							$this->html( 'dataAfterContent' );
 						} ?>
@@ -232,14 +232,14 @@ class PonyDocsTemplate extends QuickTemplate {
 					</div>
 				</div>
 				<div class="portlet" id="p-logo">
-					<a style="background-image: url(<?php $this->text( 'logopath' ) ?>);" 
+					<a style="background-image: url(<?php $this->text( 'logopath' ) ?>);"
 					   href="<?php echo htmlspecialchars( $this->data['nav_urls']['mainpage']['href'] )?>"
 						<?php echo Xml::expandAttributes( $skin->tooltipAndAccesskeyAttribs( 'p-logo' ) ) ?>></a><br />
 				</div>
 				<script type="<?php $this->text( 'jsmimetype' ) ?>">
 					if ( window.isMSIE55 ) {
 						fixalpha();
-					} 
+					}
 				</script>
 				<div id="p-documentation" class="portlet">
 					<h5>documentation</h5>
@@ -313,7 +313,7 @@ class PonyDocsTemplate extends QuickTemplate {
 										</p>
 										<p>
 											<?php
-											if ( sizeof($this->data['manualtoc'] ) ) { 
+											if ( sizeof($this->data['manualtoc'] ) ) {
 												$pdfLink = str_replace( '$1', '', $wgArticlePath ) . 'index.php?title=' . $wgTitle->__toString() . '&action=pdfbook&version=' .$this->data['selectedVersion'];
 												$topicLink = $pdfLink . '&topic=1';
 												?>
@@ -404,7 +404,7 @@ class PonyDocsTemplate extends QuickTemplate {
 						$validFooterLinks[] = $aLink;
 					}
 				}
-				if ( count( $validFooterLinks ) > 0 ) { ?>	
+				if ( count( $validFooterLinks ) > 0 ) { ?>
 					<ul id="f-list">
 						<?php
 						foreach ( $validFooterLinks as $aLink ) {
@@ -474,7 +474,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			<div class="pBody">
 				<ul>
 					<?php
-					if ( $this->data['notspecialpage'] ) { 
+					if ( $this->data['notspecialpage'] ) {
 						if ( $this->data['nav_urls']['recentchangeslinked'] ) { ?>
 							<li id="t-recentchangeslinked">
 								<a href="<?php echo htmlspecialchars( $this->data['nav_urls']['recentchangeslinked']['href'] ) ?>"
@@ -500,7 +500,7 @@ class PonyDocsTemplate extends QuickTemplate {
 						<li id="feedlinks">
 							<?php
 							foreach ( $this->data['feeds'] as $key => $feed ) { ?>
-								<a id="<?php echo Sanitizer::escapeId( "feed-$key" ) ?>" 
+								<a id="<?php echo Sanitizer::escapeId( "feed-$key" ) ?>"
 									href="<?php echo htmlspecialchars( $feed['href'] ) ?>" rel="alternate"
 									type="application/<?php echo $key ?>+xml" class="feedlink"
 									<?php echo Xml::expandAttributes(
@@ -596,7 +596,7 @@ class PonyDocsTemplate extends QuickTemplate {
 						foreach ( $cont as $key => $val ) { ?>
 							<li id="<?php echo Sanitizer::escapeId( $val['id'] ) ?>"
 								<?php
-								if ( $val['active'] ) { ?> 
+								if ( $val['active'] ) { ?>
 									class="active" <?php
 								} ?>>
 								<a href="<?php echo htmlspecialchars( $val['href'] ) ?>"
@@ -633,7 +633,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		/**
 		 * Possible topic syntax we must handle:
-		 * 
+		 *
 		 * Documentation:<topic> *Which may include a version tag at the end, we don't care about this.
 		 * Documentation:<productShortName>:<manualShortName>:<topic>:<version>
 		 * Documentation:<productShortName>:<manualShortName>
@@ -740,10 +740,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			}
 			$this->data['topicname'] = $pieces[3];
 
-			$h1 = PonyDocsTopic::FindH1ForTitle( $wgTitle->__toString() );
-			if ( $h1 !== FALSE ) {
-				$this->data['titletext'] = $h1;
-			}
+			$this->data['titletext'] = PonyDocsTopic::FindH1ForTitle( $wgTitle->__toString() );
 		}
 
 		/**
@@ -808,7 +805,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				case 4:
 					$this->data['cattext'] = 'Applies to one or more preview version(s) only.';
 					break;
-				case 5:	
+				case 5:
 					$this->data['cattext'] = 'Applies to one or more unreleased version(s) only.';
 					break;
 				case -2: /** Means its not a a title name which should be checked. */
@@ -824,11 +821,8 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['basetopiclink'] = '<a href="' . $wgScriptPath . '/index.php?title=Special:TopicList&topic='
 				. $this->data['basetopicname'] . '">View All</a>';
 		}
-		$temp = PonyDocsTopic::FindH1ForTitle( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $topic->getTitle()->getText() );
-		if ( $temp !== false ) {
-			// We got an H1!
-			$this->data['pagetitle'] = $temp;
-		}
+		// We got an H1!
+		$this->data['pagetitle'] = PonyDocsTopic::FindH1ForTitle( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $topic->getTitle()->getText() );
 	}
 
 	private function contentActions() {
@@ -845,7 +839,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$this->data['content_actions']['viewall'] = array(
 					'class' => '',
 					'text' => 'View All',
-					'href' => $wgScriptPath . '/index.php?title=Special:TopicList&topic=' . $title 
+					'href' => $wgScriptPath . '/index.php?title=Special:TopicList&topic=' . $title
 				);
 			}
 			if ( $wgUser->isAllowed( 'branchtopic' ) ) {
@@ -887,7 +881,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['nav_urls']['documentation_manuals'] = array(
 				'href' => str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':Manuals', $wgArticlePath ),
 				'text' => 'Manuals' );
-			
+
 			$partialUrl = SpecialDocumentLinks::getDocumentLinksArticle();
 
 			$this->data['nav_urls']['document_links'] = array(
@@ -899,9 +893,9 @@ class PonyDocsTemplate extends QuickTemplate {
 
 	/**
 	 * Output select options respecting a single-level parent/child product hierarchy
-	 * 
+	 *
 	 * TODO: Handle multiple levels of parent/child relationships
-	 * 
+	 *
 	 * @param string $parent  Short name of parent whose children we want to output
 	 */
 	private function hierarchicalProductSelect( $parent = NULL ) {
