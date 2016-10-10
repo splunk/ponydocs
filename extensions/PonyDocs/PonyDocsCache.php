@@ -28,7 +28,7 @@ class PonyDocsCache
 	 */
 	public function put( $key, $data, $ttl, $fudgeFactor = 0 )	{
 		if ( PONYDOCS_CACHE_ENABLED ) {
-			$expires = 'UNIX_TIMESTAMP() + ' . $this->fudgeTtl($ttl, $fudgeFactor);
+			$expires = 'UNIX_TIMESTAMP() + ' . $ttl;
 			$data = $this->dbr->strencode(serialize($data));
 			$query = "INSERT INTO ponydocs_cache VALUES('$key', $expires, '$data')"
 				. " ON DUPLICATE KEY UPDATE data = '$data', expires = $expires";
