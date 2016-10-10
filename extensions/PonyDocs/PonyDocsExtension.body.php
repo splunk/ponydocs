@@ -497,7 +497,8 @@ class PonyDocsExtension {
 
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
-
+		// Delete Topic header cache
+		PonyDocsTopic::clearTopicHeadingCache( $title );
 		// Okay, article is in doc namespace
 		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0
 			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {
@@ -1535,6 +1536,7 @@ HEREDOC;
 				}
 			}
 		}
+		//Clear Topic header cache
 		PonyDocsTopic::clearTopicHeadingCache( $title );
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
