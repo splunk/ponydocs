@@ -192,17 +192,18 @@ class PonyDocsTopic {
 	static public function FindH1ForTitle( $title ) {
 		$article = new Article( Title::newFromText( $title ), 0 );
 		$content = $article->loadContent();
-		
-		$sections = $article->getParserOutput()->getSections();
-
 		$h1 = FALSE;
-		foreach ( $sections as $section ) {
-			if ( $section['level'] == 1 ) {
-				$h1 = $section['line'];
-				break;
+
+		if( $article->getParserOutput() ) {
+			$sections = $article->getParserOutput()->getSections();
+			
+			foreach ( $sections as $section ) {
+				if ( $section['level'] == 1 ) {
+					$h1 = $section['line'];
+					break;
+				}
 			}
 		}
-
 		return $h1;
 	}
 
