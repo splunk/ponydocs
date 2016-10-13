@@ -371,11 +371,11 @@ class PonyDocsTOC
 						$start = $toc[$idx];
 					}
 					// Determine current
-					$PrefixedText = $wgTitle->getPrefixedText();
+					$prefixedText = $wgTitle->getPrefixedText();
 					if (strpos($toc[$idx]['toctitle'], '_') !== FALSE) {
-						$PrefixedText = str_replace(' ', '_', $PrefixedText);
+						$prefixedText = str_replace(' ', '_', $prefixedText);
 					}
-					$toc[$idx]['current'] = strcmp( $PrefixedText, $toc[$idx]['title'] ) ? FALSE : TRUE;
+					$toc[$idx]['current'] = strcmp($prefixedText, $toc[$idx]['title']) ? FALSE : TRUE;
 					if ( $toc[$idx]['current'] ) {
 						$currentIndex = $idx;
 					}
