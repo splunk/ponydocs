@@ -333,7 +333,7 @@ class PonyDocsTOC
 						'page_id' => $t->getArticleID(),
 						'link' => $href,
 						'toctitle' => $baseTopic,
-						'text' => $h1,
+						'text' => $title,
 						'section' => $toc[$section]['text'],
 						'title' => $title,
 						'class' => 'toclevel-1',
