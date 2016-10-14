@@ -681,6 +681,8 @@ class PonyDocsTemplate extends QuickTemplate {
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
 					. '<i>* If you omit display name, the short name will be used in links.</i></span>' );
 				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
+					. '<i>* There should not be any text before {{#manual:manualShortName|displayName|categories}}. If you add any text before {{#manual:manualShortName|displayName|categories}}, things will break.</i></span>' );
+				$wgOut->addHTML( '<br><span class="' . $helpClass . '">'
 					. '<i>* Categories is a comma-separated list of categories</i></span>' );
 			} elseif ( !strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $wgTitle->__toString() ) ) {
 				$this->data['titletext'] = 'Products Management';
