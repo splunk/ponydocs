@@ -234,7 +234,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 				}
 			}
 			
-			$zip->addFile($fileData, $dirName . '/' . 'manual.html');
+			$zip->addFile($fileData, $dirName . '/' . 'topic.html');
 
 			if(!empty($arrAllTopicImages[$topicName]))
 			{	
