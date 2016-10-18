@@ -227,13 +227,6 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 			$topicNo++;
 			$dirName = $topicNo . '_' . $topicName;			
-			if(!is_dir($dirName)) {
-				$result = mkdir($dirName, 0777, true);
-				if(!$result) {
-					throw new Exception("Failed to create temp directory: $localPath");
-				}
-			}
-			
 			$zip->addFile($fileData, $dirName . '/' . 'topic.html');
 
 			if(!empty($arrAllTopicImages[$topicName]))
