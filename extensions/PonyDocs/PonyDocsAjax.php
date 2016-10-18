@@ -50,7 +50,7 @@ function efPonyDocsAjaxChangeProduct( $product, $title, $force = FALSE ) {
 
 	if ($force) {
 		// This is coming from the search page.  let's not do any title look up, and instead just pass back the same url.
-		if ( ! substr( $title, 0,1 ) == "/" ) {
+		if ( ! ( substr( $title, 0,1 ) == "/" ) ) {
 			$title = "/$title";
 		}
 		$response->addText( $title ); // Need to make the url non-relative
