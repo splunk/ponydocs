@@ -320,7 +320,7 @@ class PonyDocsTOC
 					/**
 					 * Obtain H1 content from the article
 					 */
-					$title = PonyDocsTopic::FindH1ForTitle( $title );
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
 
 
 					$href = str_replace(
@@ -333,7 +333,7 @@ class PonyDocsTOC
 						'page_id' => $t->getArticleID(),
 						'link' => $href,
 						'toctitle' => $baseTopic,
-						'text' => $title,
+						'text' => $h1,
 						'section' => $toc[$section]['text'],
 						'title' => $title,
 						'class' => 'toclevel-1',
