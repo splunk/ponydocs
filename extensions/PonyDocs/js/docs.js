@@ -403,7 +403,8 @@ SplunkRenameVersion = function() {
 	var sourceProduct = '';
 	var sourceVersion = '';
 	var targetVersion = '';
-	var manuals = [];
+	var manuals = {};
+	var manualsArray = [];
 	var jobID = '';
 	var progressTimer = null;
 	var completed = false;
@@ -455,7 +456,13 @@ SplunkRenameVersion = function() {
 					// Set up the progress meter
 					sajax_request_type = 'POST';
 					SplunkRenameVersion.fetchProgress();
-
+					
+					// Make an array of manuals that we can iterate over
+					var i = 0;
+					for ( index in manuals ) {
+						manualsArray[i] = manuals[index];
+						i++;
+					}
 					// Iterate over the manuals
 					SplunkRenameVersion.processNextManual();
 				});
@@ -464,8 +471,9 @@ SplunkRenameVersion = function() {
 		// Make an ajax call to process a single manual
 		// In order to fake a sychronous call (since sajax doesn't support such a thing), let's be recursively nested.
 		processNextManual: function() {
-			if ( manuals.length > 0 ) {
-				var manual = manuals.shift();
+
+			if ( manualsArray.length > 0 ) {
+				var manual = manualsArray.shift();
 				sajax_do_call(
 					'SpecialRenameVersion::ajaxProcessManual',
 					[ jobID, sourceProduct, manual['shortname'], sourceVersion, targetVersion ],
