@@ -8,11 +8,11 @@ if ( !defined( 'MEDIAWIKI' ) ) {
  * of MediaWiki.  The goal is to include all functional changes inside this extension and the custom
  * PonyDocs skin/theme.  To activate this extension you must modify your LocalSettings.php file and
  * add the following lines:
- * 
+ *
  * 	require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.php" ) ;
- * 
+ *
  * There are also a set of custom configuration directives TBD.
- * 
+ *
  * This file contains the actual body/functions, the above contains the setup for the extension.
  */
 
@@ -37,7 +37,7 @@ class PonyDocsExtension {
 		global $wgArticlePath, $wgHooks, $wgScriptPath;
 
 		$this->setPathInfo();
-		
+
 		// <namespace>/<product>/<version>/<manual>/<topic>
 		// Register a hook to map the URL to a page
 		if ( preg_match(
@@ -71,9 +71,9 @@ class PonyDocsExtension {
 		}
 		return $_SERVER['PATH_INFO'];
 	}
-	
+
 	/**
-	 * Returns the manual data for a version in cache.  If the cache is not populated for 
+	 * Returns the manual data for a version in cache.  If the cache is not populated for
 	 * that version, then build it and return it.
 	 * @param string $product product short name
 	 * @param string $version version name
@@ -107,7 +107,7 @@ class PonyDocsExtension {
 							'shortName' => $manual->getShortName(),
 							'longName' => $manual->getLongName(),
 							'firstUrl' => '/' . implode(
-								'/', 
+								'/',
 								array( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $product, $version, $manual->getShortName() ) ) );
 					}
 				} else {
@@ -140,7 +140,7 @@ class PonyDocsExtension {
 		}
 		return $cacheEntry;
 	}
-	
+
 	/**
 	 * Get the Default URL
 	 **/
@@ -155,11 +155,11 @@ class PonyDocsExtension {
 	 * -  redirect to the landing page
 	**/
 	static public function redirectToLandingPage() {
-		global $wgOut, $wgServer;		
-		$defaultUrl = self::getDefaultUrl();		
-		$wgOut->redirect( $wgServer . $defaultUrl );  		
+		global $wgOut, $wgServer;
+		$defaultUrl = self::getDefaultUrl();
+		$wgOut->redirect( $wgServer . $defaultUrl );
 	}
-	
+
 	static public function handle404(&$out) {
 		global $wgOut;
 		$wgOut->clearHTML();
@@ -217,7 +217,7 @@ class PonyDocsExtension {
 			// @todo do we need to load versions for foreign products as well?
 			PonyDocsProductVersion::LoadVersionsForProduct($fromProduct, true, true);
 			$ponydocsVersions = $topic->getProductVersions();
-			
+
 			// Add a link to the database for each version
 			foreach ($ponydocsVersions as $version) {
 				// Make a pretty PonyDocs URL (with slashes) out of the mediawiki title (with colons)
@@ -301,7 +301,7 @@ class PonyDocsExtension {
 	/**
 	 * This function will take the constant for the base author group and concatinate
 	 * it with the current product.  It accepts either the type of "product" or "preview"
-	 * 
+	 *
 	 * This same formula is used to define the groups per
 	 * product, thus you can check if the current author in the current product has permission
 	 * to edit, branch or inherit with:
@@ -357,7 +357,7 @@ class PonyDocsExtension {
 	 * Transform :-separated fake titles to /-separated paths
 	 * Use passed namespace, version, and topic to override some elements of the path
 	 * Used to generate to_links for the ponydocs_doclinks table
-	 * 
+	 *
 	 * @param string $title
 	 * @param string $fromNamespace
 	 * @param PonyDocsProducVersion $ver
@@ -372,7 +372,7 @@ class PonyDocsExtension {
 
 		// Get rid of whitespace at the end of the title
 		$title = trim($title);
-		
+
 		// If we're missing the namespace from a title AND we're in the PonyDocs namespace, prepend PonyDocs namespace to title
 		if (strpos($title, ':') === false && $fromNamespace == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
 			$title = $fromNamespace . ':' . $title;
@@ -410,7 +410,7 @@ class PonyDocsExtension {
 				} else {
 					$fromProduct = '';
 				}
-				
+
 				if ($fromProduct != $productName) {
 					$versionName = "latest";
 				} else {
@@ -449,9 +449,9 @@ class PonyDocsExtension {
 	/**
 	 * Extension functions
 	 */
-	
+
 	/**
-	 * Primary setup function 
+	 * Primary setup function
 	 * - Sets up session for anonymous users
 	 * - Handles URL rewrites for aliasing (per spec)
 	 * - Instantiates a PonyDocsWiki singleton instance which loads versions and manuals for the requested product
@@ -467,7 +467,7 @@ class PonyDocsExtension {
 
 		// This has the side effect of loading versions and manuals for the product
 		$wiki = PonyDocsWiki::getInstance();
-		
+
 		if ( ( $wiki->getRequestType() == 'Topic' || $wiki->getRequestType() == 'TOC' )
 			&& !PonyDocsProductVersion::GetSelectedVersion( $wiki->getProduct()->getShortName(), FALSE ) ) {
 			// This version isn't available to this user; go away
@@ -478,15 +478,15 @@ class PonyDocsExtension {
 			header( "Location: " . $defaultRedirect );
 			exit;
 		}
-	}	
-	
+	}
+
 
 	/**
 	 * Hooks
 	 */
 
 	/**
-	 * Called when an article is deleted, we want to purge any doclinks entries 
+	 * Called when an article is deleted, we want to purge any doclinks entries
 	 * that refer to that article if it's in the documentation namespace.
 	 *
 	 * NB $article is a WikiPage and not an article
@@ -497,29 +497,30 @@ class PonyDocsExtension {
 
 		// Delete doc links
 		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
-
+		// Delete Topic header cache
+		PonyDocsTopic::clearTopicHeadingCache( $title );
 		// Okay, article is in doc namespace
-		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 
-			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {			
+		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0
+			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {
 			PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 			// Delete the cached PDF
 			$productArr  = explode( ':', $title->getText( ) );
-			$productName = $productArr[0];	
-			if ( PonyDocsProduct::IsProduct( $productName ) 
-				&& count( $productArr ) == 4 
-				&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] ) 				
-				&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
+			$productName = $productArr[0];
+			if ( PonyDocsProduct::IsProduct( $productName )
+				&& count( $productArr ) == 4
+				&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] )
+				&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {
 				$topic = new PonyDocsTopic( $realArticle );
-				$topicVersions = $topic->getProductVersions();					
-				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
+				$topicVersions = $topic->getProductVersions();
+				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );
 				if ( $manual != null ) {
 					foreach( $topicVersions as $key => $version ) {
 						PonyDocsPdfBook::removeCachedFile( $version->getProductName(), $manual->getShortName(), $version->getVersionShortName() );
-					}	
+					}
 				}
 			}
-		}		
-		
+		}
+
 		return TRUE;
 	}
 
@@ -529,7 +530,7 @@ class PonyDocsExtension {
 	 *
 	 * @param Title $title
 	 * @param Article $article
-	 * @return boolean 
+	 * @return boolean
 	 */
 	static public function onArticleFromTitle( &$title, &$article ) {
 		global $wgHooks, $wgScriptPath, $wgTitle;
@@ -538,7 +539,7 @@ class PonyDocsExtension {
 		$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 
 		if ( !preg_match(
-			'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', 
+			'/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i',
 			$title->__toString(),
 			$matches ) ) {
 			return FALSE;
@@ -575,8 +576,8 @@ class PonyDocsExtension {
 			if ( !$latestReleasedVersion) {
 				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
 				return FALSE;
-			} 
-			
+			}
+
 			$res = $dbr->select(
 				array( 'categorylinks', 'page' ),
 				'page_title' ,
@@ -602,8 +603,8 @@ class PonyDocsExtension {
 						"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 					),
 					__METHOD__
-				);				
-				
+				);
+
 				// For each version, if any are released, then redirect to special latest doc
 				if ( $res2->numRows() ) {
 					while ( $row = $dbr->fetchObject( $res2 ) ) {
@@ -619,7 +620,7 @@ class PonyDocsExtension {
 						}
 					}
 				}
-				
+
 				// The topic doesn't exist in any released version, default redirect.
 				if ( PONYDOCS_DEBUG ) {
 					error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
@@ -648,7 +649,7 @@ class PonyDocsExtension {
 		// Specific version in URL
 		} else {
 			$versionSelectedName = PonyDocsProductVersion::GetSelectedVersion( $productName );
-			
+
 			// Default redirect if version specified in aliased URL is not a valid version
 			$version = PonyDocsProductVersion::GetVersionByName( $productName, $versionName );
 			if ( !$version ) {
@@ -661,8 +662,8 @@ class PonyDocsExtension {
 			}
 
 			/**
-			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied. 
-			 * This is the URL to redirect to.  
+			 * Look up the TOPIC in the categorylinks and find the one which is tagged with the version supplied.
+			 * This is the URL to redirect to.
 			 */
 			$res = $dbr->select(
 				array( 'categorylinks', 'page' ),
@@ -708,7 +709,7 @@ class PonyDocsExtension {
 	}
 
 	/**
-	 * 
+	 *
 	 * Implement ArticleFromtitle Hook
 	 * - Set the version correctly when editing a topic
 	 * - Redirect to the first topic in a manual if the user requested a bare manual URL
@@ -718,10 +719,10 @@ class PonyDocsExtension {
 		global $wgScriptPath;
 		if ( preg_match( '/&action=edit/', $_SERVER['PATH_INFO'] ) ) {
 			// Check referrer and see if we're coming from a doc page.
-			// If so, we're editing it, so we should force the version 
+			// If so, we're editing it, so we should force the version
 			// to be from the referrer.
 			if ( preg_match('/^' . str_replace("/",
-				"\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', 
+				"\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i',
 				$_SERVER['HTTP_REFERER'], $match ) ) {
 				$targetProduct = $match[1];
 				$targetVersion = $match[3];
@@ -779,10 +780,10 @@ class PonyDocsExtension {
 				// Okay, they want to get a version by a specific name
 				$ver = PonyDocsProductVersion::GetVersionByName( $targetProduct, $targetVersion );
 			}
-			
+
 			if ( !$ver ) {
 				if ( PONYDOCS_DEBUG ) {
-					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" 
+					error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/"
 						. PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
 				}
 				header( 'Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME );
@@ -810,10 +811,10 @@ class PonyDocsExtension {
 					PonyDocsExtension::redirectToLandingPage();
 					return FALSE;
 				}
-				
+
 				foreach ( $toc as $entry ) {
 					if ( isset( $entry['link'] ) && $entry['link'] != "" ) {
-						// We found the first article in the manual with a link.  
+						// We found the first article in the manual with a link.
 						// Redirect to it.
 						if ( PONYDOCS_DEBUG ) {
 							error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to " . $entry['link'] );
@@ -834,7 +835,7 @@ class PonyDocsExtension {
 	/**
 	 * Implement ArticleFromTitle Hook
 	 * Retrieve data for static Topics
-	 * 
+	 *
 	 * @param Title $title Mediawiki title object passed from core
 	 * @param Article $article Mediawiki article object passed from core
 	 * @return boolean
@@ -860,7 +861,7 @@ class PonyDocsExtension {
 
 	/**
 	 * Implement ArticleSave Hook
-	 * 
+	 *
 	 * Validation before saving a Topic and extra logging
 	 * Validate:
 	 *	- If a page is saved in the Documentation namespace and is tagged for a version that another form of
@@ -877,7 +878,7 @@ class PonyDocsExtension {
 	 * @param boolean $watch
 	 * @param $sectionanchor
 	 * @param integer $flags
-	 * 
+	 *
 	 * @deprecated Use PageContentSave hook instead
 	 */
 	static public function onArticleSave( &$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
@@ -946,10 +947,10 @@ class PonyDocsExtension {
 			foreach ( $categories as $category ) {
 				$categoryTags[] = "V:{$category['productName']}:{$category['versionName']}";
 			}
-			
+
 			if ( preg_match(
 				'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ) ) {
-			
+
 				$res = $dbr->select(
 					array('categorylinks', 'page'),
 					array('cl_to', 'page_title') ,
@@ -985,7 +986,7 @@ class PonyDocsExtension {
 			if ( !$res->numRows() ) {
 				return TRUE;
 			}
-			
+
 			$duplicateVersions = array();
 			$topic = '';
 
@@ -1052,7 +1053,7 @@ HEREDOC;
 				'&action=ajax-removetags&product=' . $editPonyDocsProduct . '&versions=' . implode( ',', $duplicateVersions ) .
 				'\');">here</a> to remove the version tag(s) from the other topic and use this one instead.' .
 				' Here\'s a link to that topic so you can decide which one you want to use: ' .
-				'<a href="' . str_replace( '$1', $topic, $wgArticlePath ) . '">' . $topic . '</a></div>' . 
+				'<a href="' . str_replace( '$1', $topic, $wgArticlePath ) . '">' . $topic . '</a></div>' .
 
 				'<div id="version-warning-done" style="display:none;"><h4>Version tags removed from article ' .
 				'<a href="' . str_replace( '$1', $topic, $wgArticlePath ) . '">' . $topic . '</a> ' .
@@ -1073,15 +1074,15 @@ HEREDOC;
 
 	/**
 	 * Implement ArticleSave hook
-	 * 
+	 *
 	 * This is used to scan a topic in the Documentation namespace when saved for wiki links
-	 * Any links found should 
+	 * Any links found should
 	 * - auto create the topic in the namespace (if it does not exist), respecting PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT
 	 * - set the H1 to the alternate text (if supplied)
 	 * - tag it for the versions of the currently being viewed page
-	 * 
+	 *
 	 * For doclink formats see onStripBeforeParse()
-	 * 
+	 *
 	 * @param Article $article
 	 * @param User $user
 	 * @param string $text
@@ -1090,10 +1091,10 @@ HEREDOC;
 	 * @param boolean $watch
 	 * @param $sectionanchor
 	 * @param integer $flags
-	 * 
+	 *
 	 * @deprecated Use PageContentSave hook instead
 	 */
-	static public function onArticleSave_AutoLinks( 
+	static public function onArticleSave_AutoLinks(
 		&$article, &$user, &$text, &$summary, $minor, $watch, $sectionanchor, &$flags ) {
 
 		$dbr = wfGetDB( DB_SLAVE );
@@ -1109,7 +1110,7 @@ HEREDOC;
 		if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 			return TRUE;
 		}
-		
+
 		// Gate for doclink autocreate
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $title )
 			&& !PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT ) {
@@ -1131,7 +1132,7 @@ HEREDOC;
 				 * - [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
 				 * - [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 				 */
-				
+
 				 // So we first need to detect the use of a namespace.
 				if ( strpos( $match[1], ':' ) !== FALSE ) {
 					$pieces = explode( ':', $match[1] );
@@ -1161,14 +1162,14 @@ HEREDOC;
 								if ( PonyDocsProduct::IsProduct( $product ) ) {
 									// Need to load the product versions if this topic is for a different product
 									PonyDocsProductVersion::LoadVersionsForProduct( $product );
-									
+
 									$pVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $product );
-									
+
 									// If there is no available latest released version go to the next match
 									if ( !$pVersion ) {
 										continue;
 									}
-									
+
 									$version  = $pVersion->getVersionShortName();
 								}
 							}
@@ -1237,7 +1238,7 @@ HEREDOC;
 								} else {
 									$content = '= ' . $topicTitle . " =\n";
 								}
-								
+
 								$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
 
 								$tempArticle->doEdit(
@@ -1246,10 +1247,10 @@ HEREDOC;
 									EDIT_NEW );
 								if ( PONYDOCS_DEBUG ) {
 									error_log(
-										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " 
+										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link "
 										. $match[1] . " in " . $title->__toString() );
 								}
-							} 
+							}
 						}
 					/**
 					 * Handle non-Documentation NS references, such as 'Dev:SomeTopic'.  This is much simpler -- if it doesn't exist,
@@ -1276,7 +1277,7 @@ HEREDOC;
 									'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.',
 									EDIT_NEW );
 								if ( PONYDOCS_DEBUG ) {
-									error_log( 
+									error_log(
 										"DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created " . $topicTitle . " using link "
 										. $match[1] . " in " . $title->__toString() );
 								}
@@ -1297,7 +1298,7 @@ HEREDOC;
 						// Cancel out.
 						return TRUE;
 					}
-					
+
 					/**
 					 * Does this topic exist?  Look for a topic with this name tagged for the current version.
 					 * If nothing is found, we create a new article.
@@ -1352,9 +1353,9 @@ HEREDOC;
 
 	/**
 	 * Implements ArticleSaveComplete hook
-	 * 
+	 *
 	 * Auto creates topics which don't exist yet when saving a TOC and clears caches.
-	 * 
+	 *
 	 * @param WikiPage $article
 	 * @param User $user
 	 * @param string $text
@@ -1363,12 +1364,12 @@ HEREDOC;
 	 * @param boolean $watch
 	 * @param $sectionanchor
 	 * @param integer $flags
-	 * 
+	 *
 	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
 	static public function onArticleSaveComplete_CheckTOC(
 		&$article, &$user, $text, $summary, $minor, $watch, $sectionanchor, &$flags ) {
-		
+
 		// Gate for speed processing
 		if ( PonyDocsExtension::isSpeedProcessingEnabled() ) {
 			return TRUE;
@@ -1465,9 +1466,9 @@ HEREDOC;
 
 	/**
 	 * Implements ArticleSaveComplete hook
-	 * 
+	 *
 	 * Clean-up for doclinks and caches when a Topic is saved.
-	 * 
+	 *
 	 * @param WikiPage $article
 	 * @param User $user
 	 * @param string $text
@@ -1479,7 +1480,7 @@ HEREDOC;
 	 * @param Revision $revision
 	 * @param Status $status
 	 * @param integer $baseRevId
-	 * 
+	 *
 	 * @deprecated Replace with PageContentSaveComplete hook
 	 */
 	static public function onArticleSaveComplete(
@@ -1501,7 +1502,7 @@ HEREDOC;
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/i', $title->__toString(), $matches ) ) {
 			return TRUE;
 		}
-		
+
 		// Clear cache entries for each version on the Topic
 		$productName = PonyDocsProduct::GetSelectedProduct();
 		// This will return NULL if we're on a TOC, which is why we also clear caches in the previous method
@@ -1509,7 +1510,7 @@ HEREDOC;
 		if ( $manual ) {
 			$topicName = $topic->getTopicName();
 			$versionsToClear = $topic->getProductVersions();
-			
+
 			// Add any versions removed from the Topic
 			$categories = $realArticle->getParserOutput()->getCategories();
 			$previousCategories = $realArticle->getParserOutput($previousRevisionId)->getCategories();
@@ -1520,21 +1521,23 @@ HEREDOC;
 					array_push( $versionsToClear, $removedVersion );
 				}
 			}
-		
+
 			foreach ( $versionsToClear as $versionToClear ) {
 				// Clear PDF cache, because article content may have been updated
-				PonyDocsPdfBook::removeCachedFile( 
+				PonyDocsPdfBook::removeCachedFile(
 					$versionToClear->getProductName(), $manual->getShortName(), $versionToClear->getVersionShortName() );
-				PonyDocsPdfBook::removeCachedFile( 
+				PonyDocsPdfBook::removeCachedFile(
 					$versionToClear->getProductName(), $manual->getShortName(), $versionToClear->getVersionShortName(), $topicName );
 				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
 					// Clear TOC and NAV cache in case h1 was edited
-					PonyDocsTOC::clearTOCCache( 
+					PonyDocsTOC::clearTOCCache(
 						$manual, $versionToClear, PonyDocsProduct::GetProductByShortName( $versionToClear->getProductName() ) );
 					PonyDocsProductVersion::clearNAVCache( $versionToClear );
 				}
 			}
 		}
+		//Clear Topic header cache
+		PonyDocsTopic::clearTopicHeadingCache( $title );
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
@@ -1559,10 +1562,10 @@ HEREDOC;
 
 	/**
 	 * Implement DoEditSectionLink Hook
-	 * 
+	 *
 	 * Add product and version parameters to the query string
 	 * s.t. we can redirect back to the previous product/version when editing a product-inherited Topic
-	 * 
+	 *
 	 * @param Skin $skin
 	 * @param Title $title
 	 * @param string $section
@@ -1576,7 +1579,7 @@ HEREDOC;
 		$selectedVersionName = PonyDocsProductVersion::GetSelectedVersion($selectedProductName);
 		// This is hacky, but at least it's not regex :)
 		$result = str_replace("section=$section", "section=$section&amp;product=$selectedProductName&amp;version=$selectedVersionName", $result);
-		
+
 		return TRUE;
 	}
 
@@ -1588,7 +1591,7 @@ HEREDOC;
 	 */
 	static public function onEdit_TOCPage( $editpage ) {
 		global $wgTitle, $wgOut;
-		
+
 		if ( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*)TOC(.*)/i', $wgTitle->__toString(), $match ) ) {
 			return TRUE;
 		}
@@ -1611,7 +1614,7 @@ EOJS;
 
 	/**
 	 * Implement GetFullURL hook
-	 * 
+	 *
 	 * Returns the pretty url of a document if it's in the Documentation namespace and is a topic in a manual.
 	 */
 	static public function onGetFullURL($title, $url, $query) {
@@ -1622,7 +1625,7 @@ EOJS;
 			if ( !preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', $title->__toString() ) ) {
 				return TRUE;
 			}
-			// Okay, we ARE in the documentation namespace.  Let's try and rewrite 
+			// Okay, we ARE in the documentation namespace.  Let's try and rewrite
 			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+)$/i',
 				PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" .
 				PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3",
@@ -1633,26 +1636,26 @@ EOJS;
 				// Then it looks like we are editing.
 				$editing = true;
 			}
-			// Okay, we're not in the documentation namespace, but we ARE 
+			// Okay, we're not in the documentation namespace, but we ARE
 			// looking at a documentation namespace title.  So, let's rewrite
 			if ( !$editing ) {
 				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					"/$1/$4/$2/$3", $url);
 			} else {
-				// Then we should inject the user's current version into the 
+				// Then we should inject the user's current version into the
 				// article.
 				$currentProduct = PonyDocsProduct::GetSelectedProduct();
 				$currentVersion = PonyDocsProductVersion::GetSelectedVersion($currentProduct);
 				$targetVersion = $currentVersion;
-				// Now, let's get the Article, and fetch the versions 
+				// Now, let's get the Article, and fetch the versions
 				// it applies to.
 				$title = Title::newFromText($title->__toString());
 				$article = new Article($title);
 				$topic = new PonyDocsTopic($article);
 				$topicVersions = $topic->getProductVersions();
 				$found = false;
-				// Now let's go through each version and make sure the user's 
+				// Now let's go through each version and make sure the user's
 				// current version is still in the topic.
 				foreach ( $topicVersions as $version ) {
 					if ( $version->getVersionShortName() == $currentVersion ) {
@@ -1660,12 +1663,12 @@ EOJS;
 						break;
 					}
 				}
-				
+
 				if ( !$found ) {
-					// This is an edge case, it shouldn't happen often.  But 
-					// this means that the editor removed the version the user 
-					// is in from the topic.  So in this case, we want to 
-					// return the Documentation url with the version being the 
+					// This is an edge case, it shouldn't happen often.  But
+					// this means that the editor removed the version the user
+					// is in from the topic.  So in this case, we want to
+					// return the Documentation url with the version being the
 					// latest released version in the topic.
 					$targetVersion = "latest";
 
@@ -1675,7 +1678,7 @@ EOJS;
 						}
 					}
 				}
-				
+
 				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					':([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 					"/$currentProduct/$targetVersion/$2/$3", $url);
@@ -1686,7 +1689,7 @@ EOJS;
 
 	/**
 	 * Implement ParserBeforeStrip Hook
-	 * 
+	 *
 	 * Handle doclinks, which are always of the form [[<blah>]]
 	 * We can skip other markups that also use this structure like Category tags, external links, and links to non-topic pages.
 	 * The rest we need to grab and produce proper anchors and replace in the output.
@@ -1699,7 +1702,7 @@ EOJS;
 	 * If version is omitted, we'll use current version for same-product links, latest version for inter-product links
 	 * To support product inheritance
 	 * - If product is "*", we'll use current product
-	 * - If the current topic is inherited, and the product matches the base product, and a same-product link exists, 
+	 * - If the current topic is inherited, and the product matches the base product, and a same-product link exists,
 	 *   we'll make a same-product link instead of linking to the base product
 	 *
 	 * @param Parser $parser
@@ -1733,7 +1736,7 @@ EOJS;
 			$text,
 			$matches,
 			PREG_SET_ORDER ) ) {
-			
+
 			$selectedProduct = PonyDocsProduct::GetSelectedProduct();
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
@@ -1749,7 +1752,7 @@ EOJS;
 			foreach ( $matches as $match ) {
 				$pieces = explode( ':', $match[1] );
 				$url = NULL;
-				
+
 				// Gate for piece count
 				if (! ( count( $pieces ) == 1
 						|| count( $pieces ) == 4
@@ -1761,7 +1764,7 @@ EOJS;
 				if ( count( $pieces ) > 1 && strpos( $match[1], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) !== 0 ) {
 					continue;
 				}
-				
+
 				// Gate for page type and manual when there's one piece
 				if ( count( $pieces ) == 1
 					// Make sure we're on a Topic page
@@ -1791,7 +1794,7 @@ EOJS;
 							 ),
 							__METHOD__
 						);
-					
+
 						if ( $res->numRows() ) {
 							$productName = $selectedProduct;
 						}
@@ -1816,10 +1819,10 @@ EOJS;
 						$versionName = $version->getVersionShortName();
 					}
 				}
-				
+
 				// [[Documentation:Product:Manual:Topic:Version]]
 				if ( count( $pieces ) == 5 ) {
-					$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' 
+					$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/'
 						. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $pieces[3] );
 				// [[Documentation:Product:Manual:Topic]]
 				} elseif ( count( $pieces ) == 4 ) {
@@ -1837,16 +1840,16 @@ EOJS;
 					);
 
 					if ( $res->numRows() ) {
-						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/' 
+						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/' . $pieces[2] . '/'
 							. preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] );
 					}
 				// [[Topic]]
 				} elseif ( count( $pieces ) == 1 ) {
 					$manualName = $pManual->getShortName();
-					
+
 					$res = $dbr->select(
 						'categorylinks',
-						'cl_from', 
+						'cl_from',
 						array(
 							"cl_to = 'V:$productName:$versionName'",
 							"cl_type = 'page'",
@@ -1857,11 +1860,11 @@ EOJS;
 
 					if ( $res->numRows() ) {
 						$url = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $productName . '/' . $versionName . '/'
-								. $manualName . '/' 
+								. $manualName . '/'
 								. preg_replace('/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $match[1] );
 					}
 				}
-				
+
 				if ( isset( $url ) ) {
 					// Construct URL
 					$href = str_replace( '$1', $url, $wgArticlePath );
@@ -1871,20 +1874,20 @@ EOJS;
 					}
 					// Rebuild as external link
 					$text = str_replace(
-						$match[0], 
-						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( !empty( $match[4] ) ? $match[4] : $match[1] ) 
+						$match[0],
+						'[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( !empty( $match[4] ) ? $match[4] : $match[1] )
 							. ']',
 						$text );
 				}
 			}
 		}
-		
+
 		return TRUE;
 	}
 
 	/**
 	 * Implement ShowEditFormFields Hook
-	 * 
+	 *
 	 * Render a hidden text field which will hold what product and version we were in.
 	 * onArticleSave() uses this to set product and version on article save
 	 * which then allows doGetFullURL to set the URL to wherever the editor came from on redirect after save is successful.
@@ -1944,7 +1947,7 @@ EOJS;
 				$repArray[] = '';
 			}
 			$content = preg_replace( $findArray, $repArray, $content );
-			
+
 			$article->doEdit( $content, 'Automatic removal of duplicate version tags.', EDIT_UPDATE );
 
 			/**
@@ -1968,7 +1971,7 @@ EOJS;
 
 	/**
 	 * Handles special cases for permissions, which include:
-	 * 
+	 *
 	 * 	- Only AUTHOR group can edit/submit the manuals and versions pages.
 	 * 	- Only AUTHORS and EMPLOYEES can edit/submit pages in Documentation namespace.
 	 *
@@ -1984,7 +1987,7 @@ EOJS;
 		$authProductGroup = PonyDocsExtension::getDerivedGroup();
 
 		$continueProcessing = TRUE;
-		
+
 		/**
 		 * WEB-5280 Only docteam and admin users should be able to see these pages
 		 * (Documentation:productShortName:Manuals).
@@ -1996,7 +1999,7 @@ EOJS;
 				$result = FALSE;
 				$continueProcessing = FALSE;
 			}
-			
+
 		}
 
 		if ( !strcmp( 'zipmanual', $action ) ) {
@@ -2023,7 +2026,7 @@ EOJS;
 				$continueProcessing = FALSE;
 			}
 		}
-		
+
 		if ( !strcmp( 'edit', $action ) || !strcmp( 'submit', $action ) ) {
 
 			$groups = $user->getGroups();
@@ -2031,7 +2034,7 @@ EOJS;
 			/**
 			 *WEB-5278 - Documentation:Products should be editable by docteam
 			*/
-			if ( !strcmp(PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( )) ){	
+			if ( !strcmp(PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $title->__toString( )) ){
 				if ( !in_array($wgPonyDocsBaseAuthorGroup, $groups) ) {
 					$result = FALSE;
 					$continueProcessing = FALSE;
