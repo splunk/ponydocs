@@ -923,3 +923,4 @@ class PonyDocsTemplate extends QuickTemplate {
 		}
 	}
 }
+

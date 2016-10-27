@@ -506,3 +506,4 @@ class PonyDocsTOC
 		return "$base/$productName/$TOCName";
 	}
 }
+
