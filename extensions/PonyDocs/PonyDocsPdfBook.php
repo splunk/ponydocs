@@ -309,4 +309,5 @@ function wfSetupPdfBook() {
 	$wgPonyDocsPdfBook = new PonyDocsPdfBook();
 }
 
+
 ?>

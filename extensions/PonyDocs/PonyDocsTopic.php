@@ -425,3 +425,4 @@ class PonyDocsTopic {
 		return "$base/$productName/$versionName/$manualName/$topicName";
 	}
 }
+
