@@ -195,13 +195,13 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 				$cmd .= " --header ... --footer $footer --quiet --jpeg --color";
 				$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
 				$cmd .= " --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
-				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --webpage --no-numbered $cmd $file > $pdfFileName";
+				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --webpage --no-numbered $cmd $file > " . escapeshellarg($pdfFileName);
 			}else {
 				$cmd  = " --left $x_margin --right $x_margin --top $y_margin --bottom $y_margin";
 				$cmd .= " --header ... --footer $footer --tocfooter .i. --quiet --jpeg --color";
 				$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
 				$cmd .= "$toc --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
-				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > $pdfFileName";
+				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > " . escapeshellarg($pdfFileName);
 			}
 
 			putenv("HTMLDOC_NOCGI=1");
