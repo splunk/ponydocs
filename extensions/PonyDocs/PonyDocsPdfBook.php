@@ -242,14 +242,8 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 */
 	static public function servePdf( $fileName ) {
 		if ( file_exists( $fileName ) ) {
-			$modFileName = $fileName;
-			$fileNameDetails = explode('-', $fileName);
-			$fileNameDetails = array_slice($fileNameDetails, 1, -1);
-			if (!empty($fileNameDetails)) {
-				$modFileName = implode('-', $fileNameDetails) . '.pdf';
-			}
 			header( "Content-Type: application/pdf" );
-			header("Content-Disposition: attachment; filename=\"$modFileName\"");			
+			header("Content-Disposition: attachment; filename=\"$fileName\"");			
 			readfile($fileName);
 			// End processing right away.
  			die();
@@ -279,7 +273,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		if (file_exists( $pdfFileName ) ) {
-			@unlink($pdfFileName);
+			@unlink( $pdfTopicFileName );
 			// If it still exists after unlinking, oops
 			if ( file_exists( $pdfFileName ) ) {
 				error_log( "ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname( 'n' )
