@@ -464,6 +464,7 @@ class PonyDocsProductVersion {
 	 * @TODO: Remove old-style Version Category tag option, since we no longer use tags like that (so it must be a dead path)
 	 */
 	static public function IsVersion( $productName, $versionName ) {
+                $versionName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $versionName );
 		if ( preg_match( '/^v:(.*)/i', $versionName, $match ) ) {
 			$versionName = $match[1];
 		}
