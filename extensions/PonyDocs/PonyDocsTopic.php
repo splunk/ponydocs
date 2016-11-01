@@ -180,30 +180,49 @@ class PonyDocsTopic {
 	}
 
 	/**
-	 * CHANGE THIS TO CACHE THESE IN MEMCACHE OR WHATEVER.
-	 *
-	 * This takes a title (text form) and extracts the H1 content for the title and returns it.
+	 * It will first check if there is any cache for h1 and return it .
+	 * If there is no cache this takes a title (text form) and extracts the H1 content for the title and returns it.
 	 * This is used in display (heading and TOC).
-	 * 
+	 *
 	 * @static
 	 * @param string $title The text form of the title to get the H1 content for.
-	 * @return boolean or string h1 or false if no h1
+	 * @return string h1 if no h1 it will set the default title for h1
 	 */
 	static public function FindH1ForTitle( $title ) {
-		$article = new Article( Title::newFromText( $title ), 0 );
-		$content = $article->loadContent();
-		
-		$sections = $article->getParserOutput()->getSections();
-
-		$h1 = FALSE;
-		foreach ( $sections as $section ) {
-			if ( $section['level'] == 1 ) {
-				$h1 = $section['line'];
-				break;
+		$cache = PonyDocsCache::getInstance();
+		$key = "TOPICHEADERCACHE-" . $title;
+		$h1 = $cache->getTopicHeaderCache( $key );
+		if ( $h1 === NULL ) {
+			$article = new Article( Title::newFromText( $title ), 0 );
+			$content = $article->loadContent();
+			$h1 = FALSE;
+			if ($article->getParserOutput()) {
+				$sections = $article->getParserOutput()->getSections();
+				foreach ( $sections as $section ) {
+					if ( $section['level'] == 1 ) {
+						$h1 = $section['line'];
+						break;
+					}
+				}
 			}
+			if ( $h1 === FALSE ) {
+				$h1 = $title;
+			}
+			// Okay, let's store in our cache.
+			$cache->put( $key, $h1, TOC_CACHE_TTL);
 		}
-
 		return $h1;
+	}
+	/**
+	 * This willremove the cache of topic h1 content
+	 * @static
+	 * @param string $key The text form of the title
+	 */
+	static public function clearTopicHeadingCache( $key ) {
+		error_log( "INFO [PonyDocsTopic::clearTopicHeaderCache] Deleting cache entry of Topic Heading $key");
+		$key = "TOPICHEADERCACHE-" . $key;
+		$cache = PonyDocsCache::getInstance();
+		$cache->remove($key);
 	}
 
 	/**
@@ -424,3 +443,4 @@ class PonyDocsTopic {
 		return "$base/$productName/$versionName/$manualName/$topicName";
 	}
 }
+

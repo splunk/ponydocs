@@ -316,18 +316,15 @@ class PonyDocsTOC
 					if ( !$t || !$t->getArticleID() ) {
 						continue;
 					}
-
 					/**
-					 * Obtain H1 content from the article -- WE NEED TO CACHE THIS!
+					 * Obtain H1 content from the article
 					 */
 					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
-					if ( $h1 === FALSE ) {
-						$h1 = $title;
-					}
+
 
 					$href = str_replace(
-						'$1', 
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
+						'$1',
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix",
 						$wgArticlePath );
 
 					$toc[$idx] = array(
@@ -371,7 +368,11 @@ class PonyDocsTOC
 						$start = $toc[$idx];
 					}
 					// Determine current
-					$toc[$idx]['current'] = strcmp( $wgTitle->getPrefixedText(), $toc[$idx]['title'] ) ? FALSE : TRUE;
+					$prefixedText = $wgTitle->getPrefixedText();
+					if (strpos($toc[$idx]['toctitle'], '_') !== FALSE) {
+						$prefixedText = str_replace(' ', '_', $prefixedText);
+					}
+					$toc[$idx]['current'] = strcmp($prefixedText, $toc[$idx]['title']) ? FALSE : TRUE;
 					if ( $toc[$idx]['current'] ) {
 						$currentIndex = $idx;
 					}
@@ -506,3 +507,4 @@ class PonyDocsTOC
 		return "$base/$productName/$TOCName";
 	}
 }
+

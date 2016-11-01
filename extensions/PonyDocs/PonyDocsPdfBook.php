@@ -195,13 +195,13 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 				$cmd .= " --header ... --footer $footer --quiet --jpeg --color";
 				$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
 				$cmd .= " --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
-				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --webpage --no-numbered $cmd $file > $pdfFileName";
+				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --webpage --no-numbered $cmd $file > " . escapeshellarg($pdfFileName);
 			}else {
 				$cmd  = " --left $x_margin --right $x_margin --top $y_margin --bottom $y_margin";
 				$cmd .= " --header ... --footer $footer --tocfooter .i. --quiet --jpeg --color";
 				$cmd .= " --bodyfont $font --fontsize $size --linkstyle plain --linkcolor $linkcol";
 				$cmd .= "$toc --format pdf14 $layout $width --titlefile $titlepagefile --size letter";
-				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > $pdfFileName";
+				$cmd  = "htmldoc -t pdf --book --charset iso-8859-1 --no-numbered $cmd $file > " . escapeshellarg($pdfFileName);
 			}
 
 			putenv("HTMLDOC_NOCGI=1");
@@ -242,8 +242,14 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 	 */
 	static public function servePdf( $fileName ) {
 		if ( file_exists( $fileName ) ) {
+			$modFileName = $fileName;
+			$fileNameDetails = explode('-', $fileName);
+			$fileNameDetails = array_slice($fileNameDetails, 1, -1);
+			if (!empty($fileNameDetails)) {
+				$modFileName = implode('-', $fileNameDetails) . '.pdf';
+			}
 			header( "Content-Type: application/pdf" );
-			header("Content-Disposition: attachment; filename=\"$fileName\"");			
+			header("Content-Disposition: attachment; filename=\"$modFileName\"");			
 			readfile($fileName);
 			// End processing right away.
  			die();
@@ -273,7 +279,7 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 		}
 
 		if (file_exists( $pdfFileName ) ) {
-			@unlink( $pdfTopicFileName );
+			@unlink($pdfFileName);
 			// If it still exists after unlinking, oops
 			if ( file_exists( $pdfFileName ) ) {
 				error_log( "ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname( 'n' )
@@ -302,5 +308,6 @@ function wfSetupPdfBook() {
 	global $wgPonyDocsPdfBook;
 	$wgPonyDocsPdfBook = new PonyDocsPdfBook();
 }
+
 
 ?>
