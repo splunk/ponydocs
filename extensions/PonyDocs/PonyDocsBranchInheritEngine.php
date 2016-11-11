@@ -528,7 +528,7 @@ class PonyDocsBranchInheritEngine {
 		// Determine if any page exists that doesn't have a category link association
 		// or when its base version is not in its categories.
 		$destinationTitle =
-			PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionShortName();
+			PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $targetVersion->getProductName() . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionShortName();
 		$destinationArticle = PonyDocsArticleFactory::getArticleByTitle( $destinationTitle );
 		if ( $destinationArticle->exists() ) {
 			return array( $destinationArticle->metadata['title'] );
