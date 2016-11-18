@@ -1530,14 +1530,20 @@ HEREDOC;
 					$versionToClear->getProductName(), $manual->getShortName(), $versionToClear->getVersionShortName(), $topicName );
 				if ( !PonyDocsExtension::isSpeedProcessingEnabled() ) {
 					// Clear TOC and NAV cache in case h1 was edited
+					$productShortName = $versionToClear->getProductName();
+					$versionShortName = $versionToClear->getVersionShortName();
+					$manualShortName = $manual->getShortName();
 					PonyDocsTOC::clearTOCCache( 
 						$manual, $versionToClear, PonyDocsProduct::GetProductByShortName( $versionToClear->getProductName() ) );
 					PonyDocsProductVersion::clearNAVCache( $versionToClear );
+					//Clear Topic header cache
+					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$productShortName:$versionShortName:$manualShortName:$topicName";
+						
+					PonyDocsTopic::clearTopicHeadingCache( $headerCacheKey );
 				}
 			}
 		}
-		//Clear Topic header cache
-		PonyDocsTopic::clearTopicHeadingCache( $title );
+		
 		PonyDocsExtension::clearArticleCategoryCache( $realArticle );
 
 		// if this is product versions or manuals page, clear navigation cache for all versions in the product
