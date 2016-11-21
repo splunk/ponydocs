@@ -494,11 +494,8 @@ class PonyDocsExtension {
 	static public function onArticleDelete( &$article, &$user, &$user, $error ) {
 		$title = $article->getTitle();
 		$realArticle = Article::newFromWikiPage( $article, RequestContext::getMain() );
-
 		// Delete doc links
-		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );
-		// Delete Topic header cache
-		PonyDocsTopic::clearTopicHeadingCache( $title );
+		PonyDocsExtension::updateOrDeleteDocLinks( "delete", $realArticle );		
 		// Okay, article is in doc namespace
 		if ( strpos( $title->getPrefixedText(), PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) === 0 
 			&& strpos($title->getPrefixedText(), ':') !== FALSE ) {			
@@ -511,11 +508,22 @@ class PonyDocsExtension {
 				&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $productArr[1] ) 				
 				&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $productArr[3] ) ) {						
 				$topic = new PonyDocsTopic( $realArticle );
+				$topicName = $topic->getTopicName();
 				$topicVersions = $topic->getProductVersions();					
 				$manual = PonyDocsProductManual::GetCurrentManual( $productName, $title );			
 				if ( $manual != null ) {
 					foreach( $topicVersions as $key => $version ) {
-						PonyDocsPdfBook::removeCachedFile( $version->getProductName(), $manual->getShortName(), $version->getVersionShortName() );
+						$productShortName = $version->getProductName();
+						$versionShortName = $version->getVersionShortName();
+						$manualShortName = $manual->getShortName();
+						PonyDocsPdfBook::removeCachedFile( $productShortName, $manualShortName, $versionShortName );
+						$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$productShortName:$manualShortName:$topicName:$versionShortName";
+						// Delete Topic header cache
+						PonyDocsTopic::clearTopicHeadingCache( $headerCacheKey );
+						PonyDocsTOC::clearTOCCache(
+								$manual, $version,  PonyDocsProduct::GetProductByShortName( $version->getProductName() ) );
+						PonyDocsProductVersion::clearNAVCache( $version );
+						
 					}	
 				}
 			}
@@ -1537,7 +1545,7 @@ HEREDOC;
 						$manual, $versionToClear, PonyDocsProduct::GetProductByShortName( $versionToClear->getProductName() ) );
 					PonyDocsProductVersion::clearNAVCache( $versionToClear );
 					//Clear Topic header cache
-					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$productShortName:$versionShortName:$manualShortName:$topicName";
+					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$productShortName:$manualShortName:$topicName:$versionShortName";
 						
 					PonyDocsTopic::clearTopicHeadingCache( $headerCacheKey );
 				}

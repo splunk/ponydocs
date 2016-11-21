@@ -319,7 +319,7 @@ class PonyDocsTOC
 					/**
 					 * Obtain H1 content from the article
 					 */
-					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedVersion:$selectedManual:$title_suffix";
+					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix:$selectedVersion";
 					$h1 = PonyDocsTopic::FindH1ForTitle( $title ,$headerCacheKey);						
 					$href = str_replace(
 						'$1',

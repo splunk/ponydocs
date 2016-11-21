@@ -188,7 +188,7 @@ class PonyDocsTopic {
 	 * @param string $title The text form of the title to get the H1 content for.
 	 * @return string h1 if no h1 it will set the default title for h1
 	 */
-	static public function FindH1ForTitle( $title,$headerCacheKey ) {
+	static public function FindH1ForTitle( $title, $headerCacheKey = NULL) {
 		
 		$cache = PonyDocsCache::getInstance();
 		$key = '';
