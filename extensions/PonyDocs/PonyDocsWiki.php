@@ -171,7 +171,18 @@ class PonyDocsWiki {
 					} elseif ( count( $pieces ) == 3
 						&& preg_match(PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] ) ) {
 
-						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						$selectedVersionName = PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						
+						if (! isset( $selectedVersionName ) ) {
+							// this version isn't available to this user; go away
+							$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+							if ( PONYDOCS_DEBUG ) {
+								error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+							}
+							header( "Location: " . $defaultRedirect );
+							exit;
+						}
+
 						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
 							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $pieces[2] );
 						}
@@ -187,7 +198,17 @@ class PonyDocsWiki {
 						&& preg_match( PONYDOCS_PRODUCTVERSION_REGEX, $pieces[2] )
 						&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[3] ) ) {
 
-						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						$selectedVersionName = PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						if (! isset( $selectedVersionName ) ) {
+							// this version isn't available to this user; go away
+							$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+							if ( PONYDOCS_DEBUG ) {
+								error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+							}
+							header( "Location: " . $defaultRedirect );
+							exit;
+						}
+
 						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
 							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $pieces[2] );
 						}
@@ -204,7 +225,18 @@ class PonyDocsWiki {
 						&& preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $pieces[3] ) ) {
 
 						$this->currentManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[3] );
-						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						
+						$selectedVersionName = PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[2] );
+						if (! isset( $selectedVersionName ) ) {
+							// this version isn't available to this user; go away
+							$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+							if ( PONYDOCS_DEBUG ) {
+								error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+							}
+							header( "Location: " . $defaultRedirect );
+							exit;
+						}
+
 						$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE );
 						if ( $selectedVersion ) {
 							$this->currentVersion = PonyDocsProductVersion::GetVersionByName( $pieces[1], $selectedVersion );
@@ -228,7 +260,16 @@ class PonyDocsWiki {
 
 						// When there's a base version, only set the version if there isn't already a version set
 						if ( !PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
-							PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $tocPieces[1] );
+							$selectedVersionName = PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $tocPieces[1] );
+							if (! isset( $selectedVersionName ) ) {
+								// this version isn't available to this user; go away
+								$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+								if ( PONYDOCS_DEBUG ) {
+									error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+								}
+								header( "Location: " . $defaultRedirect );
+								exit;
+							}
 						}
 
 						if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
@@ -253,7 +294,16 @@ class PonyDocsWiki {
 
 					// When there's a base version, only set the version if there isn't already a version set
 					if (! PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
-						PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[4] );
+						$selectedVersioName = PonyDocsProductVersion::SetSelectedVersion( $pieces[1], $pieces[4] );
+						if (! isset( $selectedVersionName ) ) {
+							// this version isn't available to this user; go away
+							$defaultRedirect = PonyDocsExtension::getDefaultUrl();
+							if ( PONYDOCS_DEBUG ) {
+								error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect" );
+							}
+							header( "Location: " . $defaultRedirect );
+							exit;
+						}
 					}
 
 					if ( PonyDocsProductVersion::GetSelectedVersion( $pieces[1], FALSE ) ) {
