@@ -1,6 +1,8 @@
 <?php
 
 require_once('PonyDocsArticleFactory.php');
+require_once('PonyDocsTOC.php');
+
 
 /**
  * Engine to perform inheritance and branch functions for PonyDocs Documentation System.
@@ -439,13 +441,14 @@ class PonyDocsBranchInheritEngine {
 				// $evalTopic is the clened up topic name to look for
 				$evalTopic = preg_quote( str_replace( '?', '', strtolower($topic) ) );
 				$content = explode( "\n", $content );
+				$targetSectionName = trim(strtolower(PonyDocsTOC::getSectionNameByTopicName( $product->getShortName(), $manual->getShortName(), $version->getVersionShortName(), $content,  $topic )));
 				$found = FALSE;
 				$inSection = FALSE;
 				$newContent = '';
 				foreach ( $content as $line ) {
 					$evalLine = trim(str_replace( '?', '', strtolower($line) ) );
 					$topicRegex = PonyDocsTopic::getTopicRegex($evalTopic);
-					if ( preg_match( "/^" . $evalSectionName . "$/", $evalLine ) ) {
+					if ( preg_match( "/^" . $evalSectionName . "$/", $evalLine ) || ( $targetSectionName != '' && ( preg_match( "/^" . $targetSectionName . "$/", $evalLine ) || ( $targetSectionName == $evalLine )))) {
 						$inSection = TRUE;
 						$newContent .= $line . "\n";
 						continue;
@@ -469,7 +472,7 @@ class PonyDocsBranchInheritEngine {
 					// Then the section didn't event exist, we should add to TOC and add the item.
 					// We need to add it before the Category evalLine.
 					$text = $sectionName . "\n" . "* {{#topic:" . $topic . "}}\n\n[[Category";
-					$newContent = preg_replace( "/\[\[Category/", $text, $newContent );
+					$newContent = preg_replace( "/\[\[Category/", $text, $newContent, 1);
 				}
 				$inSection = FALSE;
 				// Reset loop data

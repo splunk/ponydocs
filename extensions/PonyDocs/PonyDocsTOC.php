@@ -506,5 +506,127 @@ class PonyDocsTOC
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 		return "$base/$productName/$TOCName";
 	}
+	
+	/**
+	 * Get the section name by passing the topic name and content
+	 * 
+	 * @param string $selectedProduct
+	 * @param string $selectedManual
+	 * @param string $content
+	 * @param string $topicName
+	 * 
+	 * @return string
+	 */
+	static public function getSectionNameByTopicName($selectedProduct, $selectedManual, $selectedVersion, $content, $topicName) {
+		$cache = PonyDocsCache::getInstance();
+		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
+		$toc = $cache->get( $key );
+		$sectionName = '';
+		// Cache did not exist, let's load our content is build up our cache entry.
+		if ( $toc === NULL && $content != '') {
+			// The current index of the element in $toc we will work on
+			$idx = 0; 				
+			$section = -1;
+			foreach ( $content as $line ) {
+				/**
+				 * Indicates an arbitrary section header if it does not begin with a bullet point.
+				 * This is level 0 in our TOC and is not a link of any type (?).
+				 */
+				if ( ( !isset( $line[0] ) ) || $line[0] != '*' ) {
+					/**
+					 * See if we are CLOSING a section (i.e. $section != -1). If so, check 'subs' and ensure its >0, 
+					 * otherwise we need to remove the section from the list.
+					 */
+					if ( $section != -1 && 
+						( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) ) {
+						unset( $toc[$section] );
+					}
+					if ( isset( $line[0] ) && ctype_alnum( $line[0] ) ) {
+						$toc[$idx] = array(
+							'level' => 0,
+							'subs' => 0,
+							'link' => '',
+							'text' => $line,
+							'current' => FALSE
+						);
+						$section = $idx;
+					}
+				/**
+				 * This is a bullet point and thus an actual topic which can be linked to in MediaWiki. 
+				 * {{#topic:H1 Of Topic Page}}
+				 */
+				} else {
+					if ( -1 == $section ) {
+						continue;
+					}
+					$topicRegex = '/' . PonyDocsTopic::getTopicRegex() . '/i';
+					if ( !preg_match( $topicRegex, $line, $matches ) ) {
+						continue ;
+					}
+
+					$baseTopic = $matches[1];
+
+					$title_suffix = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $baseTopic );
+					$title = PonyDocsTopic::GetTopicNameFromBaseAndVersion(
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix",
+						$selectedProduct );
+
+					/**
+					 * Hide topics which have no content (i.e. have not been created yet) from the user viewing. 
+					 * Authors must go to the TOC page in order to view and edit these.
+					 * The only way to do this (the cleanest/quickest) is to create a Title object then see if its article ID is 0
+					 * @todo: Fix so that the section name is hidden if no topics are visible?
+					 */
+					$t = Title::newFromText( $title );
+					if ( !$t || !$t->getArticleID() ) {
+						continue;
+					}
+					/**
+					 * Obtain H1 content from the article
+					 */
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
+
+
+					$href = str_replace(
+						'$1',
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix",
+						$wgArticlePath );
+
+					$toc[$idx] = array(
+						'level' => 1,
+						'page_id' => $t->getArticleID(),
+						'link' => $href,
+						'toctitle' => $baseTopic,
+						'text' => $h1,
+						'section' => $toc[$section]['text'],
+						'title' => $title,
+						'class' => 'toclevel-1',
+					);
+
+					if($baseTopic == $topicName)
+					{	
+						$sectionName = $toc[$idx]['section'];
+							
+					}
+					$toc[$section]['subs']++;
+				}
+				$idx++;
+			}
+			if ( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) {
+				unset( $toc[$section] );
+			}	
+			// Okay, let's store in our cache.
+			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
+		} else {
+			foreach($toc as $details)
+			{
+				if( $details['toctitle'] == $topicName)
+				{
+					$sectionName = $details['section'];
+				}
+			}	
+		}
+		return 	$sectionName;
+	}
 }
 
