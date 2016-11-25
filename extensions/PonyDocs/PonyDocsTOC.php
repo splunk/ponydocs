@@ -605,8 +605,7 @@ class PonyDocsTOC
 
 					if($baseTopic == $topicName)
 					{	
-						$sectionName = $toc[$idx]['section'];
-							
+						$sectionName = $toc[$idx]['section'];							
 					}
 					$toc[$section]['subs']++;
 				}
