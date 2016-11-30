@@ -749,9 +749,8 @@ class PonyDocsExtension {
 		}
 
 		// Matches a URL like /Documentation/PRODUCT/VERSION/MANUAL
-		// TODO: Should match PONYDOCS_PRODUCTMANUAL_LEGALCHARS instead of \w at the end
 		if ( preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
-			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/(\w+)\/?$/i',
+			. '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)\/?$/i',
 			$_SERVER['PATH_INFO'], $match ) ) {
 			$targetProduct = $match[1];
 			$targetVersion = $match[2];
