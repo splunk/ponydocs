@@ -305,7 +305,7 @@ class PonyDocsTOC
 					$title = PonyDocsTopic::GetTopicNameFromBaseAndVersion(
 						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix",
 						$selectedProduct );
-
+					
 					/**
 					 * Hide topics which have no content (i.e. have not been created yet) from the user viewing. 
 					 * Authors must go to the TOC page in order to view and edit these.
@@ -319,9 +319,8 @@ class PonyDocsTOC
 					/**
 					 * Obtain H1 content from the article
 					 */
-					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
-
-
+					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix:$selectedVersion";
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title ,$headerCacheKey);						
 					$href = str_replace(
 						'$1',
 						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix",

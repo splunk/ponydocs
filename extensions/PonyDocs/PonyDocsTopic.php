@@ -188,11 +188,17 @@ class PonyDocsTopic {
 	 * @param string $title The text form of the title to get the H1 content for.
 	 * @return string h1 if no h1 it will set the default title for h1
 	 */
-	static public function FindH1ForTitle( $title ) {
+	static public function FindH1ForTitle( $title, $headerCacheKey = NULL) {
+		
 		$cache = PonyDocsCache::getInstance();
-		$key = "TOPICHEADERCACHE-" . $title;
-		$h1 = $cache->getTopicHeaderCache( $key );
+		$key = '';
+		$h1 = NULL;
+		if (!empty($headerCacheKey)) {
+			$key = "TOPICHEADERCACHE-" . $headerCacheKey;
+			$h1 = $cache->getTopicHeaderCache( $key );
+		}
 		if ( $h1 === NULL ) {
+		
 			$article = new Article( Title::newFromText( $title ), 0 );
 			$content = $article->loadContent();
 			$h1 = FALSE;
@@ -208,8 +214,10 @@ class PonyDocsTopic {
 			if ( $h1 === FALSE ) {
 				$h1 = $title;
 			}
-			// Okay, let's store in our cache.
-			$cache->put( $key, $h1, TOC_CACHE_TTL);
+			if (!empty($key)) {
+				// Okay, let's store in our cache.
+				$cache->put( $key, $h1, TOC_CACHE_TTL);
+			}
 		}
 		return $h1;
 	}
