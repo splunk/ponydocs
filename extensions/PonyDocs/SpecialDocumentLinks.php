@@ -211,7 +211,7 @@ class SpecialDocumentLinks extends SpecialPage {
 								// But don't expand any containers if this is not a PonyDocs product
 								if ($showTitle) { ?>
 									<h2><?php echo $fromProduct; ?></h2>
-									<?php 
+								<?php 
 									$showTitle = FALSE;
 								}
 								$selected = '';
