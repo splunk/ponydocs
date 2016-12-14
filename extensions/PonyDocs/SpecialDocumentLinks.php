@@ -193,6 +193,7 @@ class SpecialDocumentLinks extends SpecialPage {
 				// Display all links, ordered by product then version
 				foreach ( $links as $fromProduct => $fromVersions ) {
 					// If this is a PonyDocs Product
+					$showTitle = TRUE;
 					if ( PonyDocsProduct::IsProduct($fromProduct) ) { 
 						// Get versions for this product, so we can display the versions in the correct order
 						PonyDocsProductVersion::LoadVersionsForProduct($fromProduct, true);
@@ -200,9 +201,7 @@ class SpecialDocumentLinks extends SpecialPage {
 						// If there are no valid versions for this product/user, then skip the product name header.
 						if (! count($fromProductVersions)) {
 							continue;
-						} ?>
-						<h2><?php echo $fromProduct; ?></h2>
-						<?php
+						} 
 						foreach ($fromProductVersions as $fromProductVersionObj) {
 							$fromProductVersionName = $fromProductVersionObj->getVersionShortName();
 							// If there are doclinks from this version, print them
@@ -210,6 +209,11 @@ class SpecialDocumentLinks extends SpecialPage {
 								// Expand containers of incoming links from the current Product and Version
 								// Expand containers of incoming links from other Products
 								// But don't expand any containers if this is not a PonyDocs product
+								if ($showTitle) { ?>
+									<h2><?php echo $fromProduct; ?></h2>
+								<?php 
+									$showTitle = FALSE;
+								}
 								$selected = '';
 								if (($currentProduct != $fromProduct || $currentVersion == $fromProductVersionName)
 									&& ! $collapseAll) {
