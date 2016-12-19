@@ -61,6 +61,8 @@ class PonyDocsBranchInheritEngine {
 						// Do actual delete.
 						$article->doDelete( "Requested purge of conficting article when branching topic " . $topicTitle
 							. " with version: " . $version->getVersionShortName(), false );
+						$logFields = "action=\"branchTopic-delete\" status=\"success\" topictitle=\"" . htmlentities( $conflict ) ."\"";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 					}
 				}
 			}
@@ -185,6 +187,8 @@ class PonyDocsBranchInheritEngine {
 				else {
 					$article->doDelete( "Requested purge of conficting article when inheriting topic " . $topicTitle
 						. " with version: " . $version->getVersionShortName(), false );
+					$logFields = "action=\"inheritTopic-delete\" status=\"success\" topictitle=\"" . htmlentities( $conflict ) ."\"";
+					error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 				}
 			}
 		}

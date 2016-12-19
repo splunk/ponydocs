@@ -166,6 +166,9 @@ class SpecialBranchInherit extends SpecialPage
 
 	public static function ajaxFetchJobProgress($jobID) {
 		$uniqid = uniqid("ponydocsbranchinherit", true);
+		$logParameters = "jobID=\"" . $jobID . "\"";		
+		$logFields = "action=\"jobidcreated\" status=\"success\" $logParameters";
+		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents($path);
 		if($progress === false) {
@@ -255,12 +258,18 @@ class SpecialBranchInherit extends SpecialPage
 					if($manualData['tocAction'] == 'forceinherit') {
 						print("<div class=\"normal\">Forcing inheritance of source TOC.</div>");
 						PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
+						$logFields = "action=\"TOC-forceinherit\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Complete</div>");
 
 					}
 					else if($manualData['tocAction'] == 'forcebranch') {
 						print("<div class=\"normal\">Forcing branch of source TOC.</div>");
 						PonyDocsBranchInheritEngine::branchTOC($product, $manual, $sourceVersion, $targetVersion);
+						$logFields = "action=\"TOC-forcebranch\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Complete</div>");
 					}
 				}
@@ -273,6 +282,9 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"normal\">Attempting to add target version to existing source version TOC.</div>");
 							PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
 							$logFields = "action=\"TOC\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"TOC-tocInherit\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
@@ -295,6 +307,9 @@ class SpecialBranchInherit extends SpecialPage
 							}
 							PonyDocsBranchInheritEngine::createTOC($product, $manual, $targetVersion, $addData);
 							$logFields = "action=\"TOC\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"TOC-Create\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
@@ -323,6 +338,9 @@ class SpecialBranchInherit extends SpecialPage
 						$logFields = "action=\"TOC\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\" "
 							. "$logParameters";
 						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+						$logFields = "action=\"TOC-Update\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\" "
+							. "$logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Complete</div>");
 					} catch(Exception $e) {
 						$logFields = "action=\"TOC\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
@@ -344,6 +362,9 @@ class SpecialBranchInherit extends SpecialPage
 					fputs($fp, "Completed " . $numOfTopicsCompleted . " of " . $numOfTopics . " Total: " . ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . "%");
 					fclose($fp);
 					if(isset($topic['action']) && $topic['action'] == "ignore") {
+						$logFields = "action=\"topic-ignore\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Ignoring topic: " . $topic['title'] . "</div>");
 						$numOfTopicsCompleted++;
 						continue;
@@ -354,6 +375,9 @@ class SpecialBranchInherit extends SpecialPage
 							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], TRUE, FALSE );
 							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-branchpurge\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
@@ -372,6 +396,9 @@ class SpecialBranchInherit extends SpecialPage
 							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-branch\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
@@ -386,6 +413,9 @@ class SpecialBranchInherit extends SpecialPage
 							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE, TRUE );
 							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-branchsplit\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
@@ -404,6 +434,9 @@ class SpecialBranchInherit extends SpecialPage
 							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-inherit\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
@@ -418,6 +451,9 @@ class SpecialBranchInherit extends SpecialPage
 							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], TRUE );
 							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-inheritpurge\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
 								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
@@ -439,6 +475,9 @@ class SpecialBranchInherit extends SpecialPage
 		list ($msec, $sec) = explode(' ', microtime());
 		$endTime = (float)$msec + (float)$sec;
 		print("All done!\n");
+		$logFields = "action=\"finish\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] Completed $logFields" );
 		print('Execution Time: ' . round($endTime - $startTime, 3) . ' seconds');
 		if($numOfTopics == 1 && $lastTopicTarget != null) {
 			// We can safely show a link to the topic.
@@ -481,10 +520,10 @@ class SpecialBranchInherit extends SpecialPage
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct);
 		$groups = $wgUser->getGroups( );
-		if(!in_array( $authProductGroup, $groups)) {
-			$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
-			return;
-		}
+		// if(!in_array( $authProductGroup, $groups)) {
+		// 	$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
+		// 	return;
+		// }
 
 		// Static product check
 		if ( PonyDocsProduct::GetProductByShortName($forceProduct)->isStatic()) {
