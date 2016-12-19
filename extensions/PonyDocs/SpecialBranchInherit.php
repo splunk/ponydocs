@@ -520,10 +520,10 @@ class SpecialBranchInherit extends SpecialPage
 		// Security Check
 		$authProductGroup = PonyDocsExtension::getDerivedGroup(PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct);
 		$groups = $wgUser->getGroups( );
-		// if(!in_array( $authProductGroup, $groups)) {
-		// 	$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
-		// 	return;
-		// }
+		if(!in_array( $authProductGroup, $groups)) {
+			$wgOut->addHTML("<p>Sorry, but you do not have permission to access this Special page.</p>");
+			return;
+		}
 
 		// Static product check
 		if ( PonyDocsProduct::GetProductByShortName($forceProduct)->isStatic()) {
