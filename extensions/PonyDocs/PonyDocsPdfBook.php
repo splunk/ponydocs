@@ -184,7 +184,8 @@ class PonyDocsPdfBook extends PonyDocsBaseExport {
 			} else {
 				$format = 'manual'; 	/* @todo Modify so single topics can be printed in pdf */
 			}
-
+            
+            #Footer numbering
 			$footer = '.1.';
 			$toc = $format == 'single' ? '' : " --toclevels $levels";
 
