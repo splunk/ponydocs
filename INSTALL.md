@@ -362,7 +362,7 @@ This should get you started! Have fun!
 
 In the Ponydocs skin, there is a link to "PDF Version".
 
-* If you would like this to work, you'll need to install [HTMLDOC](http://www.htmldoc.org/)
+* If you would like this to work, you'll need to install [HTMLDOC](https://www.msweet.org/projects.php?Z1)
 * Additionally, you'll need to make sure your MEDIAWIKIBASE/images directory is writable by your web server user.
 
 F.A.Q.
