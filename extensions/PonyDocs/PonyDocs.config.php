@@ -32,7 +32,7 @@ define( 'PONYDOCS_CASE_SENSITIVE_TITLES', FALSE );
 define( 'PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', FALSE );
 
 // Configuration variables for Ponydocs SpecialDocumentLinks
-define( 'PONYDOCS_SPECIAL_DOCUMNET_LINKS', 'Special:SpecialDocumentLinks' );
+define( 'PONYDOCS_SPECIAL_DOCUMENT_LINKS', 'Special:SpecialDocumentLinks' );
 
 // Configuration variables to map ponydoc groups to mediawiki groups
 if ( !isset( $wgPonyDocsEmployeeGroup ) ) {

@@ -2071,7 +2071,7 @@ EOJS;
 				}
 			}
 		}
-		if( $continueProcessing && $title->__toString( ) == PONYDOCS_SPECIAL_DOCUMNET_LINKS ) {
+		if( $continueProcessing && $title->__toString( ) == PONYDOCS_SPECIAL_DOCUMENT_LINKS ) {
 			
 			//Get User Groups here
 			$groups = $user->getGroups();
