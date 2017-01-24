@@ -2075,7 +2075,7 @@ EOJS;
 			
 			//Get User Groups here
 			$groups = $user->getGroups();
-			if( ! ( in_array( $wgPonyDocsBaseAuthorGroup, $groups ) || in_array( 'docteam', $groups ) || in_array( $authProductGroup, $groups ) ) ) {
+			if( ! ( in_array( $wgPonyDocsBaseAuthorGroup, $groups ) || in_array( 'docteam', $groups ) || in_array( $authProductGroup, $groups ) || in_array($wgPonyDocsEmployeeGroup, $groups) ) ) {
 				$continueProcessing = FALSE;
 			}
 		}
