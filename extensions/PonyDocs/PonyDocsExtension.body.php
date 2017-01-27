@@ -431,7 +431,12 @@ class PonyDocsExtension {
 				} else {
 					$productName = $pieces[1];
 				}
-				$toUrl = $pieces[0] . '/' . $productName . '/' . $pieces[4] . '/' . $pieces[2] . '/' . $pieces[3];
+				$prodVersion = $pieces[4];
+				$toUrl = $pieces[0] . '/' . $productName . '/' . $prodVersion . '/' . $pieces[2] . '/' . $pieces[3];
+				if( strpos( $prodVersion, '#') != FALSE) {
+					$linkDetails = explode('#', $pieces[4]);
+					$toUrl = $pieces[0] . '/' . $productName . '/' . $linkDetails[0] . '/' . $pieces[2] . '/' . $pieces[3] . '#' . $linkDetails[1];
+				}				
 			} else {
 				// Not a valid number of pieces in title
 				error_log( "WARNING [PonyDocs] [" . __METHOD__ . "] Wrong number of pieces in PonyDocs title." );
