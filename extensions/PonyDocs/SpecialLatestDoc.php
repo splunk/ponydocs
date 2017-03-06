@@ -55,7 +55,7 @@ class SpecialLatestDoc extends SpecialPage {
 			$logFields = "action=SpecialDoc status=failure error=\"Failed to obtain value for parameter t\"";
 			error_log('WARNING [' . __METHOD__ . "] [SpecialLastestDoc] $logFields"); 
 			$logFields = serialize($_SERVER);
-			error_log('WARNING [' . __METHOD__ . "] [SpecialLastestDoc] $logFields");?>
+			error_log('Tracking referer details [' . __METHOD__ . "] [SpecialLastestDoc] $logFields");?>
 			<p>
 				Sorry, please pass in a valid parameter <b>t</b> to get the desired documentation.
 			</p>
