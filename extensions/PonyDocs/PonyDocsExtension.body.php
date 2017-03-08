@@ -433,7 +433,7 @@ class PonyDocsExtension {
 				}
 				$prodVersion = $pieces[4];
 				$toUrl = $pieces[0] . '/' . $productName . '/' . $prodVersion . '/' . $pieces[2] . '/' . $pieces[3];
-				if( strpos( $prodVersion, '#') != FALSE) {
+				if ( strpos( $prodVersion, '#') != FALSE) {
 					$linkDetails = explode('#', $pieces[4]);
 					$toUrl = $pieces[0] . '/' . $productName . '/' . $linkDetails[0] . '/' . $pieces[2] . '/' . $pieces[3] . '#' . $linkDetails[1];
 				}				
