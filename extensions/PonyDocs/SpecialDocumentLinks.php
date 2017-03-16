@@ -130,11 +130,13 @@ class SpecialDocumentLinks extends SpecialPage {
 
 		// Query the database for the list of toUrls we've collated
 		if (!empty($toUrls)) {
-			foreach ($toUrls as &$toUrl) {
+			$query = "SELECT * FROM " . $wgDBprefix . "ponydocs_doclinks WHERE ";
+			foreach ($toUrls as $toUrl) {				
 				$toUrl = $dbr->strencode($toUrl);
+				$query .= " to_link Like '" . $toUrl . "#%' OR ";
+				$query .= " to_link Like '" . $toUrl . "' OR ";
 			}
-			$inUrls = "'" . implode("','", $toUrls) . "'";
-			$query = "SELECT * FROM " . $wgDBprefix . "ponydocs_doclinks WHERE to_link IN ($inUrls)";
+			$query = rtrim($query, ' OR ');
 			$results = $dbr->query($query);
 		}
 
