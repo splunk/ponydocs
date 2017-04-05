@@ -74,6 +74,7 @@ PonyDocsValidators = function() {
 SplunkBranchInherit = function() {
 	var sourceProduct = '';
 	var sourceVersion = '';
+	var targetProduct = '';
 	var targetVersion = '';
 	var manuals = [];
 	var defaultAction = 'ignore';
@@ -86,6 +87,48 @@ SplunkBranchInherit = function() {
 
 	return {
 		init: function() {
+			// Change the current version and reload the page when source product changes
+			$( '#docsSourceProductSelect' ).change( function() {
+				var productIndex = document.getElementById( 'docsSourceProductSelect' ).selectedIndex;
+				var productName = document.getElementById( 'docsSourceProductSelect' )[productIndex].value;
+				// @todo fix this title
+				var title = window.location.pathname;
+				var force = true;
+				sajax_do_call(
+					'efPonyDocsAjaxChangeProduct', [productName, title, force], function( o ) {
+						document.getElementById( 'docsSourceProductSelect' ).disabled = true;
+						var s = new String( o.responseText );
+						document.getElementById( 'docsSourceProductSelect' ).disabled = false;
+						window.location.href = s;
+					}), true;
+			});
+			
+			// Update the target version select when target product changes
+			$( '#docsTargetProductSelect' ).change( function() {
+				var productIndex = document.getElementById( 'docsTargetProductSelect' ).selectedIndex;
+				var productName = document.getElementById( 'docsTargetProductSelect' )[productIndex].value;
+				sajax_do_call( 'efPonyDocsAjaxGetVersions', [productName], function( o ) {
+					document.getElementById( 'docsTargetProductSelect' ).disabled = true;
+					document.getElementById( 'versionselect_targetversion' ).disabled = true;
+					var versions = eval( o.responseText );
+					var targetVersionSelect = document.getElementById( 'versionselect_targetversion');
+					// Remove options
+					var selectLength = targetVersionSelect.length;
+					for ( var i = 0; i < selectLength; i++ ) {
+						targetVersionSelect.remove(0);
+					}
+					// Add options
+					for ( var i = 0; i < versions.length; i++ ) {
+						option = document.createElement( 'option' );
+						option.setAttribute( 'value', versions[i].short_name );
+						option.appendChild(document.createTextNode( versions[i].short_name + ' - ' + versions[i].status ) );
+						targetVersionSelect.appendChild( option );
+					}
+					document.getElementById( 'docsTargetProductSelect' ).disabled = false;
+					document.getElementById( 'versionselect_targetversion' ).disabled = false;
+				}, true);
+			});
+			
 			$('#versionselect_submit').click(function() {
 				sourceProduct = $('#force_product').val();
 				if($('#force_sourceVersion').length != 0) {
@@ -96,32 +139,21 @@ SplunkBranchInherit = function() {
 				else {
 					sourceVersion = $('#versionselect_sourceversion').val();
 				}
+				targetProduct = $( '#docsTargetProductSelect' ).val();
 				targetVersion = $('#versionselect_targetversion').val();
-				if(sourceVersion == targetVersion) {
-					alert('Target version can not be the same as source version.');
-				}
-				else {
-					$('#docbranchinherit .sourceversion').html(sourceVersion);
-					$('#docbranchinherit .targetversion').html(targetVersion);
+				if ( sourceProduct == targetProduct && sourceVersion == targetVersion ) {
+					alert('Target version cannot be the same as source version.');
+				} else {
+					$('#docbranchinherit .sourceversion').html(sourceProduct + ':' + sourceVersion);
+					$('#docbranchinherit .targetversion').html(targetProduct + ':' + targetVersion);
 					$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
-					if(forceTitle == null) {
-						sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
-							var manuals = eval(res.responseText);
-							var container = $('#manualselect_manuals');
-							container.html('');
-							for(index in manuals) {
-								var html = "<input id=\"manual_" + manuals[index]['shortname'] + "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname'] + "\" /><label for=\"manual_" + manuals[index]['shortname'] + "\">" + manuals[index]['longname'] + "</label><br />";
-								container.prepend(html);
-							}
-							$('#docbranchinherit .versionselect').fadeOut(function () {
-								$('#versionselect_submit').attr("value", "Continue to Manuals").removeAttr("disabled");
-								$('#docbranchinherit .manualselect').fadeIn();
-							});
-						});
-					}
-					else {
+					if ( forceTitle == null ) {
+						SplunkBranchInherit.setupManuals();
+					} else {
 						// Force handling a title.
-						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
+						sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', 
+							[sourceProduct, sourceVersion, targetProduct, targetVersion, forceManual, forceTitle],
+							SplunkBranchInherit.setupTopicActions);
 					}
 				}
 			});
@@ -129,10 +161,9 @@ SplunkBranchInherit = function() {
 			$(document).on( 'change', '.sectiondefault', null, function() {
 				var val = $(this).val();
 				$(this).siblings("table").find("option[value='" + val + "']").attr("selected", "selected");
-				if(val == "inherit") {
+				if (val == "inherit") {
 					$(this).siblings("table").find("option[value='inheritpurge']").attr("selected", "selected");
-				}
-				if(val == "branch") {
+				} else if (val == "branch") {
 					$(this).siblings("table").find("option[value='branchsplit']").attr("selected", "selected");
 				}
 			});
@@ -153,7 +184,9 @@ SplunkBranchInherit = function() {
 				});
 				$("#manualselect_submit").attr("disabled", "disabled").attr("value", "Fetching Data...");
 				// Okay, let's fetch our tocs.
-				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
+				sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', 
+					[sourceProduct, sourceVersion, targetProduct, targetVersion, manuals.join(',')],
+					SplunkBranchInherit.setupTopicActions);
 			});
 
 			$('#topicactions_submit').click(function() {
@@ -194,7 +227,11 @@ SplunkBranchInherit = function() {
 						SplunkBranchInherit.jobID = res.responseText;
 						sajax_request_type = 'POST';
 						SplunkBranchInherit.fetchProgress();
-						sajax_do_call('SpecialBranchInherit::ajaxProcessRequest', [SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetVersion, $.toJSON(topicActions)], function(res) {
+						sajax_do_call(
+							'SpecialBranchInherit::ajaxProcessRequest',
+							[SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetProduct, targetVersion,
+								$.toJSON(topicActions)],
+							function(res) {
 							completed = true;
 							clearTimeout(progressTimer);
 							progressTimer = null;
@@ -204,6 +241,45 @@ SplunkBranchInherit = function() {
 							});
 						});
 					});
+			});
+		},
+		
+		setupManuals: function() {
+			var sourceManuals = '';
+			var targetManuals = '';
+			var manuals = {};
+			sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function( res ) {
+				sourceManuals = eval( res.responseText );
+				// This second call is only necessary when sourceProduct != targetProduct
+				// but because sajax_do_call() can't do synchronous, I'm always make the second call to keep thing simpler
+				// @todo replace sajax_do_call with jQuery.ajax *everywhere*
+				sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [targetProduct], function( res ) {
+					targetManuals = eval( res.responseText );
+					if ( sourceProduct == targetProduct ) {
+						manuals = sourceManuals;
+					} else {
+						for ( manual in sourceManuals ) {
+							if ( manual in targetManuals ) {
+								manuals[manual] = sourceManuals[manual];
+							}
+						}
+					}
+
+					var container = $( '#manualselect_manuals' );
+					container.html( '' );
+					for ( manual in manuals ) {
+						var html = "<input id=\"manual_" + manuals[manual]['shortname']
+							+ "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[manual]['shortname']
+							+ "\" /><label for=\"manual_" + manuals[manual]['shortname'] + "\">" + manuals[manual]['longname']
+							+ "</label><br />";
+						container.prepend( html );
+					}
+					
+					$( '#docbranchinherit .versionselect' ).fadeOut( function () {
+						$( '#versionselect_submit' ).attr( "value", "Continue to Manuals" ).removeAttr( "disabled" );
+						$( '#docbranchinherit .manualselect' ).fadeIn();
+					});
+				});
 			});
 		},
 			
@@ -327,7 +403,8 @@ SplunkRenameVersion = function() {
 	var sourceProduct = '';
 	var sourceVersion = '';
 	var targetVersion = '';
-	var manuals = [];
+	var manuals = {};
+	var manualsArray = [];
 	var jobID = '';
 	var progressTimer = null;
 	var completed = false;
@@ -340,7 +417,7 @@ SplunkRenameVersion = function() {
 				sourceVersion = $( '#versionselect_sourceversion' ).val();
 				targetVersion = $( '#versionselect_targetversion' ).val();
 				if ( sourceVersion == targetVersion ) {
-					alert( 'Target version can not be the same as source version.' );
+					alert( 'Target version cannot be the same as source version.' );
 				}
 				else {
 					$( '#renameversion .sourceversion' ).html( sourceVersion );
@@ -379,7 +456,13 @@ SplunkRenameVersion = function() {
 					// Set up the progress meter
 					sajax_request_type = 'POST';
 					SplunkRenameVersion.fetchProgress();
-
+					
+					// Make an array of manuals that we can iterate over
+					var i = 0;
+					for ( index in manuals ) {
+						manualsArray[i] = manuals[index];
+						i++;
+					}
 					// Iterate over the manuals
 					SplunkRenameVersion.processNextManual();
 				});
@@ -388,8 +471,9 @@ SplunkRenameVersion = function() {
 		// Make an ajax call to process a single manual
 		// In order to fake a sychronous call (since sajax doesn't support such a thing), let's be recursively nested.
 		processNextManual: function() {
-			if ( manuals.length > 0 ) {
-				var manual = manuals.shift();
+
+			if ( manualsArray.length > 0 ) {
+				var manual = manualsArray.shift();
 				sajax_do_call(
 					'SpecialRenameVersion::ajaxProcessManual',
 					[ jobID, sourceProduct, manual['shortname'], sourceVersion, targetVersion ],

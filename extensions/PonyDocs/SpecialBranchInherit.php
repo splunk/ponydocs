@@ -68,54 +68,70 @@ class SpecialBranchInherit extends SpecialPage
 	/**
 	 * AJAX method to fetch manuals for a specified product and version
 	 *
-	 * @param $ver string The string representation of the version to retrieve
-	 * 					  manuals for.
+	 * @param $productName string
+	 * @param $versionName string
  	 * @returns string JSON representation of the manuals
 	 */
-	public static function ajaxFetchManuals($product, $ver) {
-		$perms = SpecialBranchInherit::userCanExecute( $product );
-		if ( !$perms ) {
-			$result = array( "success", FALSE );
-			$result = json_encode( $result );
+	public static function ajaxFetchManuals( $productName, $versionName = NULL ) {
+
+		$perms = SpecialBranchInherit::userCanExecute( $productName );
+		if( !$perms ) {
+			$result = array("success", false);
+			$result = json_encode($result);
 			return $result;
-		}		
-		PonyDocsProductVersion::LoadVersionsForProduct($product);
-		PonyDocsProductVersion::SetSelectedVersion($product, $ver);
-		$manuals = PonyDocsProductManual::LoadManualsForProduct($product, TRUE);
-		$result = array();
-		foreach($manuals as $manual) {
+		}	
+		PonyDocsProductVersion::LoadVersionsForProduct( $productName );
+		
+		if ( !is_null( $versionName ) ) {
+			PonyDocsProductVersion::SetSelectedVersion( $productName, $versionName);
+			$manuals = PonyDocsProductManual::LoadManualsForProduct( $productName, TRUE);
+		} else {
+			$manuals = PonyDocsProductManual::GetDefinedManuals( $productName );
+		}
+		
+		$response = array();
+		foreach ( $manuals as $manual ) {
 			if ( !$manual->isStatic() ) {
-				$result[] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
+				$response[$manual->getShortName()] = array( "shortname" => $manual->getShortName(), "longname" => $manual->getLongName() );
 			}
 		}
-		$result = json_encode($result);
-		return $result;
+		
+		// JS eval only works with json representing objects at the top level (i.e. associative arrays) if they parenthesized
+		return "(" . json_encode( $response ) . ")";
 	}
 
 	/**
 	 * AJAX method to fetch topics for a specified version and manuals
 	 *
-	 * @param $productName string product short name
-	 * @param $sourceVersion string String representation of the source version
-	 * @param $targetVersion string String representation of the target version
+	 * @param $sourceProductName string product short name
+	 * @param $sourceVersionName string String representation of the source version
+	 * @param $targetProductName string product short name
+	 * @param $targetVersionName string String representation of the target version
 	 * @param $manuals string Comma seperated list of manuals to retrieve from
-	 * @param $forcedTitle string A specific title to pull from and nothing else
-	 * 							  (for individual branch/inherit)
+	 * @param $forcedTitle string A specific title to pull from and nothing else (for individual branch/inherit)
 	 * @returns string JSON representation of all titles requested
 	 */
-	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $manuals, $forcedTitle = null) {
-		$perms = SpecialBranchInherit::userCanExecute( $productName );
-		if ( !$perms ) {
-			$result = array( "success", FALSE );
-			$result = json_encode( $result );
+
+	public static function ajaxFetchTopics(
+		$sourceProductName, $sourceVersionName, $targetProductName, $targetVersionName, $manuals, $forcedTitle = NULL ) {
+		$perms = SpecialBranchInherit::userCanExecute( $sourceProductName );
+		if( !$perms ) {
+			$result = array("success", false);
+			$result = json_encode($result);
+			return $result;
+		}
+		$perms = SpecialBranchInherit::userCanExecute( $targetProductName );
+		if( !$perms ) {
+			$result = array("success", false);
+			$result = json_encode($result);
 			return $result;
 		}		
-		PonyDocsProduct::LoadProducts(true);
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		PonyDocsProductVersion::LoadVersionsForProduct(true, true);
-		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
-		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
-		if(!$sourceVersion || !$targetVersion) {
+		PonyDocsProduct::LoadProducts( TRUE );
+		$product = PonyDocsProduct::GetProductByShortName( $sourceProductName );
+		PonyDocsProductVersion::LoadVersionsForProduct( TRUE, TRUE );
+		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $sourceProductName, $sourceVersionName );
+		$targetVersion = PonyDocsProductVersion::GetVersionByName( $targetProductName, $targetVersionName );
+		if (!$sourceVersion || !$targetVersion) {
 			$result = array("success", false);
 			$result = json_encode($result);
 			return $result;
@@ -124,7 +140,7 @@ class SpecialBranchInherit extends SpecialPage
 		// Okay, get manual by name.
 		$manuals = explode(",", $manuals);
 		foreach($manuals as $manualName) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+			$manual = PonyDocsProductManual::GetManualByShortName( $sourceProductName, $manualName );
 			$result[$manualName] = array();
 			$result[$manualName]['meta'] = array();
 			// Load up meta.
@@ -199,6 +215,9 @@ class SpecialBranchInherit extends SpecialPage
 			return "Access denied.";
 		}		
 		$uniqid = uniqid("ponydocsbranchinherit", true);
+		$logParameters = "jobID=\"" . $jobID . "\"";		
+		$logFields = "action=\"jobidcreated\" status=\"success\" $logParameters";
+		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents($path);
 		if($progress === false) {
@@ -211,27 +230,38 @@ class SpecialBranchInherit extends SpecialPage
 	 * Processes a branch/inherit job request.
 	 *
 	 * @param $jobID The unique id for this job (see ajaxFetchJobID)
-	 * @param $productName string product short name
+	 * @param $sourceProductName string product short name
 	 * @param $sourceVersion string String representation of the source version
+	 * @param $targetProductName string product short name
 	 * @param $targetVersion string String representaiton of the target version
 	 * @param $topicActions string JSON array representation of all topics and
 	 * 								their requested actions.
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessRequest($jobID, $productName, $sourceVersion, $targetVersion, $topicActions) {
+	public static function ajaxProcessRequest(
+		$jobID, $sourceProductName, $sourceVersion, $targetProductName, $targetVersion, $topicActions ) {
 		global $wgScriptPath;
-		$perms = SpecialBranchInherit::userCanExecute( $productName );
+		$perms = SpecialBranchInherit::userCanExecute( $sourceProductName );
 		if ( !$perms ) {	
 			print( "Access Denied." );
-			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes( $productName ) . "\" " 
-							. "sourceVersion=\"" . addslashes( $sourceVersionName ) . "\" error=\"Access Denied \" " 
-							. "targetVersion=\"" . addslashes( $targetVersionName ) . "\"";
+			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes( $sourceProductName ) . "\" " 
+							. "sourceVersion=\"" . addslashes( $sourceVersion ) . "\" error=\"Access Denied \" " 
+							. "targetVersion=\"" . addslashes( $targetVersion ) . "\"";
+			error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );		
+			return FALSE;
+		}
+		$perms = SpecialBranchInherit::userCanExecute( $targetProductName );
+		if ( !$perms ) {	
+			print( "Access Denied." );
+			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes( $targetProductName ) . "\" " 
+							. "sourceVersion=\"" . addslashes( $sourceVersion ) . "\" error=\"Access Denied \" " 
+							. "targetVersion=\"" . addslashes( $targetVersion ) . "\"";
 			error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );		
 			return FALSE;
 		}
 		ob_start();
 
-		$targetVersionName = $targetVersion;
+		$targetVersionShortName = $targetVersion;
 		$sourceVersionName = $sourceVersion;
 
 		$topicActions = json_decode($topicActions, true);
@@ -239,8 +269,12 @@ class SpecialBranchInherit extends SpecialPage
 		list ($msec, $sec) = explode(' ', microtime());
 		$startTime = (float)$msec + (float)$sec;
 
-		$logFields = "action=\"start\" status=\"success\" product=\"" . addslashes($productName) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" "
-			. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+		$logParameters = "sourceProduct=\"" . addslashes( $sourceProductName ) 
+			. "\" sourceVersion=\"" . htmlentities( $sourceVersionName ) 
+			. "\" targetProduct=\"" . addslashes( $targetProductName )
+			. "\" targetVersion=\"" . htmlentities( $targetVersionShortName ) . "\"";
+		
+		$logFields = "action=\"start\" status=\"success\" $logParameters";
 		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 
 		if($topicActions == false) {
@@ -248,16 +282,16 @@ class SpecialBranchInherit extends SpecialPage
 			return true;
 		}
 
-		print("Beginning process job for source version: " . $productName . ':' . $sourceVersion . "<br />");
-		print("Target version is: " . $targetVersion . "<br />");
+		print( "Beginning process job for source version: $sourceProductName:$sourceVersion<br />" );
+		print("Target version is: $targetProductName:$targetVersion<br />");
 
 		// Enable speed processing to avoid any unnecessary processing on
 		// new topics created by this tool.
 		PonyDocsExtension::setSpeedProcessing(true);
 
-		$product = PonyDocsProduct::GetProductByShortName($productName);
-		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
-		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
+		$product = PonyDocsProduct::GetProductByShortName( $sourceProductName );
+		$sourceVersion = PonyDocsProductVersion::GetVersionByName( $sourceProductName, $sourceVersion );
+		$targetVersion = PonyDocsProductVersion::GetVersionByName( $targetProductName, $targetVersion );
 
 		// Determine how many topics there are to process.
 		$numOfTopics = 0;
@@ -274,29 +308,35 @@ class SpecialBranchInherit extends SpecialPage
 				$numOfTopics += count($topicActions[$manualIndex]['sections'][$sectionName]);
 			}
 		}
-		$logFields = "action=\"topic\" status=\"success\" product=\"" . addslashes($productName) . "\" numOfTopics=$numOfTopics "
-			. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+		$logFields = "action=\"topic\" status=\"success\" $logParameters";
 		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 
 		$lastTopicTarget = null;
 
 		foreach($topicActions as $manualName => $manualData) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+			$manual = PonyDocsProductManual::GetManualByShortName( $sourceProductName, $manualName );
 			// Determine if TOC already exists for target version.
 			if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion)) {
-				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version " . $targetVersion->getVersionName() . "</div>");
+				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version "
+					. $targetVersion->getProductName() . ":" . $targetVersion->getVersionShortName() . "</div>");
 				// Crl eate the toc or inherit.
 				if($manualData['tocAction'] != 'default') {
 					// Then they want to force.
 					if($manualData['tocAction'] == 'forceinherit') {
 						print("<div class=\"normal\">Forcing inheritance of source TOC.</div>");
 						PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
+						$logFields = "action=\"TOC-forceinherit\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Complete</div>");
 
 					}
 					else if($manualData['tocAction'] == 'forcebranch') {
 						print("<div class=\"normal\">Forcing branch of source TOC.</div>");
 						PonyDocsBranchInheritEngine::branchTOC($product, $manual, $sourceVersion, $targetVersion);
+						$logFields = "action=\"TOC-forcebranch\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Complete</div>");
 					}
 				}
@@ -308,14 +348,16 @@ class SpecialBranchInherit extends SpecialPage
 						try {
 							print("<div class=\"normal\">Attempting to add target version to existing source version TOC.</div>");
 							PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
-							$logFields = "action=\"TOC\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+							$logFields = "action=\"TOC\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"TOC-tocInherit\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"TOC\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "error=\"" . addslashes($e->getMessage()) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"TOC\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\" "
+								. "error=\"" . addslashes( $e->getMessage() ) . "\" $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -331,14 +373,16 @@ class SpecialBranchInherit extends SpecialPage
 								}
 							}
 							PonyDocsBranchInheritEngine::createTOC($product, $manual, $targetVersion, $addData);
-							$logFields = "action=\"TOC\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+							$logFields = "action=\"TOC\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"TOC-Create\" status=\"success\" manual=\"" . htmlentities( $manualName ) . "\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"TOC\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"TOC\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -358,14 +402,16 @@ class SpecialBranchInherit extends SpecialPage
 							}
 						}
 						PonyDocsBranchInheritEngine::addCollectionToTOC($product, $manual, $targetVersion, $addData);
-						$logFields = "action=\"TOC\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-							. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+						$logFields = "action=\"TOC\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\" "
+							. "$logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+						$logFields = "action=\"TOC-Update\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\" "
+							. "$logParameters";
 						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Complete</div>");
 					} catch(Exception $e) {
-						$logFields = "action=\"TOC\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-							. "sourceVersion=\"" . addslashes($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-							. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+						$logFields = "action=\"TOC\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+							. " error=\"" . htmlentities( $e->getMessage() ) . "\" $logParameters";
 						error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 					}
@@ -383,6 +429,9 @@ class SpecialBranchInherit extends SpecialPage
 					fputs($fp, "Completed " . $numOfTopicsCompleted . " of " . $numOfTopics . " Total: " . ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . "%");
 					fclose($fp);
 					if(isset($topic['action']) && $topic['action'] == "ignore") {
+						$logFields = "action=\"topic-ignore\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
+						error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 						print("<div class=\"normal\">Ignoring topic: " . $topic['title'] . "</div>");
 						$numOfTopicsCompleted++;
 						continue;
@@ -392,14 +441,16 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and remove existing topic.</div>");
 							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], TRUE, FALSE );
-							$logFields = "action=\"topic\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-branchpurge\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"topic\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " error=\"" . htmlentities( $e->getMessage() ) . "\" $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -409,14 +460,16 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . "</div>");
 							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE, TRUE );
-							$logFields = "action=\"topic\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-branch\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"topic\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " error=\"" . htmlentities($e->getMessage()) . "\" $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -426,15 +479,16 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and split from existing topic.</div>");
 							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE, TRUE );
-							$logFields = "action=\"topic\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\"e "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-branchsplit\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"topic\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " error=\"" . htmlentities( $e->getMessage() ) . "\" $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -444,14 +498,16 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . "</div>");
 							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], FALSE );
-							$logFields = "action=\"topic\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-inherit\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"topic\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " error=\"" . htmlentities( $e->getMessage() ) . "\" $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -461,14 +517,16 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . " and remove existing topic.</div>");
 							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic(
 								$topic['title'], $targetVersion, $sectionName, $topic['text'], TRUE );
-							$logFields = "action=\"topic\" status=\"success\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" targetVersion=\"" . htmlentities($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
+							$logFields = "action=\"topic-inheritpurge\" status=\"success\" topicTitle=\"" . htmlentities( $topic['title'] ) ."\""
+								. " $logParameters";
 							error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
-							$logFields = "action=\"topic\" status=\"failure\" product=\"" . addslashes($productName) . "\" manual=\"" . htmlentities($manualName) ."\" "
-								. "topic=\"" . addslashes($topic['title']) . "\" sourceVersion=\"" . htmlentities($sourceVersionName) . "\" error=\"" . htmlentities($e->getMessage()) . "\" "
-								. "targetVersion=\"" . addslashes($targetVersionName) . "\"";
+							$logFields = "action=\"topic\" status=\"failure\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " error=\"" . htmlentities( $e->getMessage() ) . "\" $logParameters";
 							error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
@@ -476,14 +534,17 @@ class SpecialBranchInherit extends SpecialPage
 					$numOfTopicsCompleted++;
 				}
 			}
-			//WEB-10792, Clear TOCCACHE for the target version only, each Manual at a time
+			// Clear TOCCACHE for the target version only, each Manual at a time
 			PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);
-			//Also clear the NAVCache for the target version
+			// Also clear the NAVCache for the target version
 			PonyDocsProductVersion::clearNAVCache($targetVersion);
 		}
 		list ($msec, $sec) = explode(' ', microtime());
 		$endTime = (float)$msec + (float)$sec;
 		print("All done!\n");
+		$logFields = "action=\"finish\" status=\"success\" manual=\"" . htmlentities( $manualName ) ."\""
+								. " $logParameters";
+		error_log( 'INFO [' . __METHOD__ . "] [BranchInherit] Completed $logFields" );
 		print('Execution Time: ' . round($endTime - $startTime, 3) . ' seconds');
 		if($numOfTopics == 1 && $lastTopicTarget != null) {
 			// We can safely show a link to the topic.
@@ -501,10 +562,8 @@ class SpecialBranchInherit extends SpecialPage
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
-	public function execute( )
-	{
-		global $wgOut, $wgArticlePath, $wgScriptPath;
-		global $wgUser;
+	public function execute() {
+		global $wgOut, $wgUser;
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -521,9 +580,9 @@ class SpecialBranchInherit extends SpecialPage
 			$forceManual = $match[2];
 		} else {
 			$forceProduct = PonyDocsProduct::GetSelectedProduct();
-			$ponydocs = PonyDocsWiki::getInstance( $forceProduct );
-			$products = $ponydocs->getProductsForTemplate( );
 		}
+		$ponydocs = PonyDocsWiki::getInstance();
+		$products = $ponydocs->getProductsForTemplate();
 
 		$perms = SpecialBranchInherit::userCanExecute( $forceProduct );		
 		// Security Check		
@@ -547,7 +606,7 @@ class SpecialBranchInherit extends SpecialPage
 		if(isset($_GET['titleName'])) {
 			?>
 			<input type="hidden" id="force_titleName" value="<?php echo $_GET['titleName'];?>" />
-			<input type="hidden" id="force_sourceVersion" value="<?php echo PonyDocsProductVersion::GetVersionByName($forceProduct, PonyDocsProductVersion::GetSelectedVersion($forceProduct))->getVersionName();?>" />
+			<input type="hidden" id="force_sourceVersion" value="<?php echo PonyDocsProductVersion::GetVersionByName($forceProduct, PonyDocsProductVersion::GetSelectedVersion($forceProduct))->getVersionShortName();?>" />
 			<input type="hidden" id="force_manual" value="<?php echo $forceManual; ?>" />
 			<?php
 		}
@@ -559,7 +618,8 @@ class SpecialBranchInherit extends SpecialPage
 		<div class="versionselect">
 			<h1>Branch and Inheritance Console</h1>
 
-			Begin by selecting your product, source version material and a target version below.  You will then be presented with additional screens to specify branch and inherit behavior.
+			Begin by selecting your source product and version material, and target product and version below.
+			You will then be presented with additional screens to specify branch and inherit behavior.
 			<?php
 			if(isset($_GET['titleName'])) {
 				?>
@@ -570,70 +630,49 @@ class SpecialBranchInherit extends SpecialPage
 			}
 			?>
 
-			<h2>Choose a Product</h2>
+			<h2>Choose a source Product</h2>
 
 			<?php
-			if (isset($_GET['titleName'])) {
+			if ( isset( $_GET['titleName'] ) ) {
 				?>
-				You have selected a product: <?= $forceProduct ?>
+				You have selected a product: <?php echo $forceProduct; ?>
 			<?php
 			} else {
-				if (!count($products)) {
+				if ( !count( $products ) ) {
 					print "<p>No products defined.</p>";
-				} else {
-				?>
-				<div class="product">
-					<select id="docsProductSelect1" name="selectedProduct" onChange="AjaxChangeProduct1();">
-					<?php
-						foreach( $products as $idx => $data ) {
-							echo '<option value="' . $data['name'] . '" ';
-							if( !strcmp( $data['name'], $forceProduct ))
-								echo 'selected';
-							echo '>' . $data['label'] . '</option>';
-						}
-					?>
-					</select>
-				</div>
-
-				<script language="javascript">
-				function AjaxChangeProduct1_callback( o ) {
-					document.getElementById('docsProductSelect1').disabled = true;
-					var s = new String( o.responseText );
-					document.getElementById('docsProductSelect1').disabled = false;
-					window.location.href = s;
+				} else { ?>
+					<div class="product">
+						<select id="docsSourceProductSelect" name="selectedSourceProduct">
+						<?php
+							foreach( $products as $idx => $data ) {
+								echo '<option value="' . $data['name'] . '" ';
+								if ( !strcmp( $data['name'], $forceProduct ) )
+									echo 'selected';
+								echo '>' . $data['label'] . '</option>';
+							}
+						?>
+						</select>
+					</div>
+				<?php
 				}
+			} ?>
 
-				function AjaxChangeProduct1( ) {
-					var productIndex = document.getElementById('docsProductSelect1').selectedIndex;
-					var product = document.getElementById('docsProductSelect1')[productIndex].value;
-					var title = '<?= $_SERVER['REQUEST_URI'] ?>'; // TODO fix this title
-					var force = true;
-					sajax_do_call( 'efPonyDocsAjaxChangeProduct', [product,title,force], AjaxChangeProduct1_callback,true);
-				}
-				</script>
-
-
-			<?php
-				}
-			}
-			?>
-
-			<h2>Choose a Source Version</h2>
+			<h2>Choose a source Version</h2>
 			<?php
 				// Determine if topic was set, if so, we should fetch version from currently selected version.
 				if(isset($_GET['titleName'])) {
 					$version = PonyDocsProductVersion::GetVersionByName($forceProduct, PonyDocsProductVersion::GetSelectedVersion($forceProduct));
 					?>
-					You have selected a topic.  We are using the version you are currently browsing: <?php echo $version->getVersionName();?>
+					You have selected a topic.  We are using the version you are currently browsing: <?php echo $version->getVersionShortName();?>
 					<?php
 				}
 				else {
 					?>
-					<select name="version" id="versionselect_sourceversion">
+					<select name="sourceversion" id="versionselect_sourceversion">
 						<?php
 						foreach($versions as $version) {
 							?>
-							<option value="<?php echo $version->getVersionName();?>"><?php echo $version->getVersionName() . " - " . $version->getVersionStatus();?></option>
+							<option value="<?php echo $version->getVersionShortName();?>"><?php echo $version->getVersionShortName() . " - " . $version->getVersionStatus();?></option>
 							<?php
 						}
 						?>
@@ -641,18 +680,40 @@ class SpecialBranchInherit extends SpecialPage
 					<?php
 				}
 			?>
-			<h2>Choose a Target Version</h2>
-			<select name="version" id="versionselect_targetversion">
-				<?php
-				foreach($versions as $version) {
-					?>
-					<option value="<?php echo $version->getVersionName();?>"><?php echo $version->getVersionName() . " - " . $version->getVersionStatus();?></option>
+					
+			<h2>Choose a target Product</h2>
+
+			<?php
+			if ( !count( $products ) ) {
+				print "<p>No products defined.</p>";
+			} else { ?>
+				<div class="product">
+					<select id="docsTargetProductSelect" name="selectedTargetProduct">
 					<?php
-				}
-				?>
+						foreach( $products as $idx => $data ) {
+							echo '<option value="' . $data['name'] . '" ';
+							if ( !strcmp( $data['name'], $forceProduct ) )
+								echo 'selected';
+							echo '>' . $data['label'] . '</option>';
+						}
+					?>
+					</select>
+				</div>
+				<?php
+			} ?>
+
+			<h2>Choose a target Version</h2>
+			<select name="targetversion" id="versionselect_targetversion">
+				<?php
+				foreach( $versions as $version ) { ?>
+					<option value="<?php echo $version->getVersionShortName();?>"><?php echo $version->getVersionShortName()
+						. " - " . $version->getVersionStatus();?></option>
+					<?php
+				} ?>
 			</select>
+
 			<p>
-			<input type="button" id="versionselect_submit" value="Continue to Manuals" />
+				<input type="button" id="versionselect_submit" value="Continue to Manuals" />
 			</p>
 		</div>
 

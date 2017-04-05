@@ -67,7 +67,7 @@ class SpecialTOCList extends SpecialPage {
 			$wgOut->addHTML( '<h2>Table of Contents Management Pages for ' . $product->getLongName() . '</h2>' );
 
 			foreach ( PonyDocsProductVersion::GetVersions( $productName ) as $v ) {
-				$allowed_versions[] = $v->getVersionName();
+				$allowed_versions[] = $v->getVersionShortName();
 			}
 
 			foreach ( $manuals as $pMan ) {
@@ -76,11 +76,11 @@ class SpecialTOCList extends SpecialPage {
 					array( 'categorylinks', 'page' ),
 					array( 'page_title', 'GROUP_CONCAT( cl_to separator "|") categories' ),
 					array(
-						'cl_from = page_id',
-						'page_namespace = "' . NS_PONYDOCS . '"',
-						"page_title LIKE '" . $dbr->strencode( "$productName:" . $pMan->getShortName() ) . "TOC%'",
-						'cl_to LIKE "V:%:%"',
-						'cl_type = "page"',
+						"cl_from = page_id",
+						"page_namespace = '" . NS_PONYDOCS . "'",
+						"page_title LIKE '%:" . $dbr->strencode( $pMan->getShortName() ) . "TOC%'",
+						"cl_to LIKE 'V:$productName:%'",
+						"cl_type = 'page'",
 					),
 					__METHOD__,
 					array( 'GROUP BY' => 'page_title' )
@@ -91,7 +91,7 @@ class SpecialTOCList extends SpecialPage {
 					$categories = explode( '|', $row->categories );
 					foreach ( $categories as $category ) {
 						$categoryParts = explode ( ':', $category );
-						if ( in_array( $categoryParts[2], $allowed_versions ) ) {
+						if ( !empty( $categoryParts[2] ) && in_array( $categoryParts[2], $allowed_versions ) ) {
 							$versions[] = $categoryParts[2];
 						}
 

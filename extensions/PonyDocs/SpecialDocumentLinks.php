@@ -96,7 +96,7 @@ class SpecialDocumentLinks extends SpecialPage {
 			// Get the latest released version of this product
 			$latestVersionObj = PonyDocsProductVersion::GetLatestReleasedVersion($titlePieces[1]);
 			if (is_object($latestVersionObj)) {
-				$latestVersion = $latestVersionObj->getVersionName();
+				$latestVersion = $latestVersionObj->getVersionShortName();
 			} else {
 				error_log('WARNING [PonyDocs] [' . __CLASS__ . '] Unable to find latest released version of ' . $titlePieces[1]);
 			}
@@ -112,7 +112,7 @@ class SpecialDocumentLinks extends SpecialPage {
 					$toUrls[] = PonyDocsExtension::translateTopicTitleForDocLinks($titleNoVersion, NULL, $ver);
 
 					// Compare this version with latest version. If they're the same, add the URL with "latest" too.
-					$thisVersion = $ver->getVersionName();
+					$thisVersion = $ver->getVersionShortName();
 					if ($thisVersion == $latestVersion) {
 						$titleLatestVersion = 
 							$titlePieces[0] . ':' . $titlePieces[1] . ':' . $titlePieces[2] . ':' . $titlePieces[3] . ':latest';
@@ -130,11 +130,13 @@ class SpecialDocumentLinks extends SpecialPage {
 
 		// Query the database for the list of toUrls we've collated
 		if (!empty($toUrls)) {
-			foreach ($toUrls as &$toUrl) {
+			$query = "SELECT * FROM " . $wgDBprefix . "ponydocs_doclinks WHERE ";
+			foreach ($toUrls as $toUrl) {				
 				$toUrl = $dbr->strencode($toUrl);
+				$query .= " to_link Like '" . $toUrl . "#%' OR ";
+				$query .= " to_link Like '" . $toUrl . "' OR ";
 			}
-			$inUrls = "'" . implode("','", $toUrls) . "'";
-			$query = "SELECT * FROM " . $wgDBprefix . "ponydocs_doclinks WHERE to_link IN ($inUrls)";
+			$query = rtrim($query, ' OR ');
 			$results = $dbr->query($query);
 		}
 
@@ -193,6 +195,7 @@ class SpecialDocumentLinks extends SpecialPage {
 				// Display all links, ordered by product then version
 				foreach ( $links as $fromProduct => $fromVersions ) {
 					// If this is a PonyDocs Product
+					$showTitle = TRUE;
 					if ( PonyDocsProduct::IsProduct($fromProduct) ) { 
 						// Get versions for this product, so we can display the versions in the correct order
 						PonyDocsProductVersion::LoadVersionsForProduct($fromProduct, true);
@@ -200,16 +203,19 @@ class SpecialDocumentLinks extends SpecialPage {
 						// If there are no valid versions for this product/user, then skip the product name header.
 						if (! count($fromProductVersions)) {
 							continue;
-						} ?>
-						<h2><?php echo $fromProduct; ?></h2>
-						<?php
+						} 
 						foreach ($fromProductVersions as $fromProductVersionObj) {
-							$fromProductVersionName = $fromProductVersionObj->getVersionName();
+							$fromProductVersionName = $fromProductVersionObj->getVersionShortName();
 							// If there are doclinks from this version, print them
 							if (array_key_exists($fromProductVersionName, $fromVersions)) {
 								// Expand containers of incoming links from the current Product and Version
 								// Expand containers of incoming links from other Products
 								// But don't expand any containers if this is not a PonyDocs product
+								if ($showTitle) { ?>
+									<h2><?php echo $fromProduct; ?></h2>
+								<?php 
+									$showTitle = FALSE;
+								}
 								$selected = '';
 								if (($currentProduct != $fromProduct || $currentVersion == $fromProductVersionName)
 									&& ! $collapseAll) {

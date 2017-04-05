@@ -105,7 +105,7 @@ class PonyDocsTOC
 	 */
 	public function & addVersion( PonyDocsProductVersion& $pVersion )
 	{
-		$this->pVersionList[$pVersion->getVersionName()] = $pVersion;
+		$this->pVersionList[$pVersion->getVersionShortName()] = $pVersion;
 		return $pVersion;
 	}
 
@@ -151,11 +151,10 @@ class PonyDocsTOC
 				'cl_from = page_id',
 				'page_namespace = "' . NS_PONYDOCS . '"',
 				"cl_to = 'V:"
-					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionName() ) . "'" ,
+					. $dbr->strencode( $this->pProduct->getShortName() . ":" . $this->pInitialVersion->getVersionShortName() )
+					. "'" ,
 				'cl_type = "page"',
-				"cl_sortkey LIKE '"
-					. $dbr->strencode( strtoupper( $this->pProduct->getShortName() . ":" . $this->pManual->getShortName() ) )
-					. "TOC%'",
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( $this->pManual->getShortName() ) ) . "TOC%'",
 			),
 			__METHOD__ );
 		
@@ -226,11 +225,7 @@ class PonyDocsTOC
 	 * @return array
 	 */
 	public function loadContent() {
-		global $wgArticlePath;
-		global $wgTitle;
-		global $wgScriptPath;
-		global $wgPonyDocs;
-		global $title;
+		global $title, $wgArticlePath, $wgScriptPath, $wgTitle;
 
 		/**
 		 * From this we have the page ID of the TOC page to use -- fetch it then  parse it so we can produce an output TOC array.
@@ -252,22 +247,10 @@ class PonyDocsTOC
 		// We should check to see if latest is our version.
 		// If so, we want to FORCE the URL to include /latest/ as the version instead of the version that the user is currently in
 		$tempParts = explode("/", $title);
-		$latest = FALSE;
-
-		if ( isset( $tempParts[1] ) && !strcmp( $tempParts[1], "latest" ) ) {
-			$latest = TRUE;
-		}
 
 		$selectedProduct = $this->pProduct->getShortName();
-		$selectedVersion = $this->pInitialVersion->getVersionName();
+		$selectedVersion = $this->pInitialVersion->getVersionShortName();
 		$selectedManual = $this->pManual->getShortName();
-
-		// Okay, let's determine if the VERSION that the user is in is latest, if so, we should set latest to true.
-		if ( PonyDocsProductVersion::GetLatestReleasedVersion($selectedProduct) != NULL ) {
-		 	if ( $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionName() ) {
-				$latest = TRUE;
-			}
-		}
 
 		$cache = PonyDocsCache::getInstance();
 		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
@@ -289,8 +272,9 @@ class PonyDocsTOC
 					 * See if we are CLOSING a section (i.e. $section != -1). If so, check 'subs' and ensure its >0, 
 					 * otherwise we need to remove the section from the list.
 					 */
-					if ( ( $section != -1 ) && !$toc[$section]['subs'] ) {
-							unset( $toc[$section] );
+					if ( $section != -1 && 
+						( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) ) {
+						unset( $toc[$section] );
 					}
 					if ( isset( $line[0] ) && ctype_alnum( $line[0] ) ) {
 						$toc[$idx] = array(
@@ -318,34 +302,28 @@ class PonyDocsTOC
 					$baseTopic = $matches[1];
 
 					$title_suffix = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $baseTopic );
-					$title = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix";
-					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion( $title, $selectedProduct );
-
+					$title = PonyDocsTopic::GetTopicNameFromBaseAndVersion(
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix",
+						$selectedProduct );
+					
 					/**
 					 * Hide topics which have no content (i.e. have not been created yet) from the user viewing. 
-					 * 
 					 * Authors must go to the TOC page in order to view and edit these.
-					 * 
 					 * The only way to do this (the cleanest/quickest) is to create a Title object then see if its article ID is 0
-					 * 
-					 * @tbd: Fix so that the section name is hidden if no topics are visible?
+					 * @todo: Fix so that the section name is hidden if no topics are visible?
 					 */
-					$t = Title::newFromText( $newTitle );
+					$t = Title::newFromText( $title );
 					if ( !$t || !$t->getArticleID() ) {
 						continue;
 					}
-
 					/**
-					 * Obtain H1 content from the article -- WE NEED TO CACHE THIS!
+					 * Obtain H1 content from the article
 					 */
-					$h1 = PonyDocsTopic::FindH1ForTitle( $newTitle );
-					if ( $h1 === FALSE ) {
-						$h1 = $newTitle;
-					}
-
+					$headerCacheKey = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix:$selectedVersion";
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title ,$headerCacheKey);						
 					$href = str_replace(
-						'$1', 
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
+						'$1',
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix",
 						$wgArticlePath );
 
 					$toc[$idx] = array(
@@ -355,16 +333,17 @@ class PonyDocsTOC
 						'toctitle' => $baseTopic,
 						'text' => $h1,
 						'section' => $toc[$section]['text'],
-						'title' => $newTitle,
+						'title' => $title,
 						'class' => 'toclevel-1',
 					);
 					$toc[$section]['subs']++;
 				}
 				$idx++;
 			}
-			if ( !$toc[$section]['subs'] ) {
+			if ( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) {
 				unset( $toc[$section] );
 			}
+			
 			// Okay, let's store in our cache.
 			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
 		}
@@ -372,6 +351,12 @@ class PonyDocsTOC
 		if ( $toc ) {
 			$currentIndex = -1;
 			$start = array();
+
+			$latest = FALSE;
+			if ( PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct ) != NULL 
+				&& $selectedVersion == PonyDocsProductVersion::GetLatestReleasedVersion( $selectedProduct )->getVersionShortName() ) {
+				$latest = TRUE;
+			}
 
 			// Go through and determine start, prev, next and current elements.
 			foreach ( $toc as $idx => &$entry ) {
@@ -382,12 +367,16 @@ class PonyDocsTOC
 						$start = $toc[$idx];
 					}
 					// Determine current
-					$toc[$idx]['current'] = strcmp( $wgTitle->getPrefixedText(), $toc[$idx]['title'] ) ? FALSE : TRUE;
+					$prefixedText = $wgTitle->getPrefixedText();
+					if (strpos($toc[$idx]['toctitle'], '_') !== FALSE) {
+						$prefixedText = str_replace(' ', '_', $prefixedText);
+					}
+					$toc[$idx]['current'] = strcmp($prefixedText, $toc[$idx]['title']) ? FALSE : TRUE;
 					if ( $toc[$idx]['current'] ) {
 						$currentIndex = $idx;
 					}
 					// Now rewrite link with latest, if we are in latest
-					if ( $latest ) {
+					if ( PONYDOCS_USE_LATEST && $latest ) {
 						$safeVersion = preg_quote( $selectedVersion, '#' );
 						// Lets be specific and replace the version and not some other part of the URI that might match...
 						$toc[$idx]['link'] = preg_replace(
@@ -487,14 +476,17 @@ class PonyDocsTOC
 	 * @return string
 	 */
 	static public function normalizeSection( $secText ) {
+		// Replace 2 or more spaces with 1 space
+		$secText = preg_replace( '/\s{2,}/', ' ', $secText );
+		// Trim whitespace from beginning and end of string, and then replace spaces with underscores
 		$secText = str_replace( ' ', '_', preg_replace( '/^\s*|\s*$/', '', $secText ) );
 		return $secText;
 	}
 
 	static public function clearTOCCache( $manual, $version, $product ) {
 		error_log( "INFO [PonyDocsTOC::clearTOCCache] Deleting cache entry of TOC for product " . $product->getShortName()
-			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionName());
-		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName();
+			. " manual " . $manual->getShortName() . ' and version ' . $version->getVersionShortName());
+		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionShortName();
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
 	}
@@ -511,6 +503,128 @@ class PonyDocsTOC
 		global $wgArticlePath;
 
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
-		return "$base/$productName/$TOCname";
+		return "$base/$productName/$TOCName";
+	}
+	
+	/**
+	 * Get the section name by passing the topic name and content
+	 * 
+	 * @param string $selectedProduct
+	 * @param string $selectedManual
+	 * @param string $content
+	 * @param string $topicName
+	 * 
+	 * @return string
+	 */
+	static public function getSectionNameByTopicName($selectedProduct, $selectedManual, $selectedVersion, $content, $topicName) {
+		$cache = PonyDocsCache::getInstance();
+		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
+		$toc = $cache->get( $key );
+		$sectionName = '';
+		// Cache did not exist, let's load our content is build up our cache entry.
+		if ( $toc === NULL && $content != '') {
+			// The current index of the element in $toc we will work on
+			$idx = 0; 				
+			$section = -1;
+			foreach ( $content as $line ) {
+				/**
+				 * Indicates an arbitrary section header if it does not begin with a bullet point.
+				 * This is level 0 in our TOC and is not a link of any type (?).
+				 */
+				if ( ( !isset( $line[0] ) ) || $line[0] != '*' ) {
+					/**
+					 * See if we are CLOSING a section (i.e. $section != -1). If so, check 'subs' and ensure its >0, 
+					 * otherwise we need to remove the section from the list.
+					 */
+					if ( $section != -1 && 
+						( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) ) {
+						unset( $toc[$section] );
+					}
+					if ( isset( $line[0] ) && ctype_alnum( $line[0] ) ) {
+						$toc[$idx] = array(
+							'level' => 0,
+							'subs' => 0,
+							'link' => '',
+							'text' => $line,
+							'current' => FALSE
+						);
+						$section = $idx;
+					}
+				/**
+				 * This is a bullet point and thus an actual topic which can be linked to in MediaWiki. 
+				 * {{#topic:H1 Of Topic Page}}
+				 */
+				} else {
+					if ( -1 == $section ) {
+						continue;
+					}
+					$topicRegex = '/' . PonyDocsTopic::getTopicRegex() . '/i';
+					if ( !preg_match( $topicRegex, $line, $matches ) ) {
+						continue ;
+					}
+
+					$baseTopic = $matches[1];
+
+					$title_suffix = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars() ) . '])/', '', $baseTopic );
+					$title = PonyDocsTopic::GetTopicNameFromBaseAndVersion(
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ":$selectedProduct:$selectedManual:$title_suffix",
+						$selectedProduct );
+
+					/**
+					 * Hide topics which have no content (i.e. have not been created yet) from the user viewing. 
+					 * Authors must go to the TOC page in order to view and edit these.
+					 * The only way to do this (the cleanest/quickest) is to create a Title object then see if its article ID is 0
+					 * @todo: Fix so that the section name is hidden if no topics are visible?
+					 */
+					$t = Title::newFromText( $title );
+					if ( !$t || !$t->getArticleID() ) {
+						continue;
+					}
+					/**
+					 * Obtain H1 content from the article
+					 */
+					$h1 = PonyDocsTopic::FindH1ForTitle( $title );
+
+
+					$href = str_replace(
+						'$1',
+						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix",
+						$wgArticlePath );
+
+					$toc[$idx] = array(
+						'level' => 1,
+						'page_id' => $t->getArticleID(),
+						'link' => $href,
+						'toctitle' => $baseTopic,
+						'text' => $h1,
+						'section' => $toc[$section]['text'],
+						'title' => $title,
+						'class' => 'toclevel-1',
+					);
+
+					if($baseTopic == $topicName)
+					{	
+						$sectionName = $toc[$idx]['section'];							
+					}
+					$toc[$section]['subs']++;
+				}
+				$idx++;
+			}
+			if ( !array_key_exists($section, $toc) || !$toc[$section]['subs'] ) {
+				unset( $toc[$section] );
+			}	
+			// Okay, let's store in our cache.
+			$cache->put( $key, $toc, TOC_CACHE_TTL, TOC_CACHE_TTL / 4 );
+		} else {
+			foreach($toc as $details)
+			{
+				if( $details['toctitle'] == $topicName)
+				{
+					$sectionName = $details['section'];
+				}
+			}	
+		}
+		return 	$sectionName;
 	}
 }
+

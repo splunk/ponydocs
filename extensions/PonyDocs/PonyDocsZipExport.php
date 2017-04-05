@@ -20,34 +20,40 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 	 * Called when an unknown action occurs on url.  We are only interested in zipmanual action.
 	 */
 	function onUnknownAction($action, $article) {
-		global $wgOut, $wgUser, $wgTitle, $wgParser, $wgRequest;
-		global $wgServer, $wgArticlePath, $wgScriptPath, $wgUploadPath, $wgUploadDirectory, $wgScript, $wgStylePath;
+		global $wgOut, $wgTitle, $wgUser;
 
-		// We don't do any processing unless it's zipmanual
-		if ($action != 'zipmanual') {
-			return true;
+		// Gate for zipmanual action
+		if ( $action != 'zipmanual' ) {
+			return TRUE;
 		}
 
-		$zipAllowed = false;
+		$zipAllowed = FALSE;
 		PonyDocsExtension::onUserCan( $wgTitle, $wgUser, 'zipmanual', &$zipAllowed );
 		if ( !$zipAllowed ) {
-			error_log("WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission.");
+			error_log( "WARNING [" . __METHOD__ . "] User attempted to perform a ZIP Export without permission." );
 			$defaultRedirect = PonyDocsExtension::getDefaultUrl();
 			header( "Location: " . $defaultRedirect );
 			exit;
 		}
 	
-		// Get the title and make sure we're in Documentation namespace
+		// Gate for Documentation namespace
 		$title = $article->getTitle();
-		if($title->getNamespace() != NS_PONYDOCS) {
-			return true;
+		if ( $title->getNamespace() != NS_PONYDOCS ) {
+			return TRUE;
 		}
 
 		// Grab parser options for the logged in user.
-		$opt = ParserOptions::newFromUser($wgUser);
+		$opt = ParserOptions::newFromUser( $wgUser );
 
 		// Any potential titles to exclude
 		$exclude = array();
+
+		// Grab Topics html
+		$arrTopicHtml = array();
+
+		// Grab Topic Images Array
+		$arrAllTopicImages = array();
+
 
 		// Determine articles to gather
 		$articles = array();
@@ -66,12 +72,17 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 			exit;
 		}
 
-		$productName = $pieces[1];
-		$ponydocs = PonyDocsWiki::getInstance($productName);
-		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
-		if ($pProduct === NULL) { // product wasn't valid
+		// Determine Product
+		if ( isset( $_GET['product'] ) && PonyDocsProduct::IsProduct( $_GET['product'] ) ) {
+			$productName = $_GET['product'];
+		} else {
+			$productName = $pieces[1];
+		}
+		$pProduct = PonyDocsProduct::GetProductByShortName( $productName );
+		// product wasn't valid
+ 		if ( $pProduct === NULL ) {
 			wfProfileOut( __METHOD__ );
-			$wgOut->setStatusCode(404);
+			$wgOut->setStatusCode( 404 );
 			return FALSE;
 		}
 		$productLongName = $pProduct->getLongName();
@@ -95,7 +106,15 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 			foreach($manualtoc as $tocEntry) {
 				if($tocEntry['level'] > 0 && strlen($tocEntry['title']) > 0) {
 					$title = Title::newFromText($tocEntry['title']);
-					$articles[$tocEntry['section']][] = array('title' => $title, 'text' => $tocEntry['text']);
+
+					//Taking title for directory name
+					$topicTitle =  $tocEntry['title'];
+					$arrtopicTitle = explode(':', $tocEntry['title']);
+					if(!empty($arrtopicTitle[3])) {
+						$topicTitle = $arrtopicTitle[3];
+					}
+
+					$articles[$tocEntry['section']][] = array('title' => $title, 'text' => $tocEntry['text'], 'topicTitle' => $topicTitle);
 				}
 			}
 		} else {
@@ -103,7 +122,7 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 				. ": User attempted to export ZIP from a non TOC page with path:" . $wgTitle->__toString());
 		}
 
-		$html = self::getManualHTML($pProduct, $pManual, $v);
+		$arrTopicHtml = self::getManualTopicsHTML($pProduct, $pManual, $v, $articles);
 
 		$coverPageHTML = self::getCoverPageHTML($pProduct, $pManual, $v, false);
 
@@ -125,18 +144,47 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 
 		$mh = curl_multi_init();
 
-		$manualDoc = new DOMDocument();
-		@$manualDoc->loadHTML($html);
+		foreach ($arrTopicHtml as $topicName => $topicHtml) {
+
+			$arrTopicImages = array(); 
+			$manualDoc = new DOMDocument();
+			@$manualDoc->loadHTML($topicHtml);
+			
+			self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  &$arrTopicImages);
+			
+			// Execute the RollingCurl requests
+			$rollingCurl->execute();
+			// Now update all our image elements in our appropriate DOMDocs.
+			foreach($arrTopicImages as $img) {
+				// Put the data into it.
+				file_put_contents($img['local_path'], $img['request']->getResponseText());
+				// Modify element
+				$img['element']->setAttribute('src', $img['new_path']);
+				// Do curl cleanup
+
+				$arrAllTopicImages[$topicName][] = array('local_path' => $img['local_path'], 'new_path' => $img['new_path']);
+			}
+			
+			//Write the html to temp files
+			$topicHtml = $manualDoc->saveHTML();
+			$file = tempnam($tempDirPath, "zipexport-");
+			$arrTopicHtmlFiles[$topicName] = $file;
+			$fh = fopen($file, 'w+');
+			fwrite($fh, $topicHtml);
+			fclose($fh);			
+		}
+
+		//Cover Page Manual starts here
 		$coverPageDoc = new DOMDocument();
 		@$coverPageDoc->loadHTML($coverPageHTML);
 
-		self::prepareImageRequests($manualDoc, $rollingCurl, $tempDirPath,  &$imgData);
+		
 		self::prepareImageRequests($coverPageDoc, $rollingCurl, $tempDirPath, &$imgData);
 
 		// Execute the RollingCurl requests
 		$rollingCurl->execute();
 
-		// Now update all our image elements in our appropriate DOMDocs.
+		// Now update all our cover page image elements in our appropriate DOMDocs.
 		foreach($imgData as $img) {
 			// Put the data into it.
 			file_put_contents($img['local_path'], $img['request']->getResponseText());
@@ -145,21 +193,14 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 			// Do curl cleanup
 		}
 
-		$html = $manualDoc->saveHTML();
 		$coverPageHTML = $coverPageDoc->saveHTML();
-
-		// Write the HTML to a tmp file
-		$file = tempnam($tempDirPath, "zipexport-");
-		$fh = fopen($file, 'w+');
-		fwrite($fh, $html);
-		fclose($fh);
-
+		
 		// Okay, write the title page
 		$titlepagefile = tempnam($tempDirPath, "zipexport-");
 		$fh = fopen($titlepagefile, 'w+');
 		fwrite($fh, $coverPageHTML);
 		fclose($fh);
-
+		//Cover Page Manual Ends here
 
 
 		// Disable output of our standard mediawiki output.  We will be outputting a zip file instead.
@@ -170,12 +211,33 @@ class PonyDocsZipExport extends PonyDocsBaseExport {
 		$tempZipFilePath = tempnam($tempDirPath, "zipexport-");
 		$zipFileName = $productName . '-' . $versionText . '-' . $pManual->getShortName() . '.zip';
 		$zip->open($tempZipFilePath, ZipArchive::OVERWRITE);
+		
+		//Adding Cover Page
 		$zip->addFile($titlepagefile, 'cover.html');
-		$zip->addFile($file, 'manual.html');
-		// Iterate through all the images
+
+		// Iterate through all the Cover Page images
 		foreach($imgData as $img) {
 			$zip->addFile($img['local_path'], $img['new_path']);
 		}
+
+
+		//Added Topic Html and Images
+		$topicNo = 0;
+		foreach($arrTopicHtmlFiles as $topicName => $fileData) {
+
+			$topicNo++;
+			$dirName = $topicNo . '_' . $topicName;			
+			$zip->addFile($fileData, $dirName . '/' . 'topic.html');
+
+			if(!empty($arrAllTopicImages[$topicName]))
+			{	
+				$arrTopicImages = $arrAllTopicImages[$topicName];
+				foreach ($arrTopicImages as $img) {
+					$zip->addFile($img['local_path'], $dirName . '/' . $img['new_path']);
+				}
+			}
+		}
+		
 		$zip->close();
 		header("Content-Type: application/zip"); 
 		header("Content-Length: " . filesize($tempZipFilePath)); 

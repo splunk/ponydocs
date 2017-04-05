@@ -96,7 +96,6 @@ class PonyDocsTopic {
 		}
 		
 		$dbr = wfGetDB( DB_SLAVE );
-		$revision = $this->pArticle->mRevision;
 
 		$res = $dbr->select(
 			'categorylinks',
@@ -112,11 +111,9 @@ class PonyDocsTopic {
 		$this->versions = array();
 		
 		while ( $row = $dbr->fetchObject( $res ) ) {
-			if ( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ) ) {
-				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
-				if ( $v ) {
-					$this->versions[] = $v;
-				}
+			$version = $this->convertCategoryToVersion( $row->cl_to );
+			if ( $version ) {
+				$this->versions[] = $version;
 			}
 		}
 
@@ -124,34 +121,57 @@ class PonyDocsTopic {
 		usort( $this->versions, "PonyDocs_ProductVersionCmp" );		
 		return $this->versions;
 	}
+	
+	/**
+	 * Convert a category tag to a PonyDocsProductVersion
+	 * 
+	 * @param string $category
+	 * @return PonyDocsProductVersion|NULL
+	 */
+	public function convertCategoryToVersion( $category ) {
+		if ( preg_match( '/^v:(.*):(.*)/i', $category, $match ) ) {
+			$version = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
+		}
+		
+		if ( $version ) {
+			return $version;
+		}
+	}
 
 	/**
 	 * Given a 'base' topic name (Documentation:User:HowToFoo), find the proper topic name based on selected version.
 	 * If 2.1 is selected and we have a HowToFoo2.0 tagged for 2.1, return HowToFoo2.0.
 	 *
-	 * @static
 	 * @param string $baseTopic
-	 * @param string $product
+	 * @param string $productName
 	 */
-	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product ) {
+	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $productName ) {
 		$dbr = wfGetDB( DB_SLAVE );
-		$noPrefixText = preg_replace('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':/', '', $baseTopic);
+		$pathArray = explode(':', $baseTopic);
+
+		// Gate for pathArray - quit if we don't have a proper $baseTopic
+		if (count($pathArray) < 4) {
+			return FALSE;
+		}
+		$manualName = $pathArray[2];
+		$topicName = $pathArray[3];
 
 		$res = $dbr->select(
 			array('categorylinks', 'page'),
 			'page_title' ,
 			array(
-				'cl_from = page_id',
-				'page_namespace = "' . NS_PONYDOCS . '"',
-				"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'",
-				'cl_type = "page"',
-				"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( $noPrefixText ) ) . ":%'",
+				"cl_from = page_id",
+				"page_namespace = '" . NS_PONYDOCS . "'",
+				"cl_to = 'V:$productName:" . $dbr->strencode( PonyDocsProductVersion::GetSelectedVersion( $productName ) ) . "'",
+				"cl_type = 'page'",
+				// Wildcard product to support product inheritance
+				"cl_sortkey LIKE '%:" . $dbr->strencode( strtoupper( "$manualName:$topicName" ) ) . ":%'",
 			),
 			__METHOD__ 
 		);
-
+		
 		if ( !$res->numRows() ) {
-			return false;
+			return FALSE;
 		}
 
 		$row = $dbr->fetchObject( $res );
@@ -160,23 +180,57 @@ class PonyDocsTopic {
 	}
 
 	/**
-	 * CHANGE THIS TO CACHE THESE IN MEMCACHE OR WHATEVER.
-	 *
-	 * This takes a title (text form) and extracts the H1 content for the title and returns it.
+	 * It will first check if there is any cache for h1 and return it .
+	 * If there is no cache this takes a title (text form) and extracts the H1 content for the title and returns it.
 	 * This is used in display (heading and TOC).
-	 * 
+	 *
 	 * @static
 	 * @param string $title The text form of the title to get the H1 content for.
-	 * @return string The resulting H1 content; or boolean false if title not found.
+	 * @return string h1 if no h1 it will set the default title for h1
 	 */
-	static public function FindH1ForTitle( $title ) {
-		$article = new Article( Title::newFromText( $title ), 0 );
-		$content = $article->loadContent();
-
-		if ( !preg_match( '/^\s*=(.*)=/D', $article->getContent(), $matches ) ) {
-			return false;
+	static public function FindH1ForTitle( $title, $headerCacheKey = NULL) {
+		
+		$cache = PonyDocsCache::getInstance();
+		$key = '';
+		$h1 = NULL;
+		if (!empty($headerCacheKey)) {
+			$key = "TOPICHEADERCACHE-" . $headerCacheKey;
+			$h1 = $cache->getTopicHeaderCache( $key );
 		}
-		return $matches[1];
+		if ( $h1 === NULL ) {
+		
+			$article = new Article( Title::newFromText( $title ), 0 );
+			$content = $article->loadContent();
+			$h1 = FALSE;
+			if ($article->getParserOutput()) {
+				$sections = $article->getParserOutput()->getSections();
+				foreach ( $sections as $section ) {
+					if ( $section['level'] == 1 ) {
+						$h1 = $section['line'];
+						break;
+					}
+				}
+			}
+			if ( $h1 === FALSE ) {
+				$h1 = $title;
+			}
+			if (!empty($key)) {
+				// Okay, let's store in our cache.
+				$cache->put( $key, $h1, TOC_CACHE_TTL);
+			}
+		}
+		return $h1;
+	}
+	/**
+	 * This willremove the cache of topic h1 content
+	 * @static
+	 * @param string $key The text form of the title
+	 */
+	static public function clearTopicHeadingCache( $key ) {
+		error_log( "INFO [PonyDocsTopic::clearTopicHeaderCache] Deleting cache entry of Topic Heading $key");
+		$key = "TOPICHEADERCACHE-" . $key;
+		$cache = PonyDocsCache::getInstance();
+		$cache->remove($key);
 	}
 
 	/**
@@ -280,20 +334,22 @@ class PonyDocsTopic {
 		// Just the names of our released versions
 		$releasedNames = array();
 		foreach ( $releasedVersions as $ver ) {
-			$releasedNames[] = strtolower( $ver->getVersionName() );
+			$releasedNames[] = strtolower( $ver->getVersionShortName() );
 		}
 		
 		$previewVersions = PonyDocsProductVersion::GetPreviewVersions( $productName );
 		// Just the names of our preview versions
 		$previewNames = array();
-		foreach ( $previewVersions as $ver ) {
-			$previewNames[] = strtolower( $ver->getVersionName() );
+		if ( $previewVersions ) {
+			foreach ( $previewVersions as $ver ) {
+				$previewNames[] = strtolower( $ver->getVersionShortName() );
+			}
 		}
 		
 		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
 	
 		foreach( $this->versions as $version ) {
-			$versionName = strtolower($version->getVersionName());
+			$versionName = strtolower($version->getVersionShortName());
 			
 			// Is this version released, preview, or unreleased?
 			if ( in_array( $versionName, $releasedNames ) ) {
@@ -335,6 +391,18 @@ class PonyDocsTopic {
 	}
 	
 	/**
+	 * Get just the topic part of the title
+	 * 
+	 * @return string
+	 */
+	public function getTopicName() {
+		if ( preg_match( '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(),
+			$match ) ) {
+			return $match[3];
+		}
+	}
+	
+	/**
 	 * Return a regex to match the topic parser function
 	 * 
 	 * @param string $title An optional title to search for. If not supplied, we'll search for any title, using a capture group.
@@ -355,27 +423,32 @@ class PonyDocsTopic {
 	 * @param string $manualName
 	 * @param string $topicName
 	 * @param string $versionName - Optional. We'll get the selected version (which defaults to 'latest') if empty
+	 * @param boolean $makeLatestUrl - Optional.
+	 *                                 If TRUE (default) replace version string with 'latest' if the latest verson is passed in
 	 * 
 	 * @return string
 	 * 
 	 * TODO: We should really be passing a topic object into this and not a string
 	 */
-	static public function getTopicURLPath( $productName, $manualName, $topicName, $versionName = NULL ) {
+	static public function getTopicURLPath( $productName, $manualName, $topicName, $versionName = NULL, $makeLatestUrl = TRUE ) {
 		global $wgArticlePath;
 
 		if (! isset( $versionName ) ) {
 			$versionName = PonyDocsProductVersion::GetSelectedVersion( $productName );
 		}
 		
-		$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
-		if ( $latestVersion ) {
-			if ( $versionName == $latestVersion->getVersionName() ) {
-				$versionName = 'latest';
+		if ($makeLatestUrl) {
+			$latestVersion = PonyDocsProductVersion::GetLatestReleasedVersion( $productName );
+			if ( $latestVersion ) {
+				if ( $versionName == $latestVersion->getVersionShortName() ) {
+					$versionName = 'latest';
+				}
 			}
 		}
-		
+
 		$base = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 
 		return "$base/$productName/$versionName/$manualName/$topicName";
 	}
 }
+

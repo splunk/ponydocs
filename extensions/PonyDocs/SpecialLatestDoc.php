@@ -107,10 +107,10 @@ class SpecialLatestDoc extends SpecialPage {
 					$latestVersionSql = null;
 					foreach ( $versionList as $pV ) {
 						if ( $latestVersionSql == null ) {
-							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionName();
+							$latestVersionSql = 'V:' . $productName . ':' . $pV->getVersionShortName();
 						}
-						$versionNameList[] = $pV->getVersionName();
-						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionName() . '\'';
+						$versionNameList[] = $pV->getVersionShortName();
+						$versionSql[] = '\'V:' . $productName . ':' . $pV->getVersionShortName() . '\'';
 					}
 					$versionSql = '(' . implode( ",",$versionSql ) . ')';
 
@@ -122,16 +122,14 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 1) Same product, different manual, current version.
 					 */
 					$res = $dbr->select(
-						array('categorylinks', 'page'),
-						array('cl_to', 'page_title') ,
-						array(
-							'cl_from = page_id',
-							'page_namespace = "' . NS_PONYDOCS . '"',
-							'cl_to LIKE "V:%:%"',
+						array( 'categorylinks', 'page' ),
+						array( 'cl_to', 'page_title' ),
+						array( "cl_from = page_id",
+							"page_namespace = '" . NS_PONYDOCS . "'",
+							"cl_to LIKE '" . $dbr->strencode( "V:$productName:%" ) . "'",
 							"cl_to = '" . $latestVersionSql . "'",
-							'cl_type = "page"',						
-							"cl_sortkey REGEXP '"
-								. $dbr->strencode( '^' . strtoupper( $productName . ":[^:]+:" . $topicName .":[^:]+$" ) ) . "'",
+							"cl_type = 'page'",						
+							"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "%:$topicName:%" ) ) . "'",
 						),
 						__METHOD__
 					);
@@ -147,16 +145,14 @@ class SpecialLatestDoc extends SpecialPage {
 					 * 2) Same product, same manual, earlier version
 					 */
 					$res = $dbr->select(
-						array('categorylinks', 'page'),
-						array('cl_to', 'page_title') ,
-						array(
-							'cl_from = page_id',
-							'page_namespace = "' . NS_PONYDOCS . '"',
-							'cl_to LIKE "V:%:%"',
+						array( 'categorylinks', 'page' ),
+						array( 'cl_to', 'page_title' ),
+						array( "cl_from = page_id",
+							"page_namespace = '" . NS_PONYDOCS . "'",
+							"cl_to LIKE '" . $dbr->strencode( "V:$productName:%" ) . "'",
 							"cl_to IN " . $versionSql,
-							'cl_type = "page"',						
-							"cl_sortkey REGEXP '"
-								. $dbr->strencode( '^' . strtoupper( "$productName:$manualName:$topicName:[^:]+" ) ) . "\$'",
+							"cl_type = 'page'",
+							"cl_sortkey LIKE '" . $dbr->strencode( strtoupper( "%:$manualName:$topicName:%" ) ) . "'",
 						),
 						__METHOD__
 					);
@@ -204,7 +200,16 @@ class SpecialLatestDoc extends SpecialPage {
 					The topic you've asked to see does not apply to the most recent version.
 					</p>
 					<p>
-					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $matches[4];?>">Search</a></li>
+					<?php 
+						$searchTerm = trim($topicName);
+						$tempSuggArr = $primarySuggestions;
+						$suggFirstEle = array_pop( $tempSuggArr );
+						if ( !empty( $suggFirstEle['title'] ) ) {
+								$suggFirstEle['title'] = trim( $suggFirstEle['title'] );
+								$searchTerm = urlencode( $suggFirstEle['title'] );
+						}
+					?>
+					To search the latest version of the documentation, click <a href="<?php echo $wgScriptPath;;?>/Special:Search?search=<?php echo $searchTerm ?>">Search</a></li>
 					</p>
 					<?php
 					if ( count( $primarySuggestions ) ) { ?>
@@ -214,20 +219,30 @@ class SpecialLatestDoc extends SpecialPage {
 						</p>
 						<ul id="suggestions">
 						<?php
-						foreach( $primarySuggestions as $suggestion ) {
+						foreach ( $primarySuggestions as $suggestion ) {
 							?>
-							<li><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
-							<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+							<li>
+								<?php echo $suggestion['product'];?> &raquo;
+								<?php echo ($versionList[$suggestion['version']]->getVersionLongName()); ?> &raquo;
+								<?php echo $suggestion['manual'];?> &raquo;
+								<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>">
+									<?php echo $suggestion['title'];?>
+								</a>
+							</li>
 							<?php
 						}
-						if( count( $suggestions ) )
-						{
-							foreach( $suggestions as $suggestion ) {
+						if ( count( $suggestions ) ) {
+							foreach ( $suggestions as $suggestion ) {
 								?>
-									<li style="display: none;"><?php echo $suggestion['product'];?> &raquo; <?php echo $suggestion['version'];?> &raquo; <?php echo $suggestion['manual'];?> &raquo; 
-									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>"><?php echo $suggestion['title'];?></a></li>
+								<li style="display: none;">
+									<?php echo $suggestion['product'];?> &raquo;
+									<?php echo ($versionList[$suggestion['version']]->getVersionLongName());?> &raquo;
+									<?php echo $suggestion['manual'];?> &raquo; 
+									<a href="<?php echo $wgScriptPath;?>/<?php echo $suggestion['url'];?>">
+										<?php echo $suggestion['title'];?>
+									</a>
+								</li>
 								<?php
-
 							}
 						}
 						?>
