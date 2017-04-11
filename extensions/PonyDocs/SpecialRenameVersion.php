@@ -114,9 +114,6 @@ class SpecialRenameVersion extends SpecialPage
 		global $wgScriptPath;
 		$perms = SpecialRenameVersion::userCanExecute( $productName );
 		if ( !$perms ) {		
-			$logFields = "action=start status=failure error=\"Access Denied\" product=$productName manual=$manualName "
-				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
-			error_log( 'WARNING [' . __METHOD__ . "] [RenameVersion] $logFields" );	
 			return "Access denied for product: $productName<br />";
 		}		
 		ob_start();

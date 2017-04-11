@@ -239,10 +239,6 @@ class SpecialBranchInherit extends SpecialPage
 		$perms = ( SpecialBranchInherit::userCanExecute( $sourceProductName ) && SpecialBranchInherit::userCanExecute( $targetProductName ) );
 		if ( !$perms ) {	
 			print( "Access Denied." );
-			$logFields = "action=\"start\" status=\"failure\" product=\"" . addslashes( $sourceProductName ) . "\" " 
-							. "sourceVersion=\"" . addslashes( $sourceVersion ) . "\" error=\"Access Denied \" " 
-							. "targetVersion=\"" . addslashes( $targetVersion ) . "\"";
-			error_log( 'WARNING [' . __METHOD__ . "] [BranchInherit] $logFields" );		
 			return FALSE;
 		}
 		ob_start();
