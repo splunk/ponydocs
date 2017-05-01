@@ -207,6 +207,58 @@ function efPonyDocsAjaxGetVersions( $productName ) {
 }
 
 /**
+ * To use this inside the HTML, you need to execute the call:
+ *
+ * 	sajax_do_call("efPonyDocsAjexRemoveVersions", [title,versions], callback );
+ *
+ * Where 'title' is the title topic to process and versions is a colon delimited list of versions
+ * to strip from the supplied title, both in categorylinks table and from the article content
+ * itself.
+ *
+ * @param string $title Title/topic name.
+ * @param string $versionList Colon delimited list of versions.
+ * @return AjaxResponse
+ */
+function efPonyDocsAjaxRemoveVersions( $title, $versionList ) {
+	global $wgRequest;
+
+	/**
+	 * First open the title and strip the [[Category]] tags from the content and save.
+	 */
+	$versions = explode( ':', $versionList );
+
+	$title = Title::newFromText( $title );
+	$article = new Article( $title );
+	$content = $article->getContent( );
+
+	$findArray = $repArray = array( );
+	foreach( $versions as $v ) {
+		$findArray[] = '/\[\[\s*Category\s*:\s*' . $v . '\s*\]\]/i';
+		$repArray[] = '';
+	}
+	$content = preg_replace( $findArray, $repArray, $content );
+	$article->doEdit( $content, 'Automatic removal of duplicate version tags.', EDIT_UPDATE );
+
+	/**
+	 * Now update the categorylinks table as well -- might not be needed, doEdit() might take care
+	 * of this when saving the article.
+	 */
+	$q = "DELETE FROM categorylinks"
+		. " WHERE cl_sortkey = '" . $dbr->strencode( strtoupper( $title->getText() ) ) . "'"
+		. " AND cl_to IN ('V:" . implode( "','V:", $versions ) . "')"
+		. " AND cl_type = 'page'";
+
+	$res = $dbr->query( $q, __METHOD__ );
+
+	/**
+	 * Do not output anything, but perhaps a status would be nice to return?
+	 */
+	$response = new AjaxResponse( );
+	return $response;
+}
+
+
+/**
  * This is used when an author wants to CLONE a title from outside the Documentation namespace into a
  * title within it.  We must be passed the title of the original/source topic and then the destination
  * title which should be a full form PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':<manual>:<topicName>:<version>'
