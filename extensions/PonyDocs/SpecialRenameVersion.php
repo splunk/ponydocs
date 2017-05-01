@@ -33,27 +33,6 @@ class SpecialRenameVersion extends SpecialPage
 	}
 	
 	/**
-	 * @Overridden
-	 * Check for Permission
-	 * @param String $productName Ponydocs Product name
-	 * 
-	 * @return boolean
-	 */
-	public function userCanExecute( $productName = "" ) {
-		global $wgUser;	
-		if ( empty( $productName ) ) {
-			$productName = PonyDocsProduct::GetSelectedProduct();
-		}
-		// Security Check
-		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
-		$groups = $wgUser->getGroups();
-		if ( !in_array( $authProductGroup, $groups) ) {
-			return FALSE;
-		}
-		return TRUE;
-	}	
-	
-	/**
 	 * Returns a human readable description of this special page.
 	 *
 	 * @returns string
@@ -68,10 +47,6 @@ class SpecialRenameVersion extends SpecialPage
 	 * @returns string The unique id for this job.
 	 */
 	public static function ajaxFetchJobID() {
-		$perms = SpecialRenameVersion::userCanExecute();	
-		if ( !$perms ) {			
-			return "Access Denied";
-		}
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
 		// Create the file.
 		$path = PonyDocsExtension::getTempDir() . $uniqid;
@@ -83,15 +58,11 @@ class SpecialRenameVersion extends SpecialPage
 
 	/**
 	 * AJAX method to fetch job progress. Used to update progress report.
-	 * 
+	 *
 	 * @param type $jobID
-	 * @return string 
+	 * @return string
 	 */
 	public static function ajaxFetchJobProgress( $jobID ) {
-		$perms = SpecialRenameVersion::userCanExecute();	
-		if ( !$perms ) {			
-			return 'Access denied.';
-		}
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents( $path );
 		if ( $progress === false ) {
@@ -112,17 +83,10 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionShortName ) {
 		global $wgScriptPath;
-		$perms = SpecialRenameVersion::userCanExecute( $productName );
-		if ( !$perms ) {
-			$logFields = "action=start status=failure error=\"Access Denied\" product=$productName manual=$manualName "
- 				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
- 				error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );			
-			return "Access denied for product: $productName<br />";
-		}		
 		ob_start();
 
-		list ( $msec, $sec ) = explode( ' ', microtime() ); 
-		$startTime = (float)$msec + (float)$sec; 
+		list ( $msec, $sec ) = explode( ' ', microtime() );
+		$startTime = (float)$msec + (float)$sec;
 
 		$logFields = "action=start status=success product=$productName manual=$manualName "
 			. "sourceVersion=$sourceVersionName targetVersion=$targetVersionShortName";
@@ -141,11 +105,11 @@ class SpecialRenameVersion extends SpecialPage
 
 		// TODO: Is this necessary? Haven't we done this already?
 		PonyDocsProductVersion::SetSelectedVersion( $productName, $sourceVersionName );
-		
+
 		print "Beginning process job for manual: $manualName<br />";
 		print "Source version is $productName:$sourceVersionName<br />";
 		print "Target version is $targetVersionShortName<br />";
-		
+
 		// Get topics
 		// Update log file
 		// TODO: Pull this out into a separate method somewhere
@@ -203,7 +167,7 @@ class SpecialRenameVersion extends SpecialPage
 		foreach ( $manualTopics as $manualName => $manualData ) {
 			foreach ( $manualData['sections'] as $sectionName => $section ) {
 				// The following is a goofy fix for some browsers.
-				// Sometimes the JSON comes along with null values for the first element. 
+				// Sometimes the JSON comes along with null values for the first element.
 				// It's just an additional element, so we can drop it.
 				// TODO: Since we're no longer getting this from JSON, this is probably removeable
 				if ( empty( $section['topics'][0]['text'] ) ) {
@@ -225,7 +189,7 @@ class SpecialRenameVersion extends SpecialPage
 					// Update log file
 					$fp = fopen( $path, "w+" );
 					fputs( $fp, "Renaming topics in manual $manualName<br />"
-						. "Completed $numOfTopicsCompleted of $numOfTopics Total: " 
+						. "Completed $numOfTopicsCompleted of $numOfTopics Total: "
 						. ( (int)($numOfTopicsCompleted / $numOfTopics * 100) ) . '%' );
 					fclose( $fp );
 					try {
@@ -266,16 +230,16 @@ class SpecialRenameVersion extends SpecialPage
 					print '</div><div class="error">Exception: ' . $e->getMessage() . '</div>';
 				}
 			}
-		
+
 		}
 
-		list ( $msec, $sec ) = explode( ' ', microtime() ); 
-		$endTime = (float)$msec + (float)$sec; 
+		list ( $msec, $sec ) = explode( ' ', microtime() );
+		$endTime = (float)$msec + (float)$sec;
 		print "Done with $manualName! Execution Time: " . round($endTime - $startTime, 3) . ' seconds<br />';
 		//WEB-10792, Clear TOCCACHE for the target version only, each Manual at a time
-		PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);		
+		PonyDocsTOC::clearTOCCache($manual, $targetVersion, $product);
 		//Also clear the NAVCache for the target version
-		PonyDocsProductVersion::clearNAVCache($targetVersion);		
+		PonyDocsProductVersion::clearNAVCache($targetVersion);
 		unlink($path);
 		$buffer = ob_get_clean();
 		return $buffer;
@@ -299,8 +263,9 @@ class SpecialRenameVersion extends SpecialPage
 		$products = $ponydocs->getProductsForTemplate();
 
 		// Security Check
-		$perms = SpecialRenameVersion::userCanExecute( $forceProduct );		
-		if ( !$perms ) {
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct );
+		$groups = $wgUser->getGroups();
+		if ( !in_array( $authProductGroup, $groups ) ) {
 			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
 			return;
 		}
