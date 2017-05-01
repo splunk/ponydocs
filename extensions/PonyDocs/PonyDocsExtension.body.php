@@ -2076,7 +2076,15 @@ EOJS;
 				}
 			}
 		}
-
+		
+		if ( $continueProcessing && $title->__toString( ) == PONYDOCS_SPECIAL_DOCUMENT_LINKS ) {
+			
+			//Get User Groups here
+			$groups = $user->getGroups();
+			if ( ! ( in_array( $wgPonyDocsBaseAuthorGroup, $groups ) || in_array( 'docteam', $groups ) || in_array( $authProductGroup, $groups ) ) ) {
+				$continueProcessing = FALSE;
+			}
+		}
 		return $continueProcessing;
 	}
 }
