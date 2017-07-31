@@ -33,6 +33,27 @@ class SpecialRenameVersion extends SpecialPage
 	}
 	
 	/**
+	 * @Overridden
+	 * Check for Permission
+	 * @param String $productName Ponydocs Product name
+	 * 
+	 * @return boolean
+	 */
+	public function userCanExecute( $productName = "" ) {
+		global $wgUser;	
+		if ( empty( $productName ) ) {
+			$productName = PonyDocsProduct::GetSelectedProduct();
+		}
+		// Security Check
+		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $productName );
+		$groups = $wgUser->getGroups();
+		if ( !in_array( $authProductGroup, $groups) ) {
+			return FALSE;
+		}
+		return TRUE;
+	}	
+	
+	/**
 	 * Returns a human readable description of this special page.
 	 *
 	 * @returns string
@@ -47,6 +68,10 @@ class SpecialRenameVersion extends SpecialPage
 	 * @returns string The unique id for this job.
 	 */
 	public static function ajaxFetchJobID() {
+		$perms = SpecialRenameVersion::userCanExecute();	
+		if ( !$perms ) {			
+			return "Access Denied";
+		}
 		$uniqid = uniqid( 'ponydocsrenameversion', true );
 		// Create the file.
 		$path = PonyDocsExtension::getTempDir() . $uniqid;
@@ -63,6 +88,10 @@ class SpecialRenameVersion extends SpecialPage
 	 * @return string
 	 */
 	public static function ajaxFetchJobProgress( $jobID ) {
+		$perms = SpecialRenameVersion::userCanExecute();	
+		if ( !$perms ) {			
+			return 'Access denied.';
+		}
 		$path = PonyDocsExtension::getTempDir() . $jobID;
 		$progress = file_get_contents( $path );
 		if ( $progress === false ) {
@@ -83,6 +112,13 @@ class SpecialRenameVersion extends SpecialPage
 	 */
 	public static function ajaxProcessManual( $jobID, $productName, $manualName, $sourceVersionName, $targetVersionShortName ) {
 		global $wgScriptPath;
+		$perms = SpecialRenameVersion::userCanExecute( $productName );
+		if ( !$perms ) {
+			$logFields = "action=start status=failure error=\"Access Denied\" product=$productName manual=$manualName "
+ 				. "sourceVersion=$sourceVersionName targetVersion=$targetVersionName";
+ 				error_log( 'INFO [' . __METHOD__ . "] [RenameVersion] $logFields" );			
+			return "Access denied for product: $productName<br />";
+		}		
 		ob_start();
 
 		list ( $msec, $sec ) = explode( ' ', microtime() );
@@ -263,9 +299,8 @@ class SpecialRenameVersion extends SpecialPage
 		$products = $ponydocs->getProductsForTemplate();
 
 		// Security Check
-		$authProductGroup = PonyDocsExtension::getDerivedGroup( PonyDocsExtension::ACCESS_GROUP_PRODUCT, $forceProduct );
-		$groups = $wgUser->getGroups();
-		if ( !in_array( $authProductGroup, $groups ) ) {
+		$perms = SpecialRenameVersion::userCanExecute( $forceProduct );		
+		if ( !$perms ) {
 			$wgOut->addHTML( '<p>Sorry, but you do not have permission to access this Special page.</p>' );
 			return;
 		}
