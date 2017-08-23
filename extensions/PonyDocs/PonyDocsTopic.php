@@ -208,8 +208,6 @@ class PonyDocsTopic {
 		
 			$article = new Article( Title::newFromText( $title ), 0 );
 			$content = $article->loadContent();
-			//print_r($article);
-			//exit;
 			$h1 = FALSE;
 			if ($article->getParserOutput()) {
 				$sections = $article->getParserOutput()->getSections();
