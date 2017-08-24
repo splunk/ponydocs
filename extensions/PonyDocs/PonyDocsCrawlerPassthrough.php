@@ -15,7 +15,7 @@ class PonyDocsCrawlerPassthrough {
 		global $wgRequest;
 		if ( $wgRequest->getIP() 
 			&& defined( 'PONYDOCS_CRAWLER_ADDRESS' )
-			&& $wgRequest->getIP() == PONYDOCS_CRAWLER_ADDRESS
+			&& $wgRequest->getCustomisedIP() == PONYDOCS_CRAWLER_ADDRESS
 			&& isset( $_SERVER['HTTP_USER_AGENT'] )
 			&& defined( 'PONYDOCS_CRAWLER_USERAGENT_REGEX' )
 			&& preg_match( PONYDOCS_CRAWLER_USERAGENT_REGEX, $_SERVER['HTTP_USER_AGENT'] ) ) {
