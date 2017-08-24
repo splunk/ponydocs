@@ -24,12 +24,12 @@ class PonyDocsCrawlerPassthrough {
 			$return = FALSE;
 		}
 		
-		if ( PONYDOCS_DEBUG ) {
+		
 			error_log( "DEBUG [" . __METHOD__ . ":" . __LINE__ . "]"
 			. " ip={$wgRequest->getIP()} crawlerAddress=" . PONYDOCS_CRAWLER_ADDRESS
 			. " useragent=\"{$_SERVER['HTTP_USER_AGENT']}\" regex=\"" . PONYDOCS_CRAWLER_USERAGENT_REGEX . "\""
 			. " crawler=$return");
-		}
+		
 		return $return;
 	}
 
