@@ -193,7 +193,14 @@ class PonyDocsTopic {
 		$cache = PonyDocsCache::getInstance();
 		$key = '';
 		$h1 = NULL;
-		if (!empty($headerCacheKey)) {
+		$skipCache = false;
+		if (strpos ($title, ':') != false) {
+			$arrTitleExplode = explode (':', $title);
+			if ($arrTitleExplode[0] == 'Splexicon') {
+				$skipCache = true;
+			}
+		} 
+		if (!empty($headerCacheKey) && !$skipCache) {
 			$key = "TOPICHEADERCACHE-" . $headerCacheKey;
 			$h1 = $cache->getTopicHeaderCache( $key );
 		}
@@ -214,7 +221,7 @@ class PonyDocsTopic {
 			if ( $h1 === FALSE ) {
 				$h1 = $title;
 			}
-			if (!empty($key)) {
+			if (!empty($key) && !$skipCache) {
 				// Okay, let's store in our cache.
 				$cache->put( $key, $h1, TOC_CACHE_TTL);
 			}
