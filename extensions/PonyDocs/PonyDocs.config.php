@@ -31,6 +31,9 @@ define( 'PONYDOCS_CASE_SENSITIVE_TITLES', FALSE );
 // Auto-Create Topics when referenced during editing
 define( 'PONYDOCS_AUTOCREATE_ON_ARTICLE_EDIT', FALSE );
 
+//Ponydocs Special Links
+define( 'PONYDOCS_SPECIAL_DOCUMENT_LINKS', 'Special:SpecialDocumentLinks' );
+
 // Configuration variables to map ponydoc groups to mediawiki groups
 if ( !isset( $wgPonyDocsEmployeeGroup ) ) {
 	$wgPonyDocsEmployeeGroup = 'employees';

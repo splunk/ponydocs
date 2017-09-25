@@ -98,7 +98,7 @@ class SpecialRecentProductChanges extends SpecialRecentChanges {
 		// Selected product changes
 		$product = addslashes(isset($_GET['product']) ? $_GET['product'] : PonyDocsProduct::GetSelectedProduct());
 		
-		$conds[] = 'rc_title LIKE "' . $product . '%"';
+		$conds[] = 'rc_title LIKE "' . $product . ':%"';
 
 		$hidePatrol = $wgUser->useRCPatrol() && $opts['hidepatrolled'];
 		$hideLoggedInUsers = $opts['hideliu'] && !$forcebot;
